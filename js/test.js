@@ -7,6 +7,10 @@
   const $ = s => document.querySelector(s);
   const LET = 'ABCD';
   const NOMBRE_TIPO = { imprime: '¿Qué imprime?', error: 'Encuentra el error', hueco: 'Completa el hueco' };
+  // Etiqueta de tipo: usa los tipos del test si los trae ({tipos:{id:{nombre,color}}})
+  const chipTipo = t => { const d = T && T.tipos && T.tipos[t];
+    return d ? '<span class="tipo" style="background:var(--' + d.color + ')">' + esc(d.nombre) + '</span>'
+             : '<span class="tipo t-' + t + '">' + (NOMBRE_TIPO[t] || t) + '</span>'; };
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
   /* ---------- resaltado de Python ---------- */
@@ -123,7 +127,7 @@
           (T.chuleta ? '<div class="regla"><span class="g" style="color:var(--ambar)">chuleta</span><p>ábrela cuando quieras con el botón amarillo</p></div>' : '') +
           '<div class="regla"><span class="g">sin prisa</span><p>puedes repetirlo las veces que quieras</p></div>' +
         '</div>' +
-        '<div class="leyenda">' + tipos.map(t => '<span class="tipo t-' + t + '">' + (NOMBRE_TIPO[t] || t) + '</span>').join('') + '</div>' +
+        '<div class="leyenda">' + tipos.map(chipTipo).join('') + '</div>' +
         '<div class="acciones"><button class="btn pri" id="bEmpezar">Empezar →</button>' +
           (sesion ? '<span class="quien">Entras como <b>nº ' + esc(sesion.alumno.split('-').pop()) + '</b> · <button class="enlace" id="bSalir">No soy yo</button></span>' : '') +
         '</div>' +
@@ -139,7 +143,11 @@
 
   /* ---------- intento ---------- */
   function empezar(preguntas) {
-    lista = preguntas.map(p => ({ p, orden: barajar(p.ops.map((_, i) => i)) }));
+    lista = preguntas.map(p => {
+      const idx = p.ops.map((_, i) => i);
+      const orden = p.fija_ultima ? barajar(idx.slice(0, -1)).concat(idx.length - 1) : barajar(idx);
+      return { p, orden };
+    });
     resp = new Array(lista.length).fill(null);
     pos = 0; inicioIntento = Date.now(); estadoGuardado = 'local';
     barra.innerHTML = lista.map(() => '<i></i>').join('');
@@ -152,17 +160,17 @@
     pos = i;
     const { p, orden } = lista[i];
     const r = resp[i];
-    let h = '<div class="q' + (r ? ' resuelta' : '') + '">';
-    h += '<div class="izq"><div class="chips"><span class="tipo t-' + p.tipo + '">' + (NOMBRE_TIPO[p.tipo] || p.tipo) + '</span><span class="act">' + esc(p.act || '') + '</span></div>';
+    let h = '<div class="q' + (r ? ' resuelta' : '') + (p.code ? '' : ' sin-codigo') + '">';
+    h += '<div class="izq"><div class="chips">' + chipTipo(p.tipo) + '<span class="act">' + esc(p.act || '') + '</span></div>';
     h += '<p class="enun">' + esc(p.enun) + '</p>';
-    h += '<pre class="codigo">' + conLineas(p.code) + '</pre>';
-    const htmlConsola = '<div class="consola"><span class="et">LO QUE SALE DE VERDAD' +
+    if (p.code) h += '<pre class="codigo">' + conLineas(p.code) + '</pre>';
+    const htmlConsola = !p.salida ? '' : '<div class="consola"><span class="et">LO QUE SALE DE VERDAD' +
          (p.tipo === 'hueco' ? ' (CON LA BUENA)' : '') +
          (p.stdin ? ' · EL USUARIO ESCRIBE ' + esc(p.stdin.trim().split('\n').join(', ')) : '') +
          '</span><pre>' + consola(p.salida) + '</pre></div>';
-    h += '<div class="solu solo-escritorio">' + htmlConsola + '</div>';
+    if (htmlConsola) h += '<div class="solu solo-escritorio">' + htmlConsola + '</div>';
     h += '</div><div class="der">';
-    const mono = p.tipo !== 'error';
+    const mono = p.tipo === 'imprime' || p.tipo === 'hueco';
     h += '<div class="ops">' + orden.map((oi, j) => {
       const cls = ['op'];
       if (oi === p.ok) cls.push('ok');
@@ -174,7 +182,7 @@
     }).join('') + '</div>';
     h += '<div class="veredicto"></div>';
     h += '<div class="solu">';
-    h += '<div class="solo-movil">' + htmlConsola + '</div>';
+    if (htmlConsola) h += '<div class="solo-movil">' + htmlConsola + '</div>';
     if (p.sol) h += '<div class="caja porque"><b>POR QUÉ</b>' + esc(p.sol) + '</div>';
     if (p.trampa) h += '<div class="caja trampa"><b>LA TRAMPA</b>' + esc(p.trampa) + '</div>';
     if (T.chuleta && p.tema) h += '<button class="ver-chuleta" data-tema="' + esc(p.tema) + '">Repasar esto en la chuleta →</button>';
@@ -294,7 +302,7 @@
         '<div class="num" style="color:' + color + '">' + String(nota).replace('.', ',') + '<small>SOBRE 10</small></div></div>' +
         '<div class="mensaje">' + msg + '<small>' + aciertos + ' de ' + total + ' bien · ' + Math.floor(seg / 60) + ' min ' + (seg % 60) + ' s</small></div></div>' +
         '<div class="guardado" id="guardado" hidden></div>' +
-        '<div class="por-tipo">' + Object.keys(porTipo).map(t => { const x = porTipo[t]; return '<div class="fila"><div class="cab"><span class="tipo t-' + t + '">' + NOMBRE_TIPO[t] + '</span><b>' + x.ok + '/' + x.n + '</b></div><div class="medidor"><i style="width:' + (x.ok / x.n * 100) + '%"></i></div></div>'; }).join('') + '</div>' +
+        '<div class="por-tipo">' + Object.keys(porTipo).map(t => { const x = porTipo[t]; return '<div class="fila"><div class="cab">' + chipTipo(t) + '<b>' + x.ok + '/' + x.n + '</b></div><div class="medidor"><i style="width:' + (x.ok / x.n * 100) + '%"></i></div></div>'; }).join('') + '</div>' +
         '<div class="subtit">PULSA UNA PREGUNTA PARA REVISARLA</div>' +
         '<div class="rejilla">' + resp.map((r, i) => '<button class="' + (r.ok ? 'ok' : 'mal') + '" data-i="' + i + '">' + (i + 1) + '</button>').join('') + '</div>' +
         '<div class="acciones">' +

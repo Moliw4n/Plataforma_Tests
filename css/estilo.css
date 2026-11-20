@@ -195,3 +195,18 @@ table.rg td:first-child{white-space:nowrap}
 @media (max-width:860px){.solo-escritorio{display:none!important}.resuelta .solo-movil{display:block}}
 /* en pantallas táctiles, sin efecto hover pegado al tocar */
 @media (hover:none){.op:not([disabled]):hover{border-color:var(--borde);background:var(--panel)}}
+
+/* chuleta: piezas visuales extra (TDA I) */
+.tarjeta .cadena{display:flex;flex-wrap:wrap;align-items:center;gap:6px;color:var(--mut);font-weight:800}
+.tarjeta .cadena span{background:#0a1022;border:1px solid var(--borde);border-left:4px solid var(--c,var(--naranja));border-radius:8px;padding:6px 10px;color:var(--tinta);font-size:14px}
+.tarjeta .formula{background:#0a1022;border:1px solid var(--borde);border-radius:10px;padding:10px 12px;font-family:Orbitron,sans-serif;font-size:15px;text-align:center}
+.tarjeta .formula b{color:var(--c,var(--naranja))}
+.tarjeta .pesos{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.tarjeta .pesos span{background:var(--c,var(--naranja));color:var(--oscuro);border-radius:8px;text-align:center;padding:8px 0;font-family:Orbitron,sans-serif;font-weight:800;font-size:15px}
+.tarjeta .pesos.eje span{background:#0a1022;color:var(--tinta);border:1px solid var(--borde)}
+.tarjeta table.rg.hex td{text-align:center;font-family:Orbitron,sans-serif;font-weight:800}
+.tarjeta ol.pasos{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px;font-size:15.5px}
+.tarjeta ol.pasos b{color:var(--c,var(--naranja))}
+/* preguntas sin código (p. ej. TDA I): una sola columna centrada */
+.q.sin-codigo{grid-template-columns:1fr;max-width:860px;margin:0 auto;gap:6px}
+.q.sin-codigo .enun{margin-bottom:6px}

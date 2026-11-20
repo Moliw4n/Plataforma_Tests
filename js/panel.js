@@ -8,7 +8,10 @@
   const CFG = window.CONFIG;
   const LET = 'ABCD';
   const NOMBRE_TIPO = { imprime: '¿Qué imprime?', error: 'Encuentra el error', hueco: 'Completa el hueco' };
-  const TESTS_CONOCIDOS = ['tda2-u1-python-practica'];
+  const TESTS_CONOCIDOS = ['tda2-u1-python-practica', 'tda1-u1u2-repaso'];
+  const chipTipo = (T, t) => { const d = T && T.tipos && T.tipos[t];
+    return d ? '<span class="tipo" style="background:var(--' + d.color + ')">' + esc(d.nombre) + '</span>'
+             : '<span class="tipo t-' + t + '">' + (NOMBRE_TIPO[t] || t) + '</span>'; };
   const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const app = $('#app');
 
@@ -102,9 +105,12 @@
       try { const r = await fetch('tests/' + encodeURIComponent(id) + '.json', { cache: 'no-cache' }); if (r.ok) tests[id] = await r.json(); } catch (e) {}
     }));
     if (!grupos.some(g => g.id === f.grupo)) f.grupo = grupos[0].id;
-    if (!ids.includes(f.test)) f.test = ids[0];
+    if (!ids.includes(f.test)) f.test = testDelGrupo(ids);
     pintar();
   }
+
+  // Cada test es de un grupo: 'tda1-…' → TDA1. Al cambiar de grupo se elige su test.
+  const testDelGrupo = ids => ids.find(id => id.toUpperCase().startsWith(f.grupo.toUpperCase() + '-')) || ids[0];
 
   /* ---------- utilidades ---------- */
   const nombreDe = id => nombres[id] || '';
@@ -175,7 +181,11 @@
     h += '<div id="vista"></div>';
     app.innerHTML = h;
 
-    $('#sGrupo').onchange = e => { f.grupo = e.target.value; pintar(); };
+    $('#sGrupo').onchange = e => {
+      f.grupo = e.target.value;
+      if (!f.test.toUpperCase().startsWith(f.grupo.toUpperCase() + '-')) f.test = testDelGrupo(Object.keys(tests));
+      pintar();
+    };
     $('#sTest').onchange = e => { f.test = e.target.value; pintar(); };
     $('#bRecargar').onclick = arrancar;
     $('#bExcel').onclick = exportar;
@@ -254,8 +264,8 @@
       const peorOp = reparto.filter(x => p && x.j !== p.ok).sort((a, b) => b.c - a.c)[0];
       return '<div class="pfila">' +
         '<div>' +
-          '<div class="cab-p"><span class="idp">' + esc(s.id.toUpperCase()) + '</span>' + (p ? '<span class="tipo t-' + p.tipo + '">' + (NOMBRE_TIPO[p.tipo] || p.tipo) + '</span><span class="act">' + esc(p.act) + '</span>' : '') + '</div>' +
-          (p ? '<div class="enun-p">' + esc(p.enun) + '</div><details><summary>Ver código y opciones</summary><pre class="codigo">' + esc(p.code) + '</pre>' +
+          '<div class="cab-p"><span class="idp">' + esc(s.id.toUpperCase()) + '</span>' + (p ? chipTipo(T, p.tipo) + '<span class="act">' + esc(p.act) + '</span>' : '') + '</div>' +
+          (p ? '<div class="enun-p">' + esc(p.enun) + '</div><details><summary>Ver ' + (p.code ? 'código y ' : '') + 'opciones</summary>' + (p.code ? '<pre class="codigo">' + esc(p.code) + '</pre>' : '') +
             '<div class="reparto" style="margin-top:10px">' + reparto.map(x => '<div class="' + (x.j === p.ok ? 'ok' : '') + '"><span class="l">' + LET[x.j] + '</span><code style="white-space:pre-wrap;font-size:13px">' + esc(x.o) + '</code><span>' + x.c + '</span></div>').join('') + '</div></details>' : '<div class="enun-p">(pregunta que ya no está en el test)</div>') +
           (peorOp && peorOp.c ? '<div class="trampa-mas"><b>LA RESPUESTA EQUIVOCADA MÁS ELEGIDA · ' + peorOp.c + ' VECES</b><code>' + esc(peorOp.o) + '</code></div>' : '') +
         '</div>' +
@@ -307,8 +317,8 @@
       caja.querySelectorAll('.mapa button').forEach(o => o.classList.toggle('on', o === b));
       ver.hidden = false;
       ver.innerHTML = !p ? 'Esta pregunta ya no está en el test.' :
-        '<div class="cab-p"><span class="tipo t-' + p.tipo + '">' + (NOMBRE_TIPO[p.tipo] || p.tipo) + '</span> <b>' + esc(p.enun) + '</b></div>' +
-        '<pre class="codigo" style="font-size:14px;padding:10px 12px">' + esc(p.code) + '</pre>' +
+        '<div class="cab-p">' + chipTipo(T, p.tipo) + ' <b>' + esc(p.enun) + '</b></div>' +
+        (p.code ? '<pre class="codigo" style="font-size:14px;padding:10px 12px">' + esc(p.code) + '</pre>' : '') +
         p.ops.map((o, j) => '<div class="op-mini' + (j === p.ok ? ' ok' : '') + (j === r.elegida ? ' elegida' + (r.ok ? '' : ' mal') : '') + '"><b>' + LET[j] + '</b><code>' + esc(o) + '</code><span class="m">' + (j === r.elegida ? (r.ok ? '✓ eligió esta' : '✗ eligió esta') : (j === p.ok ? '✓ correcta' : '')) + '</span></div>').join('') +
         '<div class="dato-p">Tardó ' + fmtSeg((r.ms || 0) / 1000) + ' en contestar.</div>';
     });

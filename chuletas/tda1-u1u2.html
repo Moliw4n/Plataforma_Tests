@@ -1,0 +1,194 @@
+<!-- Chuleta TDA I · U1 El ordenador por dentro · U2 El sistema operativo.
+     Cada <section> es una pestaña. -->
+
+<section data-tema="componentes" data-nombre="Componentes" data-color="naranja">
+  <div class="tarjeta">
+    <h3><span class="n">1</span>Las cuatro funciones <small>y una quinta</small></h3>
+    <table class="rg">
+      <tr><th>función</th><th>quién</th><th>ojo</th></tr>
+      <tr><td><b>Calcular</b></td><td>Procesador</td><td>Lo único que «hace» algo</td></tr>
+      <tr><td><b>Recordar</b></td><td>RAM</td><td>Rápida, pero <b>se borra al apagar</b></td></tr>
+      <tr><td><b>Guardar</b></td><td>SSD o disco duro</td><td>Lento, pero <b>sobrevive al apagado</b></td></tr>
+      <tr><td><b>Comunicarse</b></td><td>Puertos y tarjeta de red</td><td></td></tr>
+      <tr><td><b>Alimentar</b></td><td>Fuente</td><td>230 V alterna → 12, 5 y 3,3 V continua</td></tr>
+    </table>
+    <div class="aviso">La pregunta que lo resuelve casi todo: <b>si apago de golpe, ¿se pierde?</b> Si se pierde, estaba en la RAM. Si sobrevive, en el almacenamiento.</div>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">2</span>Dónde busca el procesador un dato</h3>
+    <p class="lema">De lo más cerca y rápido a lo más lejos y lento:</p>
+    <div class="cadena"><span>Registros</span>→<span>Caché L1</span>→<span>L2</span>→<span>L3</span>→<span>RAM</span>→<span>SSD / disco</span></div>
+    <p class="lema">La rápida es cara y pequeña; la barata y enorme es lenta. Por eso hay capas.</p>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">3</span>RAM y almacenamiento</h3>
+    <p class="lema"><b>RAM llena</b> → el sistema usa el disco como memoria → todo va a tirones. Ampliar RAM y poner un SSD son las mejoras más rentables.</p>
+    <p class="lema"><b>Generaciones</b> (DDR3, DDR4, DDR5…): no se mezclan. La <b>muesca</b> está en otro sitio en cada una. DDR4 y DDR5 tienen los mismos pines (288).</p>
+    <p class="lema"><b>SSD vs disco duro</b>: el SSD gana sobre todo en <b>tiempo de acceso</b> (lo que tarda en empezar a dar un dato), no solo en MB/s.</p>
+    <p class="lema"><b>Con gráfica dedicada</b>, el cable de la pantalla va a <b>la tarjeta</b>, no a la placa.</p>
+  </div>
+</section>
+
+<section data-tema="medir" data-nombre="Unidades" data-color="cian">
+  <div class="tarjeta">
+    <h3><span class="n">4</span>Bits y bytes</h3>
+    <table class="rg">
+      <tr><th>se escribe</th><th>es</th><th>se usa para</th></tr>
+      <tr><td><b>b</b> minúscula</td><td>bit</td><td>Velocidad de conexión: Mb/s</td></tr>
+      <tr><td><b>B</b> mayúscula</td><td>byte = 8 bits</td><td>Tamaño de archivos, descargas: MB/s</td></tr>
+    </table>
+    <div class="par">
+      <div class="formula">MB/s = Mb/s ÷ 8</div>
+      <div class="formula">1.000 Mb/s ÷ 8 = <b>125 MB/s</b></div>
+    </div>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">5</span>Hercios <small>veces por segundo</small></h3>
+    <table class="rg">
+      <tr><td>kHz</td><td>mil</td></tr>
+      <tr><td>MHz</td><td>un millón</td></tr>
+      <tr><td>GHz</td><td>mil millones</td></tr>
+    </table>
+    <p class="lema">3,5 GHz = el reloj da <b>3.500 millones de pasos por segundo</b>. Los GHz solo se comparan dentro de la misma familia y generación: hoy importan también los <b>núcleos</b>.</p>
+    <div class="aviso">GHz es velocidad del reloj. GB es cantidad de datos. No se parecen en nada.</div>
+  </div>
+</section>
+
+<section data-tema="binario" data-nombre="Binario y hex" data-color="ambar">
+  <div class="tarjeta">
+    <h3><span class="n">6</span>Los pesos de un byte</h3>
+    <div class="pesos"><span>128</span><span>64</span><span>32</span><span>16</span><span>8</span><span>4</span><span>2</span><span>1</span></div>
+    <p class="lema"><b>Binario → decimal</b>: suma los pesos que tienen un 1 debajo.</p>
+    <div class="pesos eje"><span>0</span><span>0</span><span>1</span><span>0</span><span>1</span><span>1</span><span>0</span><span>1</span></div>
+    <p class="lema">00101101 = 32 + 8 + 4 + 1 = <b>45</b></p>
+    <p class="lema"><b>Decimal → binario</b>: resta pesos de mayor a menor. 200 = 128 + 64 + 8 → <b>11001000</b></p>
+    <div class="aviso">Comprueba: impar → acaba en 1; par → acaba en 0. Máximo con 8 bits: 255 (256 combinaciones con el cero).</div>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">7</span>Hexadecimal</h3>
+    <table class="rg hex">
+      <tr><td>A</td><td>B</td><td>C</td><td>D</td><td>E</td><td>F</td></tr>
+      <tr><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td><td>15</td></tr>
+    </table>
+    <p class="lema"><b>Hex → decimal</b>: primera cifra × 16 + segunda. 2F = 2 × 16 + 15 = <b>47</b></p>
+    <p class="lema"><b>Decimal → hex</b>: ÷ 16. Cociente = primera cifra, resto = segunda. 200 ÷ 16 = 12 resto 8 → <b>C8</b></p>
+    <p class="lema">Cada cifra hex = 4 bits. Colores web <code>#RRGGBB</code>: rojo, verde, azul, de 0 a 255.</p>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">8</span>Letras en el ordenador</h3>
+    <p class="lema">No se guarda la letra: se guarda <b>su número</b> en una tabla. <b>ASCII</b>: 128 símbolos, sin ñ ni tildes. <b>Unicode</b>: un número para cada carácter del mundo. <b>UTF-8</b>: la forma de guardarlos (1 a 4 bytes).</p>
+    <div class="aviso">«GijÃ³n» = se guardó en UTF-8 y se leyó con otra codificación. El archivo no está roto.</div>
+  </div>
+</section>
+
+<section data-tema="averias" data-nombre="Averías" data-color="rojo">
+  <div class="tarjeta">
+    <h3><span class="n">9</span>El orden que funciona</h3>
+    <ol class="pasos">
+      <li><b>¿Llega corriente?</b> Cable, regleta, interruptor de la fuente.</li>
+      <li><b>¿Está todo bien encajado?</b> RAM, cables.</li>
+      <li><b>¿Qué ha cambiado?</b> Se movió, se instaló algo, hubo tormenta…</li>
+      <li><b>Quita lo que no hace falta.</b> Lo mínimo para arrancar.</li>
+      <li><b>Cambia una sola cosa</b> y vuelve a probar.</li>
+      <li><b>Anota</b> lo que vas haciendo.</li>
+    </ol>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">10</span>Síntomas</h3>
+    <table class="rg">
+      <tr><th>si pasa esto</th><th>piensa en</th></tr>
+      <tr><td>Cuelgues sin ningún patrón</td><td><b>Fuente o RAM</b></td></tr>
+      <tr><td>Se apaga tras un rato o al exigirle</td><td><b>Temperatura</b> (polvo, ventilador)</td></tr>
+      <tr><td>Chasquido rítmico en el disco</td><td><b>Copia los datos ya</b></td></tr>
+      <tr><td>Arranca pero pantalla negra</td><td>Cable de vídeo en la placa en vez de en la gráfica</td></tr>
+      <tr><td>Pitidos al arrancar</td><td>La tabla del manual de la placa</td></tr>
+    </table>
+    <div class="aviso">Antes de abrir: <b>desenchufa</b> (no basta con apagar) y toca la caja metálica para descargar la electricidad estática.</div>
+  </div>
+</section>
+
+<section data-tema="so" data-nombre="Sistema operativo" data-color="morado">
+  <div class="tarjeta">
+    <h3><span class="n">11</span>Qué hace <small>repartir</small></h3>
+    <table class="rg">
+      <tr><td><b>Procesos</b></td><td>Turnos de procesador para cada programa</td></tr>
+      <tr><td><b>Memoria</b></td><td>Cada programa su trozo, <b>sin tocar el de otro</b> → si uno se cuelga, solo cae ese</td></tr>
+      <tr><td><b>Archivos</b></td><td>Sectores del disco → carpetas con nombre</td></tr>
+      <tr><td><b>Dispositivos</b></td><td>A través de los controladores</td></tr>
+      <tr><td><b>Usuarios</b></td><td>Cada uno con sus archivos y permisos</td></tr>
+    </table>
+    <p class="lema"><b>Núcleo (kernel)</b>: la única parte que habla directamente con el hardware. <b>UEFI</b> (antes BIOS): en un chip de la placa, arranca antes que nada. Ahí se cambia el <b>orden de arranque</b> (Supr o F2 al encender).</p>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">12</span>Familias</h3>
+    <table class="rg">
+      <tr><th>tronco</th><th>sistemas</th></tr>
+      <tr><td><b>Unix</b></td><td>macOS, iOS / iPadOS</td></tr>
+      <tr><td><b>Linux</b> (familia Unix)</td><td>GNU/Linux, <b>Android</b>, ChromeOS</td></tr>
+      <tr><td><b>Windows</b></td><td>Va aparte: por eso usa otra barra en las rutas ( \ )</td></tr>
+    </table>
+  </div>
+</section>
+
+<section data-tema="archivos" data-nombre="Archivos" data-color="cian">
+  <div class="tarjeta">
+    <h3><span class="n">13</span>Rutas y extensiones</h3>
+    <p class="lema"><b>Ruta</b>: la dirección completa, desde la raíz del disco hasta el archivo.</p>
+    <p class="lema"><b>Extensión</b> (.docx, .jpg, .exe): es <b>parte del nombre</b>, no del contenido. Solo decide con qué programa se abre. Cambiarla <b>no convierte</b> el archivo.</p>
+    <div class="aviso">Con las extensiones ocultas, <code>factura.pdf.exe</code> se ve como <code>factura.pdf</code>: un programa disfrazado de documento.</div>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">14</span>Sistemas de archivos</h3>
+    <table class="rg">
+      <tr><td><b>NTFS</b></td><td>Windows</td></tr>
+      <tr><td><b>APFS</b></td><td>macOS</td></tr>
+      <tr><td><b>ext4</b></td><td>Linux</td></tr>
+      <tr><td><b>FAT32</b></td><td>Lo lee todo, pero <b>ningún archivo de más de 4 GB</b></td></tr>
+      <tr><td><b>exFAT</b></td><td>Lo lee casi todo y <b>sin límite de 4 GB</b>: el bueno para un pendrive</td></tr>
+    </table>
+  </div>
+</section>
+
+<section data-tema="configurar" data-nombre="Configurar" data-color="verde">
+  <div class="tarjeta">
+    <h3><span class="n">15</span>Configurar según quién lo usa</h3>
+    <p class="lema"><b>Cuenta normal a diario.</b> Administrador es un permiso: cualquier programa que ejecutes hereda tus permisos.</p>
+    <p class="lema"><b>Varias personas</b> → una cuenta para cada una.</p>
+    <p class="lema"><b>Aula compartida</b> → que no quede rastro de nadie, que arranque rápido y que todos los equipos sean iguales.</p>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">16</span>Navegador</h3>
+    <table class="rg">
+      <tr><td><b>Cookies</b></td><td>Guardan tu sesión abierta. Borrarlas al cerrar → el siguiente no entra en tu cuenta.</td></tr>
+      <tr><td><b>Cookies de terceros</b></td><td>De otros sitios: sirven para seguirte de web en web.</td></tr>
+      <tr><td><b>HTTPS</b></td><td>Cifra la conexión. No cierra sesiones.</td></tr>
+    </table>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">17</span>Dónde se cambia <small>Windows 11</small></h3>
+    <p class="lema"><b>Windows + I</b> abre Configuración. No memorices menús: escribe lo que buscas en su buscador.</p>
+    <table class="rg">
+      <tr><td>Resolución y escala</td><td>Sistema → Pantalla</td></tr>
+      <tr><td>Programas que arrancan solos</td><td>Aplicaciones → Inicio</td></tr>
+      <tr><td>Fondo de escritorio</td><td>Personalización → Fondo</td></tr>
+      <tr><td>Ver extensiones</td><td>Explorador → Ver → Mostrar → Extensiones</td></tr>
+    </table>
+  </div>
+</section>
+
+<section data-tema="elegir" data-nombre="Elegir sistema" data-color="ambar">
+  <div class="tarjeta">
+    <h3><span class="n">18</span>Criterios, en este orden</h3>
+    <ol class="pasos">
+      <li><b>¿Qué programas necesita?</b> Casi siempre decide esto.</li>
+      <li><b>¿Qué hardware hay?</b> Equipo antiguo → Linux ligero.</li>
+      <li><b>¿Quién lo va a usar?</b></li>
+      <li><b>¿Cuánto cuesta mantenerlo?</b> No solo la licencia.</li>
+    </ol>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">19</span>Gratuito ≠ libre</h3>
+    <p class="lema"><b>Gratuito</b>: no pagas. Nada más.</p>
+    <p class="lema"><b>Libre</b>: puedes usarlo, <b>ver cómo está hecho, modificarlo y compartirlo</b>.</p>
+  </div>
+</section>
