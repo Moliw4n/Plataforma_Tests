@@ -1,0 +1,268 @@
+<!-- Chuleta de Python · TDA II · A1 a A6.
+     Cada <section> es una pestaña. Los <pre class="py"> se colorean solos.
+     <pre class="sal"> es lo que sale en la consola. -->
+
+<section data-tema="pantalla" data-nombre="Pantalla" data-color="cian">
+  <div class="tarjeta">
+    <h3><span class="n">1</span>Escribir en pantalla <small>print · f-strings</small></h3>
+    <p class="lema">Texto <b>entre comillas</b>; números y variables, <b>sin</b>. Varias cosas, separadas por <b>comas</b> (se pone un espacio entre ellas).</p>
+    <div class="par">
+<pre class="py">nombre = "Sofia"
+print("Hola", nombre)
+print("Hola" + nombre)
+print(2 + 3, "y", "2 + 3")</pre>
+<pre class="sal">Hola Sofia
+HolaSofia
+5 y 2 + 3</pre>
+    </div>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">★</span>f-strings <small>meter variables en un texto</small></h3>
+    <p class="lema">Una <b>f</b> delante de las comillas y la variable entre <b>{llaves}</b>. <code>:.2f</code> deja dos decimales.</p>
+    <div class="par">
+<pre class="py">precio = 10 / 3
+print(f"Precio: {precio:.2f} euros")
+print(f"Doble: {precio * 2:.1f}")</pre>
+<pre class="sal">Precio: 3.33 euros
+Doble: 6.7</pre>
+    </div>
+    <div class="aviso">Sin la <b>f</b>, sale el texto de las llaves tal cual: <code>Precio: {precio:.2f} euros</code></div>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">#</span>Comentarios</h3>
+    <p class="lema">Todo lo que va detrás de <code>#</code> es una nota para personas: Python no lo ejecuta.</p>
+<pre class="py"># esto no hace nada
+print("Hola")   # esto tampoco</pre>
+  </div>
+</section>
+
+<section data-tema="variables" data-nombre="Variables" data-color="naranja">
+  <div class="tarjeta">
+    <h3><span class="n">2</span>Variables e input <small>guardar y pedir datos</small></h3>
+    <p class="lema"><code>nombre = valor</code> guarda. <b>input() siempre da texto</b>: para hacer cuentas, conviértelo.</p>
+    <table class="rg">
+      <tr><th>tipo</th><th>qué es</th><th>cómo se pide</th></tr>
+      <tr><td><code>str</code></td><td>texto</td><td><code>input("Nombre: ")</code></td></tr>
+      <tr><td><code>int</code></td><td>entero</td><td><code>int(input("Edad: "))</code></td></tr>
+      <tr><td><code>float</code></td><td>decimal</td><td><code>float(input("Precio: "))</code></td></tr>
+    </table>
+    <div class="par">
+<pre class="py">x = "3"
+print(x + x, int(x) + int(x))</pre>
+<pre class="sal">33 6</pre>
+    </div>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">!</span>Ojo con los nombres</h3>
+    <p class="lema">Las <b>mayúsculas cuentan</b>: <code>nombre</code> y <code>Nombre</code> son dos variables distintas. Si usas una que no existe: <code>NameError</code>.</p>
+    <p class="lema"><code>int("16.5")</code> o <code>int("hola")</code> no se pueden convertir: <code>ValueError</code>. Con decimales, <code>float()</code>.</p>
+  </div>
+</section>
+
+<section data-tema="operadores" data-nombre="Operadores" data-color="morado">
+  <div class="tarjeta">
+    <h3><span class="n">3</span>Operadores <small>cuentas · comparar · juntar</small></h3>
+    <table class="rg">
+      <tr><th>operador</th><th>significa</th></tr>
+      <tr><td><code>+ - * /</code></td><td>suma, resta, multiplicación, división (da decimal)</td></tr>
+      <tr><td><code>//</code></td><td>división entera: <code>7 // 2</code> → 3</td></tr>
+      <tr><td><code>%</code></td><td>resto: <code>7 % 2</code> → 1</td></tr>
+      <tr><td><code>**</code></td><td>potencia: <code>2 ** 3</code> → 8</td></tr>
+      <tr><td><code>== !=</code></td><td>igual · distinto (¡<code>=</code> guarda, <code>==</code> compara!)</td></tr>
+      <tr><td><code>&lt; &gt; &lt;= &gt;=</code></td><td>menor, mayor, menor o igual, mayor o igual</td></tr>
+      <tr><td><code>and</code></td><td>las dos ciertas</td></tr>
+      <tr><td><code>or</code></td><td>al menos una cierta</td></tr>
+      <tr><td><code>not</code></td><td>le da la vuelta</td></tr>
+    </table>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">★</span>Orden de las cuentas</h3>
+    <p class="lema">Primero <code>**</code>, luego <code>* / // %</code> y al final <code>+ -</code>. Con paréntesis decides tú.</p>
+    <div class="par">
+<pre class="py">print(2 + 3 * 4)
+print((2 + 3) * 4)
+print("5" + "3", 5 + 3)</pre>
+<pre class="sal">14
+20
+53 8</pre>
+    </div>
+  </div>
+</section>
+
+<section data-tema="decisiones" data-nombre="if · elif · else" data-color="ambar">
+  <div class="tarjeta">
+    <h3><span class="n">4</span>Decisiones <small>if · elif · else</small></h3>
+    <p class="lema">Dos puntos <b>:</b> al final y <b>sangría</b> (4 espacios) debajo. El <b>elif</b> y el <b>else</b> son opcionales. El <b>else</b> nunca lleva condición.</p>
+<pre class="py">if condicion:
+    # si se cumple
+elif otra_condicion:
+    # si no, y se cumple esta
+else:
+    # si no se cumple ninguna</pre>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">★</span>Gana la primera que se cumple</h3>
+    <p class="lema">Ordena de <b>más exigente a menos</b>. Lo que va sin sangría está fuera del if y se ejecuta siempre.</p>
+    <div class="par">
+<pre class="py">nota = 9.5
+if nota >= 9:
+    print("Sobresaliente")
+elif nota >= 5:
+    print("Aprobado")
+print("Fin")</pre>
+<pre class="sal">Sobresaliente
+Fin</pre>
+    </div>
+    <div class="aviso">Las mayúsculas cuentan: <code>"Si" == "si"</code> es <code>False</code>. Usa <code>.lower()</code>.</div>
+  </div>
+</section>
+
+<section data-tema="repetir" data-nombre="Bucles" data-color="verde">
+  <div class="tarjeta">
+    <h3><span class="n">5</span>Repetir <small>while · for · range</small></h3>
+    <div class="dos">
+      <div>
+        <div class="mini">while <span>· mientras se cumpla</span></div>
+<pre class="py">while condicion:
+    # se repite
+    # cambia la variable
+    # o no acaba nunca</pre>
+      </div>
+      <div>
+        <div class="mini">for <span>· un número de veces</span></div>
+<pre class="py">for i in range(1, 6):
+    # i vale 1, 2, 3, 4, 5
+    print(i)</pre>
+      </div>
+    </div>
+    <table class="rg">
+      <tr><th>escribes</th><th>da</th><th>ojo</th></tr>
+      <tr><td><code>range(5)</code></td><td>0 1 2 3 4</td><td>empieza en 0</td></tr>
+      <tr><td><code>range(1, 5)</code></td><td>1 2 3 4</td><td>no llega al final</td></tr>
+      <tr><td><code>range(0, 10, 3)</code></td><td>0 3 6 9</td><td>inicio, final, salto</td></tr>
+    </table>
+    <p class="lema"><code>break</code> sale del bucle · <code>continue</code> salta a la siguiente vuelta</p>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">6</span>Contar y sumar <small>los dos patrones</small></h3>
+    <div class="dos">
+      <div>
+<pre class="py">cuantos = 0      # ANTES del bucle
+for ...:
+    cuantos = cuantos + 1</pre>
+        <p class="lema"><b>Contador</b>: cuántas veces.</p>
+      </div>
+      <div>
+<pre class="py">suma = 0         # ANTES del bucle
+for ...:
+    suma = suma + valor</pre>
+        <p class="lema"><b>Acumulador</b>: va sumando valores.</p>
+      </div>
+    </div>
+    <div class="aviso">Si el <code>= 0</code> va dentro del bucle, se reinicia en cada vuelta. Y <code>suma + 1</code> sin <code>suma =</code> no guarda nada.</div>
+  </div>
+</section>
+
+<section data-tema="cadenas" data-nombre="Cadenas" data-color="cian">
+  <div class="tarjeta">
+    <h3><span class="n">7</span>Cadenas <small>texto por dentro</small></h3>
+    <p class="lema">Las posiciones se cuentan <b>desde 0</b>; <code>[-1]</code> es la última.</p>
+    <div class="par">
+<pre class="py">t = " Hola Mundo "
+print(len(t), t[1], t[-2])
+print(t.strip().upper())
+print("o" in t)</pre>
+<pre class="sal">12 H o
+HOLA MUNDO
+True</pre>
+    </div>
+    <table class="rg">
+      <tr><th>escribes</th><th>hace</th></tr>
+      <tr><td><code>t.upper()</code> / <code>t.lower()</code></td><td>mayúsculas / minúsculas</td></tr>
+      <tr><td><code>t.strip()</code></td><td>quita espacios de los extremos</td></tr>
+      <tr><td><code>t.replace(a, b)</code></td><td>cambia a por b</td></tr>
+      <tr><td><code>a in t</code></td><td>¿está dentro? True / False</td></tr>
+      <tr><td><code>t.split(", ")</code></td><td>parte el texto en una lista</td></tr>
+    </table>
+  </div>
+</section>
+
+<section data-tema="listas" data-nombre="Listas" data-color="naranja">
+  <div class="tarjeta">
+    <h3><span class="n">8</span>Listas <small>varios valores en orden</small></h3>
+    <p class="lema"><code>lista = [a, b, c]</code>. Posiciones desde 0: con 3 elementos, la <code>[3]</code> no existe (<code>IndexError</code>).</p>
+    <div class="par">
+<pre class="py">l = ["pan", "leche"]
+l.append("sal")
+print(l, len(l), l[0])</pre>
+<pre class="sal">['pan', 'leche', 'sal'] 3 pan</pre>
+    </div>
+    <table class="rg">
+      <tr><th>escribes</th><th>hace</th></tr>
+      <tr><td><code>l.append(x)</code></td><td>añade al final</td></tr>
+      <tr><td><code>l.insert(pos, x)</code></td><td>mete en esa posición</td></tr>
+      <tr><td><code>l.remove(x)</code></td><td>quita ese elemento</td></tr>
+      <tr><td><code>l.pop()</code></td><td>quita el último y lo devuelve</td></tr>
+      <tr><td><code>l.sort()</code></td><td>ordena la propia lista</td></tr>
+    </table>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">9</span>Recorrer una lista <small>for … in …</small></h3>
+    <p class="lema">En cada vuelta, la variable vale <b>un elemento</b> de la lista.</p>
+    <div class="par">
+<pre class="py">notas = [7, 4, 9]
+for nota in notas:
+    print(nota * 2)</pre>
+<pre class="sal">14
+8
+18</pre>
+    </div>
+  </div>
+</section>
+
+<section data-tema="funciones" data-nombre="Funciones" data-color="morado">
+  <div class="tarjeta">
+    <h3><span class="n">10</span>Funciones <small>def · parámetros · return</small></h3>
+    <p class="lema"><b>Definir</b> no ejecuta nada: hay que <b>llamarla</b>. Los datos entran por los <b>parámetros</b>, en orden; el resultado sale con <b>return</b>.</p>
+    <div class="par">
+<pre class="py">def media(a, b):
+    return (a + b) / 2
+
+m = media(6, 9)
+print(m)</pre>
+<pre class="sal">7.5</pre>
+    </div>
+    <div class="aviso"><b>print</b> solo enseña; <b>return</b> entrega. Una función sin return devuelve <code>None</code>. Lo que se crea dentro de una función no existe fuera.</div>
+  </div>
+  <div class="tarjeta">
+    <h3><span class="n">12</span>Funciones que ya vienen hechas</h3>
+    <table class="rg">
+      <tr><th>escribes</th><th>hace</th></tr>
+      <tr><td><code>print(a, b)</code></td><td>escribe en pantalla</td></tr>
+      <tr><td><code>input("texto")</code></td><td>pide un dato (da texto)</td></tr>
+      <tr><td><code>int(x)</code> / <code>float(x)</code> / <code>str(x)</code></td><td>convierte a entero / decimal / texto</td></tr>
+      <tr><td><code>type(x)</code></td><td>dice el tipo: str, int, float…</td></tr>
+      <tr><td><code>len(x)</code></td><td>cuántos hay (letras o elementos)</td></tr>
+      <tr><td><code>range(a, b)</code></td><td>números de a hasta b − 1</td></tr>
+      <tr><td><code>sum(lista)</code></td><td>suma todos</td></tr>
+      <tr><td><code>max(lista)</code> / <code>min(lista)</code></td><td>el mayor / el menor</td></tr>
+      <tr><td><code>sorted(lista)</code></td><td>copia ordenada</td></tr>
+    </table>
+  </div>
+</section>
+
+<section data-tema="errores" data-nombre="Errores" data-color="rojo">
+  <div class="tarjeta">
+    <h3><span class="n">11</span>Leer un error <small>de abajo arriba</small></h3>
+    <p class="lema">Mira la <b>última línea</b> (el tipo) y el <b>line</b> (dónde se dio cuenta Python).</p>
+    <table class="rg">
+      <tr><th>si pone</th><th>suele ser</th></tr>
+      <tr><td><code>SyntaxError</code></td><td>No es Python: comilla o paréntesis sin cerrar, faltan los <code>:</code>, <code>=</code> en vez de <code>==</code></td></tr>
+      <tr><td><code>IndentationError</code></td><td>La sangría no cuadra</td></tr>
+      <tr><td><code>NameError</code></td><td>Ese nombre no existe: errata, mayúscula, o variable creada dentro de una función</td></tr>
+      <tr><td><code>TypeError</code></td><td>Mezclas tipos (texto + número) o falta un dato al llamar a una función</td></tr>
+      <tr><td><code>ValueError</code></td><td><code>int("hola")</code>: el valor no se puede convertir</td></tr>
+      <tr><td><code>IndexError</code></td><td>Esa posición no existe en la lista o la cadena</td></tr>
+    </table>
+  </div>
+</section>

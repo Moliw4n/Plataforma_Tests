@@ -1,0 +1,305 @@
+{
+  "id": "tda2-u1-simulacro-python",
+  "titulo": "Simulacro U1 · Python",
+  "materia": "TDA II",
+  "unidad": "Bloque C · U1",
+  "version": 1,
+  "fuente": "TDA/TDA II/Bloque C - Programacion/U1_SIMULACRO_Python.html",
+  "preguntas": [
+    {
+      "tipo": "imprime",
+      "act": "A1-A2 · print y variables",
+      "enun": "¿Qué sale en la consola?",
+      "code": "print(\"5\" + \"3\")\nprint(5 + 3)",
+      "ops": [
+        "53\n8",
+        "8\n8",
+        "53\n53",
+        "5 + 3\n8"
+      ],
+      "ok": 0,
+      "sol": "Con comillas son textos: el + los pega. Sin comillas son números: el + los suma.",
+      "trampa": "Pensar que \"5\" y 5 son lo mismo. Uno es texto (str) y el otro número (int).",
+      "salida": "53\n8",
+      "id": "q01"
+    },
+    {
+      "tipo": "imprime",
+      "act": "A2 · operadores // y %",
+      "enun": "¿Qué sale en la consola?",
+      "code": "minutos = 135\nhoras = minutos // 60\nresto = minutos % 60\nprint(horas, \"h\", resto, \"min\")",
+      "ops": [
+        "2.25 h 0 min",
+        "2 h 25 min",
+        "2 h 15 min",
+        "2.25 h 15 min"
+      ],
+      "ok": 2,
+      "sol": "// es la división entera (cuántas horas completas: 2). % es el resto (lo que sobra: 15).",
+      "trampa": "Usar / en vez de //: la división normal da 2.25.",
+      "salida": "2 h 15 min",
+      "id": "q02"
+    },
+    {
+      "tipo": "error",
+      "act": "A2 · input",
+      "enun": "El usuario escribe 16. ¿Qué pasa al ejecutarlo?",
+      "code": "edad = input(\"Edad: \")\nproxima = edad + 1\nprint(\"El ano que viene:\", proxima)",
+      "stdin": "16\n",
+      "ops": [
+        "Sale: El ano que viene: 17",
+        "TypeError: no se suma texto y número",
+        "ValueError: 16 no es un número válido",
+        "SyntaxError: faltan los dos puntos"
+      ],
+      "ok": 1,
+      "sol": "input() siempre devuelve texto. \"16\" + 1 mezcla texto y número → TypeError. Se arregla con int(input(...)).",
+      "trampa": "Olvidar el int() alrededor del input().",
+      "salida": "Edad: 16\nTraceback (most recent call last):\n  File \"programa.py\", line 2, in <module>\n    proxima = edad + 1\n              ~~~~~^~~\nTypeError: can only concatenate str (not \"int\") to str",
+      "id": "q03"
+    },
+    {
+      "tipo": "imprime",
+      "act": "A3 · if / elif / else",
+      "enun": "¿Qué sale en la consola?",
+      "code": "nota = 9.5\nif nota >= 5:\n    print(\"Aprobado\")\nelif nota >= 9:\n    print(\"Sobresaliente\")\nelse:\n    print(\"Suspenso\")",
+      "ops": [
+        "Sobresaliente",
+        "Aprobado",
+        "Aprobado\nSobresaliente",
+        "Suspenso"
+      ],
+      "ok": 1,
+      "sol": "Python se queda con la PRIMERA condición que se cumple. 9.5 >= 5 es cierto, así que ni mira el elif.",
+      "trampa": "Ordenar de menos a más exigente. Lo correcto es empezar por nota >= 9.",
+      "salida": "Aprobado",
+      "id": "q04"
+    },
+    {
+      "tipo": "hueco",
+      "act": "A3 · and / or",
+      "enun": "La entrada es gratis para menores de 12 años y para quienes tienen 65 o más. ¿Qué va en el hueco?",
+      "code": "edad = int(input(\"Edad: \"))\nif ________:\n    print(\"Gratis\")\nelse:\n    print(\"Pagas 6 euros\")",
+      "ops": [
+        "edad < 12 and edad >= 65",
+        "edad > 12 or edad <= 65",
+        "edad < 12 or edad >= 65",
+        "edad < 12 or >= 65"
+      ],
+      "ok": 2,
+      "run_with": "edad < 12 or edad >= 65",
+      "stdin": "70\n",
+      "sol": "Basta con que se cumpla UNA de las dos: or. Con and nadie puede tener menos de 12 y 65 o más a la vez.",
+      "trampa": "«edad < 12 or >= 65» parece lógico en castellano, pero da SyntaxError: hay que repetir edad.",
+      "salida": "Edad: 70\nGratis",
+      "id": "q05"
+    },
+    {
+      "tipo": "error",
+      "act": "A3 · comparar",
+      "enun": "Este programa no arranca. ¿Por qué?",
+      "code": "edad = 18\nif edad = 18:\n    print(\"Ya puedes votar\")",
+      "ops": [
+        "Falta int() en la línea 1",
+        "La línea 3 no lleva sangría",
+        "Falta un else al final",
+        "En la línea 2 va == y no ="
+      ],
+      "ok": 3,
+      "sol": "= guarda un valor; == compara. Dentro de un if se compara: if edad == 18:",
+      "trampa": "Confundir = con ==. Es el SyntaxError más típico de los if.",
+      "salida": "  File \"programa.py\", line 2\n    if edad = 18:\n       ^^^^^^^^^\nSyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?",
+      "id": "q06"
+    },
+    {
+      "tipo": "imprime",
+      "act": "A4 · for y range",
+      "enun": "¿Qué sale en la consola? (cada número en una línea)",
+      "code": "for i in range(1, 4):\n    print(i * 2)",
+      "ops": [
+        "1  2  3",
+        "2  4  6  8",
+        "0  2  4  6",
+        "2  4  6"
+      ],
+      "ok": 3,
+      "sol": "range(1, 4) da 1, 2 y 3: empieza en 1 y NO llega al 4. Cada uno por 2: 2, 4, 6.",
+      "trampa": "Pensar que range(1, 4) incluye el 4.",
+      "salida": "2\n4\n6",
+      "id": "q07"
+    },
+    {
+      "tipo": "imprime",
+      "act": "A4 · acumulador",
+      "enun": "¿Qué sale en la consola?",
+      "code": "for n in range(1, 4):\n    suma = 0\n    suma = suma + n\nprint(suma)",
+      "ops": [
+        "3",
+        "6",
+        "0",
+        "Un error"
+      ],
+      "ok": 0,
+      "sol": "suma = 0 está DENTRO del bucle: se reinicia en cada vuelta. Solo queda la última: 0 + 3 = 3. No da ningún error: es un fallo mudo.",
+      "trampa": "El acumulador se pone a cero ANTES del bucle, nunca dentro.",
+      "salida": "3",
+      "id": "q08"
+    },
+    {
+      "tipo": "hueco",
+      "act": "A4 · while",
+      "enun": "Queremos que escriba «Hola» 3 veces y pare. ¿Qué va en el hueco?",
+      "code": "contador = 1\nwhile contador <= 3:\n    print(\"Hola\")\n    ________",
+      "ops": [
+        "contador + 1",
+        "contador = 1",
+        "contador == contador + 1",
+        "contador = contador + 1"
+      ],
+      "ok": 3,
+      "run_with": "contador = contador + 1",
+      "sol": "Hay que cambiar la variable de la condición y GUARDARLA: contador = contador + 1. Las otras tres dejan el bucle infinito.",
+      "trampa": "«contador + 1» calcula, pero no guarda nada: bucle infinito sin ningún aviso.",
+      "salida": "Hola\nHola\nHola",
+      "id": "q09"
+    },
+    {
+      "tipo": "imprime",
+      "act": "A5 · cadenas",
+      "enun": "¿Qué sale en la consola?",
+      "code": "palabra = \"Python\"\nprint(len(palabra), palabra[0], palabra[-1])",
+      "ops": [
+        "6 y n",
+        "5 P n",
+        "6 P n",
+        "6 P o"
+      ],
+      "ok": 2,
+      "sol": "len cuenta 6 letras. [0] es la primera (P) y [-1] la última (n).",
+      "trampa": "Pensar que se cuenta desde 1. La primera posición es la 0.",
+      "salida": "6 P n",
+      "id": "q10"
+    },
+    {
+      "tipo": "error",
+      "act": "A5 · listas",
+      "enun": "¿Qué pasa al ejecutarlo?",
+      "code": "dias = [\"lunes\", \"martes\", \"miercoles\"]\nprint(dias[3])",
+      "ops": [
+        "Sale: miercoles",
+        "IndexError: no hay posición 3",
+        "NameError: dias no existe",
+        "Sale: martes"
+      ],
+      "ok": 1,
+      "sol": "Tres elementos son las posiciones 0, 1 y 2. La 3 no existe: IndexError.",
+      "trampa": "Contar desde 1. El último de una lista de 3 es dias[2] o dias[-1].",
+      "salida": "Traceback (most recent call last):\n  File \"programa.py\", line 2, in <module>\n    print(dias[3])\n          ~~~~^^^\nIndexError: list index out of range",
+      "id": "q11"
+    },
+    {
+      "tipo": "imprime",
+      "act": "A5 · append y remove",
+      "enun": "¿Qué sale en la consola?",
+      "code": "compra = [\"pan\", \"leche\"]\ncompra.append(\"huevos\")\ncompra.remove(\"pan\")\nprint(compra, len(compra))",
+      "ops": [
+        "['leche', 'huevos'] 2",
+        "['pan', 'leche'] 2",
+        "['huevos', 'leche'] 2",
+        "['leche', 'huevos'] 3"
+      ],
+      "ok": 0,
+      "sol": "append añade al final: pan, leche, huevos. remove quita «pan». Quedan 2.",
+      "trampa": "Creer que append mete el elemento al principio.",
+      "salida": "['leche', 'huevos'] 2",
+      "id": "q12"
+    },
+    {
+      "tipo": "hueco",
+      "act": "A5 · recorrer una lista",
+      "enun": "Queremos contar cuántas notas están aprobadas (debe salir 3). ¿Qué va en el hueco?",
+      "code": "notas = [7, 4, 9, 3, 6]\naprobados = 0\nfor nota in notas:\n    if nota >= 5:\n        ________\nprint(aprobados)",
+      "ops": [
+        "aprobados = nota",
+        "aprobados = aprobados + 1",
+        "aprobados = aprobados + nota",
+        "aprobados + 1"
+      ],
+      "ok": 1,
+      "run_with": "aprobados = aprobados + 1",
+      "sol": "Es un CONTADOR: suma 1 cada vez que encuentra un aprobado. Sumar nota sería un acumulador (daría 22).",
+      "trampa": "Confundir contador (+ 1) con acumulador (+ nota).",
+      "salida": "3",
+      "id": "q13"
+    },
+    {
+      "tipo": "imprime",
+      "act": "A5 · len, sum, max",
+      "enun": "¿Qué sale en la consola?",
+      "code": "notas = [6, 8, 5]\nprint(sum(notas), max(notas), len(notas))",
+      "ops": [
+        "19 5 3",
+        "3 8 19",
+        "19 8 3",
+        "19 8 5"
+      ],
+      "ok": 2,
+      "sol": "sum suma todos (6 + 8 + 5 = 19), max da el mayor (8) y len cuenta cuántos hay (3).",
+      "trampa": "Confundir max con min, o pensar que len da el último valor de la lista.",
+      "salida": "19 8 3",
+      "id": "q14"
+    },
+    {
+      "tipo": "imprime",
+      "act": "A6 · print o return",
+      "enun": "¿Qué sale en la consola?",
+      "code": "def doble(n):\n    print(n * 2)\n\nresultado = doble(4)\nprint(resultado)",
+      "ops": [
+        "8\nNone",
+        "8\n8",
+        "None\n8",
+        "8"
+      ],
+      "ok": 0,
+      "sol": "La función ESCRIBE 8, pero no devuelve nada (no tiene return). Por eso resultado vale None.",
+      "trampa": "Pensar que print devuelve el valor. Solo lo enseña; para entregarlo hace falta return.",
+      "salida": "8\nNone",
+      "id": "q15"
+    },
+    {
+      "tipo": "hueco",
+      "act": "A6 · return",
+      "enun": "Queremos que salga 15. ¿Qué va en el hueco?",
+      "code": "def area_rectangulo(base, altura):\n    ________\n\nprint(area_rectangulo(3, 5))",
+      "ops": [
+        "print(base * altura)",
+        "base * altura",
+        "return base * altura",
+        "return area_rectangulo"
+      ],
+      "ok": 2,
+      "run_with": "return base * altura",
+      "sol": "return entrega el resultado y el print de fuera lo escribe. Con print(base * altura) saldría 15 y después None.",
+      "trampa": "Calcular sin return: la función hace la cuenta y la tira.",
+      "salida": "15",
+      "id": "q16"
+    },
+    {
+      "tipo": "error",
+      "act": "A6 · parámetros",
+      "enun": "¿Qué pasa al ejecutarlo?",
+      "code": "def area(base, altura):\n    return base * altura\n\nprint(area(5))",
+      "ops": [
+        "Sale: 5",
+        "Sale: 0",
+        "NameError: area no existe",
+        "TypeError: falta un dato"
+      ],
+      "ok": 3,
+      "sol": "La función tiene dos parámetros (base y altura) y al llamarla solo le damos uno. Python avisa con TypeError y dice cuál falta.",
+      "trampa": "Al llamar a una función hay que darle tantos datos como parámetros tiene, y en el mismo orden.",
+      "salida": "Traceback (most recent call last):\n  File \"programa.py\", line 4, in <module>\n    print(area(5))\n          ~~~~^^^\nTypeError: area() missing 1 required positional argument: 'altura'",
+      "id": "q17"
+    }
+  ]
+}
