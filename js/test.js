@@ -43,6 +43,8 @@
   let intento = null;
   let sesion = null;       // {codigo, alumno, grupo} · solo en memoria: al cerrar la pestaña, desaparece
   const CFG = window.CONFIG || null;
+  // Modo profesor (test.html?t=…&modo=profe): sin código y sin guardar nada.
+  const MODO_PROFE = new URLSearchParams(location.search).get('modo') === 'profe';
 
   async function rpc(fn, args) {
     const r = await fetch(CFG.supabaseUrl + '/rest/v1/rpc/' + fn, {
@@ -69,7 +71,11 @@
     document.title = T.titulo + ' · ' + (T.materia || 'Test');
     $('#marca').innerHTML = esc(T.materia || 'TEST') + ' <span>· ' + esc(T.titulo) + '</span>';
     if (T.chuleta) prepararChuleta();
-    if (CFG) acceso(); else portada();
+    if (MODO_PROFE) {
+      document.body.classList.add('modo-profe');
+      $('#marca').innerHTML = '<span class="aviso-profe">MODO PROFESOR · NO SE GUARDA</span>';
+    }
+    if (CFG && !MODO_PROFE) acceso(); else portada();
   }
 
   /* ---------- acceso con código ---------- */
@@ -129,6 +135,7 @@
         '</div>' +
         '<div class="leyenda">' + tipos.map(chipTipo).join('') + '</div>' +
         '<div class="acciones"><button class="btn pri" id="bEmpezar">Empezar →</button>' +
+          (MODO_PROFE ? '<a class="btn" href="panel.html">← Volver al panel</a>' : '') +
           (sesion ? '<span class="quien">Entras como <b>nº ' + esc(sesion.alumno.split('-').pop()) + '</b> · <button class="enlace" id="bSalir">No soy yo</button></span>' : '') +
         '</div>' +
       '</div>';
@@ -264,6 +271,7 @@
   let estadoGuardado = 'local';
   async function guardarIntento(datos) {
     window.ultimoIntento = datos;
+    if (MODO_PROFE) { estadoGuardado = 'profe'; pintarGuardado(); return; }
     if (!CFG || !sesion) { estadoGuardado = 'local'; return; }
     estadoGuardado = 'guardando'; pintarGuardado();
     try {
@@ -275,7 +283,8 @@
   function pintarGuardado() {
     const el = $('#guardado'); if (!el) return;
     const txt = { guardando: '⏳ Guardando tu resultado…', ok: '✓ Resultado guardado. Tu profesor ya lo puede ver.',
-                  error: '✗ No se ha podido guardar el resultado.', local: '' }[estadoGuardado];
+                  error: '✗ No se ha podido guardar el resultado.', local: '',
+                  profe: 'Modo profesor: este intento no se ha guardado.' }[estadoGuardado];
     el.className = 'guardado ' + estadoGuardado;
     el.innerHTML = esc(txt) + (estadoGuardado === 'error' ? ' <button class="btn" id="bReintentar">Reintentar</button>' : '');
     el.hidden = !txt;

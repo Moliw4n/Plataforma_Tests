@@ -210,3 +210,8 @@ table.rg td:first-child{white-space:nowrap}
 /* preguntas sin código (p. ej. TDA I): una sola columna centrada */
 .q.sin-codigo{grid-template-columns:1fr;max-width:860px;margin:0 auto;gap:6px}
 .q.sin-codigo .enun{margin-bottom:6px}
+.aviso-profe{background:var(--ambar);color:var(--oscuro);border-radius:99px;padding:4px 12px;font-size:11px;letter-spacing:.08em}
+.modo-profe .marca{display:block!important}
+.guardado.profe{background:rgba(255,193,69,.12);color:var(--ambar)}
+.acciones a.btn{text-decoration:none}
+a.btn{color:var(--tinta)}

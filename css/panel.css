@@ -108,3 +108,50 @@ table.datos tr.sin td{color:var(--mut)}
 .dialogo .acciones{justify-content:flex-end}
 .dialogo .btn.peligro{background:var(--rojo);color:var(--oscuro)}
 .vacio{color:var(--mut);padding:30px;text-align:center;border:1px dashed var(--borde);border-radius:var(--r)}
+
+/* pantalla de inicio */
+.inicio-cab{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.inicio-cab h1{font-family:Orbitron,sans-serif;font-size:26px;margin:0}
+.grupo{display:flex;flex-direction:column;gap:12px}
+.grupo-cab{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--naranja);padding-bottom:6px}
+.grupo-cab h2{font-family:Orbitron,sans-serif;font-size:20px;margin:0;color:var(--naranja)}
+.test-card{background:var(--panel);border:1px solid var(--borde);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.tc-tit{display:flex;flex-direction:column;gap:4px}
+.tc-tit b{font-size:18px}
+.tc-datos{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tc-datos > div{display:flex;flex-direction:column;gap:4px}
+.tc-datos .g{font-family:Orbitron,sans-serif;font-weight:800;font-size:26px;color:var(--cian)}
+.tc-datos .g small{font-size:14px;color:var(--mut)}
+.tc-acc{display:flex;gap:8px;flex-wrap:wrap}
+.tc-acc .btn{text-decoration:none;justify-content:center}
+.migas{display:flex;gap:8px;flex-wrap:wrap}
+.migas .btn{text-decoration:none;padding:8px 14px;font-size:14px}
+
+/* lista de alumnos en el móvil */
+.lista-movil{display:none;flex-direction:column;gap:8px}
+.al-card{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--borde);border-radius:12px;padding:12px 14px;text-align:left;width:100%}
+.al-card .num{font-family:Orbitron,sans-serif;font-weight:800;color:var(--mut);min-width:26px}
+.al-card .al-nom{flex:1;display:flex;flex-direction:column;font-weight:700;min-width:0}
+.al-card .al-nom small{color:var(--mut);font-weight:600;font-size:13px}
+.al-card.sin{opacity:.6}
+@media (max-width:700px){
+  .tabla-wrap{display:none}
+  .lista-movil{display:flex}
+  .panel{padding:14px 12px 40px}
+  .filtros .campo{min-width:0;flex:1 1 140px}
+  .filtros .espacio{display:none}
+  .filtros .btn{flex:1 1 auto;justify-content:center}
+  .resumen{grid-template-columns:1fr 1fr}
+  .resumen .regla .g{font-size:24px}
+  .tabs button{padding:10px 8px;font-size:11.5px}
+  .usuario{font-size:0}.usuario .btn{font-size:14px}
+  .marca span{display:none}
+  .tc-datos .g{font-size:22px}
+  .tc-acc .btn{flex:1 1 auto}
+}
+/* como app en el móvil: respetar la muesca */
+.top{padding-top:env(safe-area-inset-top);height:calc(var(--alto-top) + env(safe-area-inset-top))}
+a.btn{color:var(--tinta)}
+a.btn.pri{color:var(--oscuro)}
+.tc-datos{max-width:620px}
+@media (max-width:700px){ .top .marca{display:block} .top .marca span{display:none} }

@@ -21,27 +21,49 @@
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
     del(k) { try { localStorage.removeItem(k); } catch (e) {} }
   };
+  // La sesión del profesor se recuerda en este navegador hasta pulsar «Salir».
   const sesionTab = {
-    get() { try { return JSON.parse(sessionStorage.getItem('pt_sesion')); } catch (e) { return null; } },
-    set(v) { try { sessionStorage.setItem('pt_sesion', JSON.stringify(v)); } catch (e) {} },
-    del() { try { sessionStorage.removeItem('pt_sesion'); } catch (e) {} }
+    get() { return guarda.get('pt_sesion_profe', null); },
+    set(v) { guarda.set('pt_sesion_profe', v); },
+    del() { guarda.del('pt_sesion_profe'); try { sessionStorage.removeItem('pt_sesion'); } catch (e) {} }
   };
 
   /* ---------- estado ---------- */
-  let ses = null;                 // {token, email, exp}
+  let ses = null;                 // {token, refresh, email, exp}
   let grupos = [], alumnos = [], intentos = [];
   const tests = {};               // id -> test JSON
   let nombres = guarda.get('pt_nombres', {});   // 'TDA2-07' -> 'Nombre'
-  const f = guarda.get('pt_filtros', { grupo: '', test: '', vista: 'alumnos', soloPrimero: false });
+  const f = guarda.get('pt_filtros', { grupo: '', test: '', vista: 'inicio', soloPrimero: false });
+  f.vista = 'inicio';   // al abrir el panel, siempre la pantalla de inicio
   let orden = { col: 'num', asc: true };
 
   /* ---------- red ---------- */
-  async function api(ruta, opciones = {}) {
+  let renovando = null;   // una sola renovación aunque haya varias peticiones a la vez
+  function renovar() { return renovando || (renovando = renovarYa().finally(() => { renovando = null; })); }
+  async function renovarYa() {
+    if (!ses || !ses.refresh) return false;
+    try {
+      const r = await fetch(CFG.supabaseUrl + '/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST', headers: { apikey: CFG.supabaseKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: ses.refresh })
+      });
+      const d = await r.json();
+      if (!r.ok || !d.access_token) return false;
+      ses = { ...ses, token: d.access_token, refresh: d.refresh_token || ses.refresh, exp: Date.now() + (d.expires_in || 3600) * 1000 };
+      sesionTab.set(ses);
+      return true;
+    } catch (e) { return false; }
+  }
+  async function api(ruta, opciones = {}, reintento = true) {
+    if (ses.exp < Date.now() + 60000) await renovar();
     const r = await fetch(CFG.supabaseUrl + '/rest/v1/' + ruta, {
       ...opciones,
       headers: { apikey: CFG.supabaseKey, Authorization: 'Bearer ' + ses.token, 'Content-Type': 'application/json', ...(opciones.headers || {}) }
     });
-    if (r.status === 401) { cerrarSesion('Tu sesión ha caducado. Vuelve a entrar.'); throw new Error('401'); }
+    if (r.status === 401) {
+      if (reintento && await renovar()) return api(ruta, opciones, false);
+      cerrarSesion('Tu sesión ha caducado. Vuelve a entrar.'); throw new Error('401');
+    }
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.status === 204 ? null : r.json();
   }
@@ -67,7 +89,7 @@
         });
         const d = await r.json();
         if (!r.ok || !d.access_token) throw new Error(d.error_description || d.msg || 'credenciales');
-        ses = { token: d.access_token, email: (d.user && d.user.email) || $('#iEmail').value.trim(), exp: Date.now() + (d.expires_in || 3600) * 1000 };
+        ses = { token: d.access_token, refresh: d.refresh_token, email: (d.user && d.user.email) || $('#iEmail').value.trim(), exp: Date.now() + (d.expires_in || 3600) * 1000 };
         sesionTab.set(ses);
         arrancar();
       } catch (err) {
@@ -147,6 +169,7 @@
   /* ---------- pintar ---------- */
   function pintar() {
     guarda.set('pt_filtros', f);
+    if (f.vista === 'inicio') return pintarInicio();
     const T = tests[f.test];
     const hayNombres = Object.keys(nombres).length > 0;
     const fs = filas();
@@ -155,7 +178,9 @@
     const pregs = estadisticasPreguntas();
     const peor = pregs[0];
 
-    let h = '<div class="filtros">' +
+    let h = '<div class="migas"><button class="btn" id="bInicio">← Inicio</button>' +
+      (T ? '<a class="btn" href="test.html?t=' + encodeURIComponent(T.id) + '&modo=profe" target="_blank" rel="noopener">▶ Probar este test</a>' : '') + '</div>' +
+      '<div class="filtros">' +
       '<div class="campo"><label for="sGrupo">GRUPO</label><select id="sGrupo">' + grupos.map(g => '<option value="' + esc(g.id) + '"' + (g.id === f.grupo ? ' selected' : '') + '>' + esc(g.nombre) + '</option>').join('') + '</select></div>' +
       '<div class="campo"><label for="sTest">TEST</label><select id="sTest">' + Object.keys(tests).concat([...new Set(intentos.map(i => i.test_id))].filter(id => !tests[id])).map(id => '<option value="' + esc(id) + '"' + (id === f.test ? ' selected' : '') + '>' + esc(tests[id] ? tests[id].titulo : id) + '</option>').join('') + '</select></div>' +
       '<span class="espacio"></span>' +
@@ -188,6 +213,7 @@
     };
     $('#sTest').onchange = e => { f.test = e.target.value; pintar(); };
     $('#bRecargar').onclick = arrancar;
+    $('#bInicio').onclick = () => { f.vista = 'inicio'; pintar(); };
     $('#bExcel').onclick = exportar;
     const iCSV = $('#iCSV');
     iCSV.onchange = () => leerCSV(iCSV.files[0]);
@@ -196,6 +222,60 @@
     if ($('#bOlvidar')) $('#bOlvidar').onclick = () => { nombres = {}; guarda.del('pt_nombres'); pintar(); };
     app.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { f.vista = b.dataset.v; pintar(); });
     if (f.vista === 'preguntas') vistaPreguntas(pregs, T); else vistaAlumnos(fs);
+  }
+
+  /* ---------- pantalla de inicio: grupos y tests ---------- */
+  const haceCuanto = t => {
+    if (!t) return 'nadie todavía';
+    const min = Math.round((Date.now() - new Date(t)) / 60000);
+    if (min < 60) return 'hace ' + Math.max(1, min) + ' min';
+    const h = Math.round(min / 60); if (h < 24) return 'hace ' + h + ' h';
+    const d = Math.round(h / 24); return d === 1 ? 'ayer' : 'hace ' + d + ' días';
+  };
+  const enlaceAlumno = id => new URL('test.html' + (id === TESTS_CONOCIDOS[0] ? '' : '?t=' + encodeURIComponent(id)), location.href).href;
+  function testsDeGrupo(g) {
+    const ids = [...new Set([...Object.keys(tests), ...intentos.map(i => i.test_id)])];
+    return ids.filter(id => id.toUpperCase().startsWith(g.toUpperCase() + '-'));
+  }
+  function pintarInicio() {
+    let h = '<div class="inicio-cab"><h1>Hola 👋</h1><button class="btn" id="bRecargar">↻ Actualizar</button></div>';
+    h += grupos.map(g => {
+      const als = alumnos.filter(a => a.grupo === g.id && a.activo);
+      const ids = new Set(als.map(a => a.id));
+      const ts = testsDeGrupo(g.id);
+      return '<section class="grupo"><div class="grupo-cab"><h2>' + esc(g.nombre) + '</h2><span class="dato-p">' + als.length + ' alumnos</span></div>' +
+        (ts.length ? ts.map(id => {
+          const T = tests[id];
+          const ints = intentos.filter(i => i.test_id === id && ids.has(i.alumno));
+          const quien = new Set(ints.map(i => i.alumno));
+          const mejores = [...quien].map(a => Math.max(...ints.filter(i => i.alumno === a).map(i => Number(i.nota))));
+          const ultimo = ints.reduce((m, i) => (!m || new Date(i.terminado) > new Date(m)) ? i.terminado : m, null);
+          const pct = als.length ? quien.size / als.length * 100 : 0;
+          return '<div class="test-card">' +
+            '<div class="tc-tit"><b>' + esc(T ? T.titulo : id) + '</b><span class="dato-p">' + (T ? T.preguntas.length + ' preguntas · ' : '') + 'último intento: ' + haceCuanto(ultimo) + '</span></div>' +
+            '<div class="tc-datos">' +
+              '<div><span class="g">' + quien.size + '<small>/' + als.length + '</small></span><span class="dato-p">lo han hecho</span><div class="medidor"><i style="width:' + pct + '%"></i></div></div>' +
+              '<div><span class="g">' + (mejores.length ? fmtNotaTxt(media(mejores)) : '—') + '</span><span class="dato-p">nota media</span></div>' +
+              '<div><span class="g">' + ints.length + '</span><span class="dato-p">intentos</span></div>' +
+            '</div>' +
+            '<div class="tc-acc">' +
+              '<button class="btn pri" data-res="' + esc(g.id) + '|' + esc(id) + '">Ver resultados</button>' +
+              (T ? '<a class="btn" href="test.html?t=' + encodeURIComponent(id) + '&modo=profe" target="_blank" rel="noopener">▶ Probar</a>' : '') +
+              '<button class="btn" data-copiar="' + esc(enlaceAlumno(id)) + '">🔗 Enlace</button>' +
+            '</div></div>';
+        }).join('') : '<div class="vacio">Este grupo todavía no tiene tests.</div>') +
+      '</section>';
+    }).join('');
+    app.innerHTML = h;
+    $('#bRecargar').onclick = arrancar;
+    app.querySelectorAll('[data-res]').forEach(b => b.onclick = () => {
+      const [g, t] = b.dataset.res.split('|'); f.grupo = g; f.test = t; f.vista = 'alumnos'; pintar(); window.scrollTo({ top: 0 });
+    });
+    app.querySelectorAll('[data-copiar]').forEach(b => b.onclick = async () => {
+      try { await navigator.clipboard.writeText(b.dataset.copiar); b.textContent = '✓ Copiado'; }
+      catch (e) { prompt('Copia este enlace:', b.dataset.copiar); }
+      setTimeout(() => b.textContent = '🔗 Enlace', 2000);
+    });
   }
 
   /* ---------- vista: alumnos ---------- */
@@ -223,12 +303,17 @@
       '<td>' + (x.media == null ? '—' : fmtNotaTxt(x.media)) + '</td>' +
       '<td>' + fmtSeg(x.tUlt) + '</td><td>' + (x.n ? fmtSeg(x.tTotal) : '—') + '</td><td>' + fmtFecha(x.fecha) + '</td>' +
     '</tr>').join('');
-    h += '</tbody></table></div><p class="dato-p">Pulsa un alumno para ver sus intentos uno a uno. Pulsa una cabecera para ordenar.</p>';
+    h += '</tbody></table></div>';
+    h += '<div class="lista-movil">' + fs.map(x => '<button class="al-card' + (x.n ? '' : ' sin') + '" data-id="' + esc(x.id) + '">' +
+      '<span class="num">' + esc(x.num) + '</span><span class="al-nom">' + (esc(x.nombre) || 'Nº ' + esc(x.num)) +
+      '<small>' + (x.n ? x.n + (x.n === 1 ? ' intento' : ' intentos') + ' · ' + fmtFecha(x.fecha) : 'sin hacer') + '</small></span>' +
+      (x.n ? fmtNota(x.mejor) : '') + '</button>').join('') + '</div>';
+    h += '<p class="dato-p">Pulsa un alumno para ver sus intentos uno a uno. Pulsa una cabecera para ordenar.</p>';
     $('#vista').innerHTML = h;
     $('#vista').querySelectorAll('th').forEach(th => th.onclick = () => {
       const k = th.dataset.c; orden = { col: k, asc: orden.col === k ? !orden.asc : (k === 'num' || k === 'nombre') }; pintar();
     });
-    $('#vista').querySelectorAll('tbody tr').forEach(tr => tr.onclick = () => abrirDetalle(tr.dataset.id));
+    $('#vista').querySelectorAll('tbody tr, .al-card').forEach(tr => tr.onclick = () => abrirDetalle(tr.dataset.id));
   }
 
   /* ---------- vista: preguntas ---------- */
@@ -380,5 +465,5 @@
 
   /* ---------- inicio ---------- */
   ses = sesionTab.get();
-  if (ses && ses.exp > Date.now() + 60000) arrancar(); else pantallaLogin();
+  if (ses && (ses.exp > Date.now() + 60000 || ses.refresh)) arrancar(); else pantallaLogin();
 })();
