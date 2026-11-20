@@ -68,12 +68,12 @@
       E.innerHTML = '<div class="cargando">No encuentro este test. Revisa el enlace que te ha pasado tu profesor.</div>';
       return;
     }
-    document.title = T.titulo + ' · ' + (T.materia || 'Test');
-    $('#marca').innerHTML = esc(T.materia || 'TEST') + ' <span>· ' + esc(T.titulo) + '</span>';
+    document.title = T.titulo + ' · Kairos';
+    $('#marca').innerHTML = 'KAIR<b class="k0">0</b>S <span>· ' + esc(T.materia || '') + ' · ' + esc(T.titulo) + '</span>';
     if (T.chuleta) prepararChuleta();
     if (MODO_PROFE) {
       document.body.classList.add('modo-profe');
-      $('#marca').innerHTML = '<span class="aviso-profe">MODO PROFESOR · NO SE GUARDA</span>';
+      $('#marca').innerHTML = '<span class="aviso-profe">PROFE · NO SE GUARDA</span>';
     }
     if (CFG && !MODO_PROFE) acceso(); else portada();
   }

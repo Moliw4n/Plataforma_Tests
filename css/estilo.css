@@ -211,7 +211,11 @@ table.rg td:first-child{white-space:nowrap}
 .q.sin-codigo{grid-template-columns:1fr;max-width:860px;margin:0 auto;gap:6px}
 .q.sin-codigo .enun{margin-bottom:6px}
 .aviso-profe{background:var(--ambar);color:var(--oscuro);border-radius:99px;padding:4px 12px;font-size:11px;letter-spacing:.08em}
-.modo-profe .marca{display:block!important}
+.modo-profe .marca{display:block!important;flex:none;overflow:visible}
 .guardado.profe{background:rgba(255,193,69,.12);color:var(--ambar)}
 .acciones a.btn{text-decoration:none}
 a.btn{color:var(--tinta)}
+/* logo KAIR0S: el cero en naranja, como el R0N0S de Kronos */
+.marca{color:var(--tinta)}
+.marca .k0{color:var(--naranja);font-weight:800}
+.marca span{color:var(--mut)}
