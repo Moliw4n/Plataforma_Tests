@@ -171,7 +171,7 @@ rosco, y **cada juego alimenta la nota por criterios**.
 
 | Fase | Qué | Para qué |
 |---|---|---|
-| **0. Reorganización** | Núcleo en módulos, contrato de modos, `jugar.html`, práctica como primer modo, pruebas Playwright, latido anti-pausa, proyecto de pruebas | Que todo lo demás sea barato. El alumno no nota nada. |
+| **0. Reorganización** · *hecha en la rama `fase-0`, pendiente de fusionar tras el 25 nov* | Núcleo en módulos, contrato de modos, `jugar.html`, práctica como primer modo, pruebas Playwright, latido anti-pausa, proyecto de pruebas | Que todo lo demás sea barato. El alumno no nota nada. |
 | **1. Contenido en el servidor + examen** | Bancos e ítems en Supabase, tipos de pregunta nuevos, `partidas`/`respuestas`, modo examen (20 al azar equilibradas, un intento, tiempo, registro de salidas de pestaña, nota oculta hasta publicarla) | Exámenes sin soluciones a la vista. |
 | **2. Directo** | Modo Kahoot: sala con código, proyector, móviles, marcador con apodos, podio | El primer juego en clase. |
 | **3. Rosco** | Pasapalabra con letras, tiempo y «pasapalabra»; respuesta corta con normalización | Primer juego individual con otro tipo de pregunta. |
@@ -181,6 +181,13 @@ rosco, y **cada juego alimenta la nota por criterios**.
 
 Cada fase deja algo usable en clase. Ninguna rompe lo anterior: los enlaces que ya tienen los
 alumnos siguen funcionando.
+
+### Estado de la fase 0
+Hecho en `fase-0`: núcleo en módulos (`js/nucleo/`), contrato de modos (`nucleo/modos.js`) con la
+práctica como primer modo (`js/modos/practica/`), `jugar.html` con `test.html` como alias, entornos
+en `config.js`, pruebas Playwright + SQL + latido, `04_latido.sql`, `05_datos_prueba.sql` y GitHub
+Actions. **Quedan fuera, para la fase 1:** `formato: 2` y el conversor, `jugar.html?j=<juego>`,
+y dar de alta de verdad el proyecto de pruebas en `config.js` (necesita su URL y clave).
 
 ## 9. Riesgos y cómo se cubren
 
