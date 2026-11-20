@@ -1,5 +1,5 @@
 /* Kairos · página del alumno (el «runner»)
-   Abre: test.html?t=<id-del-test>   (carga tests/<id>.json) · &modo=profe = sin código y sin guardar.
+   Abre: jugar.html?t=<id-del-test>   (carga tests/<id>.json; test.html es un alias que reenvía aquí) · &modo=profe = sin código y sin guardar.
    Carga el contenido, pone la cabecera y la chuleta, pide el código y entrega el control al MODO
    que corresponda (por ahora siempre `practica`). El contrato de los modos está en nucleo/modos.js. */
 import { rpc } from './nucleo/api.js';

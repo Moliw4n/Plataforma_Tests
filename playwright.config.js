@@ -10,7 +10,7 @@ module.exports = defineConfig({
   use: { baseURL: 'http://localhost:4173', trace: 'retain-on-failure', channel: 'chrome' },
   webServer: {
     command: 'node pruebas/servidor.js',
-    url: 'http://localhost:4173/test.html',
+    url: 'http://localhost:4173/jugar.html',
     reuseExistingServer: !process.env.CI
   },
   projects: [

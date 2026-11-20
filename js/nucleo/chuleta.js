@@ -1,5 +1,5 @@
 /* Núcleo · chuleta.js — el panel de la chuleta (botón amarillo, pestañas por tema).
-   Usa los elementos de test.html: #bChuleta, #capaChuleta, #pestanas, #cuerpoChuleta, #tituloChuleta, #bCerrarChuleta.
+   Usa los elementos de jugar.html: #bChuleta, #capaChuleta, #pestanas, #cuerpoChuleta, #tituloChuleta, #bCerrarChuleta.
    crearChuleta({ url, materia, temaActual }) → { abrir(tema), cerrar(), abierta(), lista() }
    temaActual: función que devuelve el tema de la pregunta que se está viendo (para abrir en su pestaña). */
 import { esc } from './util.js';

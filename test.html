@@ -5,39 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b1226">
 <title>Kairos · IES Santa Bárbara</title>
-<link rel="stylesheet" href="css/estilo.css">
-<link rel="icon" href="img/favicon.png">
+<!-- ALIAS: este enlace ya lo tienen los alumnos (test.html, test.html?t=…, …&modo=profe) y no se puede romper.
+     La página de verdad es jugar.html; aquí solo se reenvía conservando todo lo que venga detrás. -->
+<script>location.replace('jugar.html' + location.search + location.hash);</script>
+<style>body{margin:0;background:#0f1830;color:#eef2fb;font:600 16px/1.5 sans-serif;display:grid;place-items:center;min-height:100vh;text-align:center}a{color:#ff9d2e}</style>
 </head>
 <body>
-<header class="top">
-  <div class="marca" id="marca"><svg class="logo-kairos" viewBox="0 0 264 73" role="img" aria-label="Kairos"><use href="img/logo-kairos.svg#k"/><text x="88" y="72.4" font-family="Orbitron, sans-serif" font-weight="800" font-size="50" letter-spacing="6" fill="#eef2fb">AIROS</text></svg></div>
-  <div class="barra" id="barra" aria-hidden="true"></div>
-  <div class="contador" id="contador"></div>
-  <button class="btn-chuleta" id="bChuleta" hidden title="Abrir la chuleta (C)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h11l5 5v11H4z"/><path d="M15 4v5h5M8 13h8M8 17h5"/></svg>
-    CHULETA
-  </button>
-</header>
-
-<main class="escena" id="escena"><div class="cargando">Cargando el test…</div></main>
-
-<footer class="bot" id="bot" hidden>
-  <button class="btn" id="bAnt" aria-label="Pregunta anterior">←</button>
-  <span class="pista" id="pista">Pulsa una opción (o las teclas 1-4)</span>
-  <span class="espacio"></span>
-  <button class="btn pri" id="bSig" disabled>Siguiente →</button>
-</footer>
-
-<div class="capa" id="capaChuleta" role="dialog" aria-modal="true" aria-label="Chuleta">
-  <div class="chuleta">
-    <div class="cab"><h2 id="tituloChuleta">CHULETA</h2><button class="cerrar" id="bCerrarChuleta" aria-label="Cerrar la chuleta">✕</button></div>
-    <nav class="pestanas" id="pestanas"></nav>
-    <div class="cuerpo" id="cuerpoChuleta"></div>
-  </div>
-</div>
-
-<script>window.TEST_POR_DEFECTO = "tda2-u1-python-practica";</script>
-<script src="js/config.js"></script>
-<script type="module" src="js/jugar.js"></script>
+<p>Abriendo Kairos… Si no se abre solo, <a href="jugar.html">pulsa aquí</a>.</p>
 </body>
 </html>
