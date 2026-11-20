@@ -5,9 +5,11 @@
   "scripts": {
     "test": "playwright test",
     "test:escritorio": "playwright test --project=escritorio",
-    "test:movil": "playwright test --project=movil"
+    "test:movil": "playwright test --project=movil",
+    "test:sql": "node --test pruebas/sql.test.js"
   },
   "devDependencies": {
-    "@playwright/test": "1.49.1"
+    "@playwright/test": "1.49.1",
+    "embedded-postgres": "^17.12.0-beta.19"
   }
 }
