@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0b1226">
+<title>Panel del profesor · Tests</title>
+<link rel="stylesheet" href="css/estilo.css">
+<link rel="stylesheet" href="css/panel.css">
+</head>
+<body>
+<header class="top">
+  <div class="marca">PANEL <span>· TESTS · IES SANTA BÁRBARA</span></div>
+  <span class="espacio-top"></span>
+  <div class="usuario" id="usuario" hidden></div>
+</header>
+
+<main class="panel" id="app"><div class="cargando">Cargando…</div></main>
+
+<div class="capa" id="capaDetalle" role="dialog" aria-modal="true" aria-label="Detalle del alumno">
+  <div class="chuleta detalle">
+    <div class="cab"><h2 id="tituloDetalle">ALUMNO</h2><button class="cerrar" id="bCerrarDetalle" aria-label="Cerrar">✕</button></div>
+    <div class="cuerpo" id="cuerpoDetalle"></div>
+  </div>
+</div>
+
+<div class="dialogo-fondo" id="dialogo" hidden>
+  <div class="dialogo" role="alertdialog" aria-modal="true" aria-labelledby="dlgTexto">
+    <p id="dlgTexto"></p>
+    <div class="acciones"><button class="btn" id="dlgNo">Cancelar</button><button class="btn peligro" id="dlgSi">Borrar</button></div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/panel.js"></script>
+</body>
+</html>
