@@ -1,5 +1,5 @@
 {
-  "_nota": "Casos de corrección compartidos. Hoy los usa el navegador (pruebas/preguntas.test.js); en el paso 4 de la fase 1 los usará también el SQL del servidor, para que los dos corrijan igual.",
+  "_nota": "Casos de corrección compartidos. Los usan el navegador (pruebas/preguntas.test.js) y el SQL del servidor (pruebas/sql-examen.test.js), para que los dos corrijan igual.",
   "normalizarTexto": [
     ["  Memoria  RAM. ", "memoria ram"], ["Ñandú", "nandu"], ["¿Qué es?", "que es"], ["RAM", "ram"], ["Ráfaga", "rafaga"],
     ["«hola»", "hola"], ["(caché)", "cache"], ["a   b\tc", "a b c"], ["C++", "c++"], ["192.168.1.1", "192.168.1.1"],

@@ -43,6 +43,12 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
   `06_contenido.sql` (fase 1: `bancos`, `items` con soluciones, `juegos`, `asignaciones`, `partidas`, `respuestas`, `eventos`; RLS cerrada,
   el profesor solo LEE las tablas y escribe con `profe_subir_banco`, `profe_crear_juego`, `profe_asignar`, `profe_publicar_notas`…).
   La validación de preguntas de SQL (`_validar_item`) y la de JS (`validarBanco`) deben coincidir: lo comprueba `npm run test:sql`.
+  `07_examen.sql` (fase 1: funciones del ALUMNO, siempre con su código: `mis_juegos`, `empezar_partida` (elige y baraja las
+  preguntas, reanuda si había una en marcha), `responder` (corrige en el servidor y NO dice si acertó), `evento`,
+  `terminar_partida`, `mi_resultado` (la nota solo se ve si el profesor la publica)). Lo que ve el alumno sale de una LISTA BLANCA
+  de campos (`_item_alumno`): nunca ok, sol, trampa, valor, aceptadas… La corrección de textos y números de SQL
+  (`_normalizar_texto`, `_parsear_numero`) debe dar lo mismo que `preguntas/normalizar.js`: lo comprueba `npm run test:sql`
+  con unos 3.800 caracteres y los vectores compartidos. Las pruebas de SQL usan bases UTF8 y simulan los privilegios por defecto de Supabase.
   El usuario los ejecuta a mano en el SQL Editor de Supabase: **dale siempre el SQL listo y dile qué debe salir**.
 - Pruebas (`pruebas/`): `npm test` (Playwright a 1280 y 390 px, Supabase simulado: nunca toca el real;
   la simulación es automática), `npm run test:sql` (Postgres local embebido), `npm run test:latido`,

@@ -49,7 +49,10 @@ async function conectar(db) {
   await c.connect(); conexiones.push(c); return c;
 }
 async function baseNueva(nombre, ficheros = ['01_esquema.sql', '03_profesor_alumnos.sql']) {
-  await pg.createDatabase(nombre);
+  // UTF8, como Supabase (con la codificación por defecto del Postgres embebido, SQL_ASCII, las letras con acento serían bytes sueltos).
+  // lc_ctype 'C': lower() solo cambia letras ASCII; el SQL no debe depender de eso (por eso traduce los acentos y mayúsculas él mismo).
+  const admin = await conectar('postgres');
+  await admin.query('create database "' + nombre + '" template template0 encoding \'UTF8\' lc_collate \'C\' lc_ctype \'C\'');
   const c = await conectar(nombre);
   await c.query(PRELUDIO);
   for (const f of ficheros) await c.query(SQL(f));
