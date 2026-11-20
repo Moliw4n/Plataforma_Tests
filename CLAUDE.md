@@ -28,7 +28,8 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
     lo manda el servidor sin soluciones (`empezar_partida`), corrige el servidor (`responder`) y la nota no se ve hasta que el profesor la publica.
     Cada preg. se contesta por POSICIÓN; se puede cambiar hasta entregar; si se corta internet las respuestas esperan y se reenvían solas;
     recargar reanuda; salir de la pestaña se anota (`evento`). Los renderizadores de `preguntas/` aceptan `examen: true` (sin corrección a la vista).
-  - `js/config.js` — entornos: producción por defecto; `?entorno=pruebas` solo desde localhost.
+  - `js/config.js` — entornos: producción por defecto; `?entorno=pruebas` solo desde localhost o una dirección de red local
+    (192.168.x.x, 10.x, 172.16-31.x, .local: los móviles del ensayo), con franja «PRUEBAS» visible, y se niega a usar la URL de producción como si fuera la de pruebas.
   - `js/panel.js` (módulo ES) y `js/panel-examenes.js`: la parte de EXÁMENES del panel (subir bancos desde un archivo del
     ordenador, crear un examen, asignarlo a un grupo, ver resultados y salidas de pestaña, publicar notas, estadísticas). Si en la
     base aún no se han ejecutado los SQL 06-08, el panel funciona exactamente como antes. `css/estilo.css`, `css/panel.css`.
@@ -57,11 +58,15 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
   de campos (`_item_alumno`): nunca ok, sol, trampa, valor, aceptadas… La corrección de textos y números de SQL
   (`_normalizar_texto`, `_parsear_numero`) debe dar lo mismo que `preguntas/normalizar.js`: lo comprueba `npm run test:sql`
   con unos 3.800 caracteres y los vectores compartidos. Las pruebas de SQL usan bases UTF8 y simulan los privilegios por defecto de Supabase.
+  Para el proyecto de PRUEBAS hay un paquete único generado, `supabase/paquete_pruebas.sql` (`npm run empaquetar-sql`; una prueba comprueba
+  que está al día; lleva una guarda que aborta si la base tiene alumnos reales).
   El usuario los ejecuta a mano en el SQL Editor de Supabase: **dale siempre el SQL listo y dile qué debe salir**.
 - Pruebas (`pruebas/`): `npm test` (Playwright a 1280 y 390 px, Supabase simulado: nunca toca el real;
   la simulación es automática; el examen se prueba con `pruebas/servidor-examen-falso.js`), `npm run test:sql` (Postgres local embebido,
   incluye `contrato-examen.test.js`: el servidor falso y el SQL real deben responder con la MISMA FORMA; si cambias una función de 07, cambia también el falso), `npm run test:latido`,
-  `npm run test:formato`, `npm run test:preguntas`. El panel se prueba con `pruebas/servidor-panel-falso.js` (login, tablas y
+  `npm run test:formato`, `npm run test:preguntas`, `npm run test:simulador`.
+  Ensayo real: `docs/ensayo-examen.md` (proyecto de pruebas, varios móviles, banco inventado en `docs/ensayo/`) y `npm run ensayo:simular`
+  (`scripts/simular-clase.mjs`: 5 alumnos de prueba a la vez contra el servidor de pruebas; se niega a tocar producción). El panel se prueba con `pruebas/servidor-panel-falso.js` (login, tablas y
   funciones `profe_*`; `contrato-panel.test.js` comprueba que tiene la misma forma que el SQL real).
   GitHub Actions las lanza en cada subida (`.github/workflows/pruebas.yml`); `latido.yml` llama a
   `latido()` cada 3 días (solo corre desde `main`).

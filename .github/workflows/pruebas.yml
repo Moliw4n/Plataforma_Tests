@@ -29,6 +29,8 @@ jobs:
         run: npm run test:formato
       - name: Pruebas de la corrección de preguntas
         run: npm run test:preguntas
+      - name: Pruebas del simulador de clase
+        run: npm run test:simulador
       # Páginas con un navegador real y Supabase simulado, a 1280 px y a 390 px.
       - name: Instalar el navegador
         run: npx playwright install --with-deps chromium

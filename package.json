@@ -6,11 +6,15 @@
     "test": "playwright test",
     "test:escritorio": "playwright test --project=escritorio",
     "test:movil": "playwright test --project=movil",
-    "test:sql": "node --test pruebas/sql.test.js pruebas/sql-contenido.test.js pruebas/sql-examen.test.js pruebas/contrato-examen.test.js pruebas/sql-panel.test.js pruebas/contrato-panel.test.js",
+    "test:sql": "node --test pruebas/sql.test.js pruebas/sql-contenido.test.js pruebas/sql-examen.test.js pruebas/contrato-examen.test.js pruebas/sql-panel.test.js pruebas/contrato-panel.test.js pruebas/sql-paquete.test.js",
     "test:latido": "node --test pruebas/latido.test.js",
     "test:formato": "node --test pruebas/formato.test.js",
     "formato": "node scripts/formato.mjs",
-    "test:preguntas": "node --test pruebas/preguntas.test.js"
+    "test:preguntas": "node --test pruebas/preguntas.test.js",
+    "empaquetar-sql": "node scripts/empaquetar-sql.mjs",
+    "ensayo:servidor": "node pruebas/servidor.js",
+    "test:simulador": "node --test pruebas/simulador.test.js",
+    "ensayo:simular": "node scripts/simular-clase.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.49.1",

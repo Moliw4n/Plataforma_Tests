@@ -28,7 +28,7 @@ async function crearServidorFalso(opciones = {}) {
     banco, red: true, desfase: 0, latencia: 0, llamadas: [], eventos: [],
     juego: { id: 'ex', titulo: 'Examen de prueba', modo: 'examen', reglas: { preguntas: 6, tiempo_min: 20, penalizacion: 0, equilibrar: 'tema', ...(opciones.reglas || {}) } },
     asignacion: { id: 1, grupo: 'TDA2', desde: null, hasta: null, intentos: 1, mostrar_soluciones: false, notas_publicadas: false, ...(opciones.asignacion || {}) },
-    alumnos: { ABC123: { id: 'TDA2-07', grupo: 'TDA2' }, AAA222: { id: 'TDA2-01', grupo: 'TDA2' }, BBB333: { id: 'TDA2-02', grupo: 'TDA2' }, CCC444: { id: 'TDA1-01', grupo: 'TDA1' } },
+    alumnos: { ABC123: { id: 'TDA2-07', grupo: 'TDA2' }, AAA222: { id: 'TDA2-01', grupo: 'TDA2' }, BBB333: { id: 'TDA2-02', grupo: 'TDA2' }, CCC444: { id: 'TDA1-01', grupo: 'TDA1' }, ...(opciones.alumnos || {}) },
     partidas: [],
     ahora() { return Date.now() + this.desfase; },
     iso(ms) { return new Date(ms).toISOString(); },

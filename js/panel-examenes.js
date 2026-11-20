@@ -17,7 +17,8 @@ export function crearExamenes(P) {
   const ventana = a => { const n = Date.now(); return a.desde && n < fecha(a.desde) ? 'pronto' : a.hasta && n > fecha(a.hasta) ? 'cerrado' : 'abierto'; };
   const ROTULO = { abierto: 'Abierto', pronto: 'Aún no abierto', cerrado: 'Cerrado' };
   const ESTADO = { en_curso: 'En curso', entregada: 'Entregado', caducada: 'Se acabó el tiempo' };
-  const enlaceExamen = id => new URL('jugar.html?j=' + encodeURIComponent(id), location.href).href;
+  // El enlace para los alumnos. Si el panel está en el entorno de PRUEBAS, el enlace también (si no, los móviles abrirían la web con la base real)
+  const enlaceExamen = id => new URL('jugar.html?j=' + encodeURIComponent(id) + (window.ENTORNO === 'pruebas' ? '&entorno=pruebas' : ''), location.href).href;
   const chip = t => '<span class="tipo t-' + esc(t) + '">' + esc(NOMBRES_TIPO[t] || t) + '</span>';
   const juegoDe = id => juegos.find(j => j.id === id) || { id, titulo: id, reglas: {} };
 

@@ -86,6 +86,28 @@ test.describe('entorno (config.js)', () => {
     expect(await page.evaluate(() => window.CONFIG)).toBeNull();
   });
 
+  // Carga config.js (con un proyecto de pruebas de mentira, si se pide) bajo un nombre de host dado y devuelve el entorno resultante
+  const entornoEn = (page, hostname, { pruebas = null } = {}) => page.evaluate(async ([host, prb]) => {
+    let src = await (await fetch('/js/config.js')).text();
+    if (prb) src = src.replace('pruebas: null', 'pruebas: ' + JSON.stringify(prb));
+    const w = {}, avisos = [];
+    const doc = { body: null, addEventListener() {}, createElement: () => ({ style: {} }) };
+    new Function('window', 'location', 'URLSearchParams', 'console', 'document', src)(w, { hostname: host, search: '?entorno=pruebas' }, URLSearchParams,
+      { warn: m => avisos.push(m), error: m => avisos.push(m) }, doc);
+    return w.ENTORNO + '|' + (w.CONFIG ? w.CONFIG.supabaseUrl : 'sin-config') + '|' + avisos.length;
+  }, [hostname, pruebas]);
+  const PRB = { supabaseUrl: 'https://pruebas-de-mentira.supabase.co', supabaseKey: 'sb_publishable_PRUEBA' };
+
+  test('el proyecto de pruebas se activa desde localhost y desde la red local (los móviles del ensayo), y solo desde ahí', async ({ page }) => {
+    for (const host of ['localhost', '127.0.0.1', '192.168.1.20', '10.0.0.5', '172.16.3.4', '172.31.255.1', 'mi-mac.local'])
+      expect(await entornoEn(page, host, { pruebas: PRB }), host).toBe('pruebas|' + PRB.supabaseUrl + '|0');
+    for (const host of ['moliw4n.github.io', '8.8.8.8', '192.169.1.1', '172.32.0.1', '172.15.0.1', 'evil.com', '192.168.1.1.evil.com', '10.0.0.5.evil.com', 'localhost.evil.com', 'miorg.local.evil.com'])
+      expect((await entornoEn(page, host, { pruebas: PRB })).startsWith('produccion|https://vltooganezktrqduwhzy'), host).toBe(true);
+  });
+  test('si por descuido el «proyecto de pruebas» es el de producción, no se conecta a nada', async ({ page }) => {
+    const prod = await page.evaluate(() => window.CONFIG.supabaseUrl);
+    expect(await entornoEn(page, 'localhost', { pruebas: { supabaseUrl: prod, supabaseKey: 'x' } })).toBe('pruebas|sin-config|2');   // dos avisos: «apunta a producción» y «no configurado»
+  });
   test('fuera de localhost no se puede activar el entorno de pruebas', async ({ page }) => {
     // Se carga config.js bajo otro nombre de host simulando la web pública.
     const entorno = await page.evaluate(async () => {

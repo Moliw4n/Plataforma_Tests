@@ -72,6 +72,16 @@ for (const id of ['tda2-u1-python-practica', 'tda1-u1u2-repaso']) {
   });
 }
 
+test('el banco de ENSAYO (docs/ensayo) es válido, usa los 4 tipos y no trae nada personal ni real', () => {
+  const b = JSON.parse(fs.readFileSync(path.join(RAIZ, 'docs', 'ensayo', 'banco-ensayo.json'), 'utf8'));
+  assert.deepEqual(F.validarBanco(b), []);
+  assert.deepEqual([...new Set(b.preguntas.map(p => p.tipo))].sort(), ['numerica', 'opcion_multiple', 'respuesta_corta', 'verdadero_falso']);
+  assert.equal(b.preguntas.length, 20);
+  assert.deepEqual([...new Set(b.preguntas.map(p => p.tema))].sort(), ['binario', 'hardware', 'so', 'unidades']);
+  assert.ok(b.preguntas.every(p => p.criterio && p.dificultad && p.sol && p.trampa));
+  assert.match(b.titulo, /ENSAYO/);
+});
+
 test.describe('validarBanco', () => {
   const base = () => clon(F.aFormato2(leer('tda1-u1u2-repaso')));
   const con = (cambia, opciones) => { const t = base(); cambia(t); return F.validarBanco(t, opciones); };

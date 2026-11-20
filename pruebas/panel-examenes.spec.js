@@ -56,6 +56,17 @@ test.describe('inicio', () => {
   });
 });
 
+test.describe('el enlace del examen', () => {
+  test('en el entorno de pruebas el enlace lleva &entorno=pruebas (y en producción, no)', async ({ page, servidor }) => {
+    await abrir(page, servidor);
+    const enlace = () => grupo(page, 'TDA II').locator('[data-ex-enlace]').getAttribute('data-ex-enlace');
+    expect(await enlace()).toMatch(/\/jugar\.html\?j=ex1$/);
+    await page.evaluate(() => { window.ENTORNO = 'pruebas'; });
+    await page.click('#bRecargar');
+    await expect(grupo(page, 'TDA II').locator('[data-ex-enlace]')).toHaveAttribute('data-ex-enlace', /\/jugar\.html\?j=ex1&entorno=pruebas$/);
+  });
+});
+
 test.describe('subir un banco', () => {
   test('un banco válido: pide confirmación con el resumen y lo sube con sus soluciones al servidor', async ({ page, servidor }) => {
     const S = await abrir(page, servidor); await aGestion(page);

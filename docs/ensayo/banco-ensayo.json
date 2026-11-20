@@ -1,0 +1,303 @@
+{
+  "formato": 2,
+  "id": "ensayo-informatica",
+  "titulo": "Banco de ENSAYO · Informática básica (inventado)",
+  "materia": "Ensayo",
+  "unidad": "Prueba de la plataforma",
+  "version": 1,
+  "preguntas": [
+    {
+      "id": "u01",
+      "tipo": "opcion_multiple",
+      "tema": "unidades",
+      "criterio": "1.1",
+      "dificultad": 1,
+      "enun": "¿Cuántos bits tiene un byte?",
+      "ops": [
+        "4",
+        "8",
+        "16",
+        "32"
+      ],
+      "ok": 1,
+      "sol": "Un byte son 8 bits: es la agrupación estándar que usan los ordenadores.",
+      "trampa": "Confundir byte con bit, o con la palabra de 32 o 64 bits de la CPU."
+    },
+    {
+      "id": "u02",
+      "tipo": "opcion_multiple",
+      "tema": "unidades",
+      "criterio": "1.1",
+      "dificultad": 2,
+      "enun": "1 KiB (kibibyte) equivale a…",
+      "ops": [
+        "1000 bytes",
+        "1024 bytes",
+        "1024 bits",
+        "100 bytes"
+      ],
+      "ok": 1,
+      "sol": "KiB usa potencias de 2: 2¹⁰ = 1024 bytes. El kB del fabricante (1000) es otra cosa.",
+      "trampa": "Pensar que «kilo» siempre significa 1000: en informática se usa 1024 con KiB."
+    },
+    {
+      "id": "u03",
+      "tipo": "verdadero_falso",
+      "tema": "unidades",
+      "criterio": "1.1",
+      "dificultad": 1,
+      "enun": "Un byte son siempre 8 bits en los ordenadores actuales.",
+      "ok": true,
+      "sol": "Hoy el byte es de 8 bits en la práctica totalidad de los equipos.",
+      "trampa": "Creer que el tamaño del byte cambia de un ordenador a otro (era así en máquinas antiguas)."
+    },
+    {
+      "id": "u04",
+      "tipo": "numerica",
+      "tema": "unidades",
+      "criterio": "1.1",
+      "dificultad": 2,
+      "enun": "¿Cuántos bytes son 2 KiB?",
+      "valor": 2048,
+      "sol": "2 KiB = 2 × 1024 = 2048 bytes.",
+      "trampa": "Multiplicar por 1000 en vez de por 1024.",
+      "unidad": "bytes"
+    },
+    {
+      "id": "u05",
+      "tipo": "respuesta_corta",
+      "tema": "unidades",
+      "criterio": "1.1",
+      "dificultad": 1,
+      "enun": "Unidad mínima de información (una sola palabra).",
+      "aceptadas": [
+        "bit"
+      ],
+      "sol": "El bit (0 o 1) es la unidad mínima de información.",
+      "trampa": "Responder «byte»: el byte son 8 bits.",
+      "pista": "Tiene tres letras"
+    },
+    {
+      "id": "b01",
+      "tipo": "opcion_multiple",
+      "tema": "binario",
+      "criterio": "1.2",
+      "dificultad": 1,
+      "enun": "¿Cuánto vale 1010 en decimal?",
+      "ops": [
+        "8",
+        "10",
+        "12",
+        "14"
+      ],
+      "ok": 1,
+      "sol": "1010₂ = 8 + 0 + 2 + 0 = 10.",
+      "trampa": "Leerlo como «mil diez» en vez de convertirlo."
+    },
+    {
+      "id": "b02",
+      "tipo": "opcion_multiple",
+      "tema": "binario",
+      "criterio": "1.2",
+      "dificultad": 2,
+      "enun": "¿Cuánto vale 0xF en decimal?",
+      "ops": [
+        "10",
+        "14",
+        "15",
+        "16"
+      ],
+      "ok": 2,
+      "sol": "F es la cifra hexadecimal más alta: vale 15 (con 0x se indica base 16).",
+      "trampa": "Pensar que F es 16: la cifra más alta de una base b es b − 1."
+    },
+    {
+      "id": "b03",
+      "tipo": "verdadero_falso",
+      "tema": "binario",
+      "criterio": "1.2",
+      "dificultad": 2,
+      "enun": "UTF-8 usa siempre 1 byte por carácter.",
+      "ok": false,
+      "sol": "UTF-8 usa de 1 a 4 bytes: ASCII ocupa 1, pero la ñ o una tilde ocupan 2, y un emoji 4.",
+      "trampa": "Confundirlo con ASCII (que sí es de 1 byte)."
+    },
+    {
+      "id": "b04",
+      "tipo": "numerica",
+      "tema": "binario",
+      "criterio": "1.2",
+      "dificultad": 2,
+      "enun": "¿Cuánto vale 2F (hexadecimal) en decimal?",
+      "valor": 47,
+      "sol": "2F₁₆ = 2 × 16 + 15 = 47.",
+      "trampa": "Sumar 2 + 15 sin multiplicar el 2 por 16."
+    },
+    {
+      "id": "b05",
+      "tipo": "numerica",
+      "tema": "binario",
+      "criterio": "1.2",
+      "dificultad": 2,
+      "enun": "Convierte 11111111 (binario) a decimal.",
+      "valor": 255,
+      "sol": "Ocho unos = 2⁸ − 1 = 255.",
+      "trampa": "Responder 256: eso sería 2⁸ (el siguiente número, 100000000).",
+      "tolerancia": 0.5
+    },
+    {
+      "id": "h01",
+      "tipo": "opcion_multiple",
+      "tema": "hardware",
+      "criterio": "2.1",
+      "dificultad": 1,
+      "enun": "¿Qué significa RAM?",
+      "ops": [
+        "Memoria de acceso aleatorio",
+        "Memoria de solo lectura",
+        "Unidad de almacenamiento",
+        "Registro de acceso múltiple"
+      ],
+      "ok": 0,
+      "sol": "RAM = Random Access Memory: memoria de acceso aleatorio, rápida y volátil.",
+      "trampa": "Confundirla con ROM (solo lectura) o con el disco duro."
+    },
+    {
+      "id": "h02",
+      "tipo": "opcion_multiple",
+      "tema": "hardware",
+      "criterio": "2.1",
+      "dificultad": 1,
+      "enun": "¿Qué componente ejecuta las instrucciones de los programas?",
+      "ops": [
+        "La CPU",
+        "El disco duro",
+        "La RAM",
+        "La fuente de alimentación"
+      ],
+      "ok": 0,
+      "sol": "La CPU (procesador) busca, decodifica y ejecuta las instrucciones.",
+      "trampa": "Pensar que la RAM «piensa»: solo guarda datos e instrucciones mientras tanto."
+    },
+    {
+      "id": "h03",
+      "tipo": "opcion_multiple",
+      "tema": "hardware",
+      "criterio": "2.1",
+      "dificultad": 1,
+      "enun": "¿Cuál de estas memorias es volátil (se borra al apagar)?",
+      "ops": [
+        "SSD",
+        "RAM",
+        "Disco duro",
+        "Memoria USB"
+      ],
+      "ok": 1,
+      "sol": "La RAM pierde su contenido sin corriente; las otras son almacenamiento permanente.",
+      "trampa": "Pensar que el SSD es volátil por ser «de memoria»: es almacenamiento permanente."
+    },
+    {
+      "id": "h04",
+      "tipo": "verdadero_falso",
+      "tema": "hardware",
+      "criterio": "2.1",
+      "dificultad": 1,
+      "enun": "La RAM conserva sus datos cuando se apaga el equipo.",
+      "ok": false,
+      "sol": "La RAM es volátil: al cortar la corriente se pierde lo que guardaba.",
+      "trampa": "Confundir memoria RAM con almacenamiento (disco o SSD)."
+    },
+    {
+      "id": "h05",
+      "tipo": "respuesta_corta",
+      "tema": "hardware",
+      "criterio": "2.1",
+      "dificultad": 1,
+      "enun": "Memoria que se borra al apagar el equipo (las siglas).",
+      "aceptadas": [
+        "ram",
+        "memoria ram"
+      ],
+      "sol": "Es la RAM, la memoria de trabajo del equipo.",
+      "trampa": "Responder «disco duro» o «ROM».",
+      "pista": "Empieza por R"
+    },
+    {
+      "id": "s01",
+      "tipo": "opcion_multiple",
+      "tema": "so",
+      "criterio": "2.2",
+      "dificultad": 1,
+      "enun": "¿Qué hace el sistema operativo?",
+      "ops": [
+        "Gestiona los recursos del equipo y ejecuta los programas",
+        "Solo sirve para navegar por internet",
+        "Guarda las fotos",
+        "Sustituye a la CPU"
+      ],
+      "ok": 0,
+      "sol": "El sistema operativo reparte CPU, memoria y dispositivos entre los programas.",
+      "trampa": "Creer que es «un programa más» sin papel especial: es el que hace posible a los demás."
+    },
+    {
+      "id": "s02",
+      "tipo": "opcion_multiple",
+      "tema": "so",
+      "criterio": "2.2",
+      "dificultad": 2,
+      "enun": "¿Cuál es el sistema de archivos habitual de Windows?",
+      "ops": [
+        "ext4",
+        "NTFS",
+        "APFS",
+        "XFS"
+      ],
+      "ok": 1,
+      "sol": "NTFS es el de Windows; ext4 y XFS son de Linux y APFS de Apple.",
+      "trampa": "Mezclar los sistemas de archivos de cada sistema operativo."
+    },
+    {
+      "id": "s03",
+      "tipo": "opcion_multiple",
+      "tema": "so",
+      "criterio": "2.2",
+      "dificultad": 1,
+      "enun": "¿Cuál de estos es un sistema operativo?",
+      "ops": [
+        "Excel",
+        "Chrome",
+        "Linux",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 2,
+      "sol": "Linux es un sistema operativo; Excel y Chrome son aplicaciones.",
+      "trampa": "Pensar que el navegador es el sistema operativo porque «es lo que ves».",
+      "fija_ultima": true
+    },
+    {
+      "id": "s04",
+      "tipo": "verdadero_falso",
+      "tema": "so",
+      "criterio": "2.2",
+      "dificultad": 1,
+      "enun": "Linux es un sistema operativo.",
+      "ok": true,
+      "sol": "Linux es un sistema operativo (en realidad, un núcleo sobre el que se construyen muchas distribuciones).",
+      "trampa": "Pensar que Linux es una aplicación o un programa de edición."
+    },
+    {
+      "id": "s05",
+      "tipo": "respuesta_corta",
+      "tema": "so",
+      "criterio": "2.2",
+      "dificultad": 1,
+      "enun": "Programa que gestiona los recursos del equipo (dos palabras).",
+      "aceptadas": [
+        "sistema operativo"
+      ],
+      "sol": "Es el sistema operativo.",
+      "trampa": "Responder «el procesador»: es hardware, no un programa.",
+      "pista": "Empieza por «sistema»"
+    }
+  ]
+}

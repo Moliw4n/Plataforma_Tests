@@ -169,6 +169,12 @@ test.describe('profe_subir_banco', () => {
     }
     assert.equal(await n('select count(*)::int n from items'), 80);
   });
+  test('el banco de ENSAYO (docs/ensayo) lo acepta el SQL, con sus criterios y temas', async () => {
+    const b = JSON.parse(require('fs').readFileSync(path.join(RAIZ, 'docs', 'ensayo', 'banco-ensayo.json'), 'utf8'));
+    assert.deepEqual(await subir(b), { ok: true, banco: 'ensayo-informatica', version: 1, items: 20 });
+    assert.equal(await n("select count(distinct tema)::int n from items where banco = 'ensayo-informatica'"), 4);
+    assert.equal(await n("select count(distinct criterio)::int n from items where banco = 'ensayo-informatica'"), 4);
+  });
   test('demasiadas preguntas o banco gigante', async () => {
     const b = clon(MIXTO); b.preguntas = Array.from({ length: 501 }, (_, i) => it('p' + i, { tipo: 'verdadero_falso', ok: true }));
     await assert.rejects(subir(b), /demasiadas preguntas/);

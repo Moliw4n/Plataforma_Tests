@@ -19,4 +19,9 @@ http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': TIPOS[path.extname(archivo)] || 'application/octet-stream' });
     res.end(datos);
   });
-}).listen(4173, () => console.log('Servidor de pruebas en http://localhost:4173'));
+}).listen(4173, () => {
+  // Escucha en todas las interfaces: los móviles de la misma WiFi pueden abrir http://<IP-de-tu-ordenador>:4173
+  console.log('Servidor de pruebas en http://localhost:4173');
+  const ips = Object.values(require('os').networkInterfaces()).flat().filter(i => i && i.family === 'IPv4' && !i.internal).map(i => i.address);
+  for (const ip of ips) console.log('  desde los móviles (misma WiFi): http://' + ip + ':4173/jugar.html?j=<examen>&entorno=pruebas   ·   panel: http://' + ip + ':4173/panel.html?entorno=pruebas');
+});
