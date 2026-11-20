@@ -3,40 +3,19 @@
    De momento funciona sin conexión a la base de datos: el resultado de cada intento
    queda en `intento` y se pasa a guardarIntento(), que más adelante enviará a Supabase. */
 import { rpc } from './nucleo/api.js';
+import { esc, barajar, tituloBonito } from './nucleo/util.js';
+import { crearChuleta } from './nucleo/chuleta.js';
+import { mostrarAcceso } from './nucleo/acceso.js';
+import { pintar as pintarPregunta } from './nucleo/preguntas/opcion_multiple.js';
 
 (function () {
   'use strict';
   const $ = s => document.querySelector(s);
-  const LET = 'ABCD';
   const NOMBRE_TIPO = { imprime: '¿Qué imprime?', error: 'Encuentra el error', hueco: 'Completa el hueco' };
   // Etiqueta de tipo: usa los tipos del test si los trae ({tipos:{id:{nombre,color}}})
   const chipTipo = t => { const d = T && T.tipos && T.tipos[t];
     return d ? '<span class="tipo" style="background:var(--' + d.color + ')">' + esc(d.nombre) + '</span>'
              : '<span class="tipo t-' + t + '">' + (NOMBRE_TIPO[t] || t) + '</span>'; };
-  const LOGO_KAIROS = '<svg class="logo-kairos" viewBox="0 0 264 73" role="img" aria-label="Kairos"><use href="img/logo-kairos.svg#k"/><text x="88" y="72.4" font-family="Orbitron, sans-serif" font-weight="800" font-size="50" letter-spacing="6" fill="#eef2fb">AIROS</text></svg>';
-  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-  /* ---------- resaltado de Python ---------- */
-  const KW = new Set(['def','return','if','elif','else','for','while','in','and','or','not','break','continue','True','False','None','global','import','from','as','pass']);
-  const BI = new Set(['print','input','int','float','str','len','range','sorted','sum','max','min','type','round','abs','list']);
-  function pinta(code) {
-    const re = /(#[^\n]*)|(f?"[^"\n]*"|f?'[^'\n]*')|(\b\d+(?:\.\d+)?\b)|(________)|(\.[A-Za-z_]\w*(?=\())|([A-Za-z_]\w*)|([\s\S])/g;
-    let o = '', m;
-    while ((m = re.exec(code))) {
-      if (m[1]) o += '<span class="c">' + esc(m[1]) + '</span>';
-      else if (m[2]) o += '<span class="s">' + esc(m[2]) + '</span>';
-      else if (m[3]) o += '<span class="n">' + m[3] + '</span>';
-      else if (m[4]) o += '<span class="hueco">?</span>';
-      else if (m[5]) o += '.<span class="m">' + esc(m[5].slice(1)) + '</span>';
-      else if (m[6]) o += KW.has(m[6]) ? '<span class="k">' + m[6] + '</span>' : BI.has(m[6]) ? '<span class="f">' + m[6] + '</span>' : m[6];
-      else o += esc(m[7]);
-    }
-    return o;
-  }
-  const conLineas = code => pinta(code).split('\n').map((l, i) => '<span class="ln">' + (i + 1) + '</span>' + l).join('\n');
-  const consola = txt => esc(txt).split('\n').map(l => /^(\w+Error)\b/.test(l) ? '<span class="err">' + l + '</span>' : l).join('\n');
-  function barajar(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
-
   /* ---------- estado ---------- */
   let T = null;            // el test
   let lista = [];          // preguntas de este intento: {p, orden:[índices de opciones]}
@@ -62,8 +41,8 @@ import { rpc } from './nucleo/api.js';
       return;
     }
     document.title = T.titulo + ' · Kairos';
-    $('#marca').innerHTML = LOGO_KAIROS + ' <span>· ' + esc(T.materia || '') + ' · ' + esc(T.titulo) + '</span>';
-    if (T.chuleta) prepararChuleta();
+    $('#marca').innerHTML = 'KAIR<b class="k0">0</b>S <span>· ' + esc(T.materia || '') + ' · ' + esc(T.titulo) + '</span>';
+    if (T.chuleta) chuleta = crearChuleta({ url: T.chuleta, materia: T.materia || '', temaActual: () => lista[pos] && lista[pos].p.tema });
     if (MODO_PROFE) {
       document.body.classList.add('modo-profe');
       $('#marca').innerHTML = '<span class="aviso-profe">PROFE · NO SE GUARDA</span>';
@@ -74,40 +53,12 @@ import { rpc } from './nucleo/api.js';
   /* ---------- acceso con código ---------- */
   function acceso(mensaje) {
     $('#bot').hidden = true; barra.innerHTML = ''; $('#contador').textContent = '';
-    E.innerHTML =
-      '<div class="portada acceso">' +
-        '<div class="sup">' + esc((T.materia || '') + (T.unidad ? ' · ' + T.unidad : '')).toUpperCase() + '</div>' +
-        '<h1>' + tituloBonito(T.titulo) + '</h1>' +
-        '<form class="caja-codigo" id="fAcceso" autocomplete="off">' +
-          '<label for="iCodigo">Escribe tu código</label>' +
-          '<input id="iCodigo" class="orb" inputmode="text" autocapitalize="characters" spellcheck="false" maxlength="7" placeholder="ABC-123" aria-describedby="msgAcceso">' +
-          '<button class="btn pri" id="bEntrar">Entrar →</button>' +
-          '<p class="msg" id="msgAcceso" role="status">' + (mensaje || 'Es el de tu tarjeta. Lo tienes que escribir cada vez que entres.') + '</p>' +
-        '</form>' +
-      '</div>';
-    const inp = $('#iCodigo');
-    inp.addEventListener('input', () => {
-      const v = inp.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
-      inp.value = v.length > 3 ? v.slice(0, 3) + '-' + v.slice(3) : v;
-      inp.classList.remove('mal');
+    mostrarAcceso({
+      contenedor: E, mensaje,
+      sup: (T.materia || '') + (T.unidad ? ' · ' + T.unidad : ''),
+      titulo: tituloBonito(T.titulo),
+      alEntrar: s => { sesion = s; portada(); }
     });
-    $('#fAcceso').onsubmit = async e => {
-      e.preventDefault();
-      const codigo = inp.value.replace(/[^A-Z0-9]/g, '');
-      const msg = $('#msgAcceso');
-      if (codigo.length !== 6) { msg.textContent = 'El código tiene 6 caracteres, por ejemplo ABC-123.'; inp.classList.add('mal'); inp.focus(); return; }
-      $('#bEntrar').disabled = true; msg.textContent = 'Comprobando…';
-      try {
-        const r = await rpc('entrar', { p_codigo: codigo }, { reintentos: 1 });
-        if (r.ok) { sesion = { codigo, alumno: r.alumno, grupo: r.grupo }; portada(); return; }
-        msg.textContent = r.motivo === 'espera' ? 'Demasiados intentos seguidos. Espera un minuto y vuelve a probar.' : 'Ese código no existe. Revísalo: no hay ceros ni letras O.';
-        inp.classList.add('mal');
-      } catch (err) {
-        msg.textContent = 'No hay conexión con el servidor. Comprueba internet y vuelve a probar.';
-      }
-      $('#bEntrar').disabled = false; inp.focus(); inp.select();
-    };
-    inp.focus();
   }
   function salir() { sesion = null; lista = []; acceso('Has salido. Escribe tu código para volver a entrar.'); }
 
@@ -136,11 +87,6 @@ import { rpc } from './nucleo/api.js';
     if (sesion) $('#bSalir').onclick = salir;
     $('#bEmpezar').focus();
   }
-  function tituloBonito(t) {
-    const i = t.indexOf('·');
-    return i < 0 ? esc(t) : esc(t.slice(0, i).trim()) + '<br><span>' + esc(t.slice(i + 1).trim()) + '</span>';
-  }
-
   /* ---------- intento ---------- */
   function empezar(preguntas) {
     lista = preguntas.map(p => {
@@ -156,63 +102,26 @@ import { rpc } from './nucleo/api.js';
     ir(0);
   }
 
+  let vista = null;        // lo que devuelve el renderizador de la pregunta que se ve
   function ir(i) {
     pos = i;
     const { p, orden } = lista[i];
-    const r = resp[i];
-    let h = '<div class="q' + (r ? ' resuelta' : '') + (p.code ? '' : ' sin-codigo') + '">';
-    h += '<div class="izq"><div class="chips">' + chipTipo(p.tipo) + '<span class="act">' + esc(p.act || '') + '</span></div>';
-    h += '<p class="enun">' + esc(p.enun) + '</p>';
-    if (p.code) h += '<pre class="codigo">' + conLineas(p.code) + '</pre>';
-    const htmlConsola = !p.salida ? '' : '<div class="consola"><span class="et">LO QUE SALE DE VERDAD' +
-         (p.tipo === 'hueco' ? ' (CON LA BUENA)' : '') +
-         (p.stdin ? ' · EL USUARIO ESCRIBE ' + esc(p.stdin.trim().split('\n').join(', ')) : '') +
-         '</span><pre>' + consola(p.salida) + '</pre></div>';
-    if (htmlConsola) h += '<div class="solu solo-escritorio">' + htmlConsola + '</div>';
-    h += '</div><div class="der">';
-    const mono = p.tipo === 'imprime' || p.tipo === 'hueco';
-    h += '<div class="ops">' + orden.map((oi, j) => {
-      const cls = ['op'];
-      if (oi === p.ok) cls.push('ok');
-      if (r && r.elegida === oi) cls.push('elegida', oi === p.ok ? 'bien' : 'mal');
-      const marca = r ? (oi === p.ok ? '✓' : (r.elegida === oi ? '✗' : '')) : '';
-      return '<button class="' + cls.join(' ') + '" data-oi="' + oi + '"' + (r ? ' disabled' : '') + '>' +
-        '<span class="l">' + LET[j] + '</span><span class="tx' + (mono ? ' mono' : '') + '">' + (p.tipo === 'hueco' ? pinta(p.ops[oi]) : esc(p.ops[oi])) + '</span>' +
-        '<span class="marca-op">' + marca + '</span></button>';
-    }).join('') + '</div>';
-    h += '<div class="veredicto"></div>';
-    h += '<div class="solu">';
-    if (htmlConsola) h += '<div class="solo-movil">' + htmlConsola + '</div>';
-    if (p.sol) h += '<div class="caja porque"><b>POR QUÉ</b>' + esc(p.sol) + '</div>';
-    if (p.trampa) h += '<div class="caja trampa"><b>LA TRAMPA</b>' + esc(p.trampa) + '</div>';
-    if (T.chuleta && p.tema) h += '<button class="ver-chuleta" data-tema="' + esc(p.tema) + '">Repasar esto en la chuleta →</button>';
-    h += '</div></div></div>';
-    E.innerHTML = h;
-    E.querySelectorAll('.op:not([disabled])').forEach(b => b.onclick = () => responder(+b.dataset.oi));
-    const vc = E.querySelector('.ver-chuleta'); if (vc) vc.onclick = () => abrirChuleta(vc.dataset.tema);
-    if (r) pintarVeredicto(r.ok);
+    vista = pintarPregunta(p, E, {
+      orden, respuesta: resp[i], chipTipo,
+      hayChuleta: !!T.chuleta,
+      alResponder: responder,
+      alVerChuleta: tema => chuleta && chuleta.abrir(tema)
+    });
     t0 = Date.now();
     actualizarBarra();
     window.scrollTo({ top: 0 });
-  }
-  function pintarVeredicto(bien) {
-    const v = E.querySelector('.veredicto');
-    v.className = 'veredicto ' + (bien ? 'bien' : 'fallo');
-    v.innerHTML = '<span class="ico">' + (bien ? '✓' : '✗') + '</span>' + (bien ? '¡CORRECTO!' : 'NO ES ESA');
   }
 
   function responder(oi) {
     if (resp[pos]) return;
     const p = lista[pos].p;
     resp[pos] = { id: p.id, elegida: oi, ok: oi === p.ok, ms: Date.now() - t0 };
-    E.querySelectorAll('.op').forEach(b => {
-      const o = +b.dataset.oi;
-      b.disabled = true;
-      if (o === oi) b.classList.add('elegida', o === p.ok ? 'bien' : 'mal');
-      b.querySelector('.marca-op').textContent = o === p.ok ? '✓' : (o === oi ? '✗' : '');
-    });
-    pintarVeredicto(oi === p.ok);
-    E.querySelector('.q').classList.add('resuelta');
+    vista.mostrarCorreccion({ elegida: oi, ok: oi === p.ok });
     actualizarBarra();
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     // llevar la vista a la explicación, sin que la tape la barra de abajo
@@ -327,49 +236,13 @@ import { rpc } from './nucleo/api.js';
   }
 
   /* ---------- chuleta ---------- */
-  let chuletaLista = false;
-  const capa = $('#capaChuleta');
-  async function prepararChuleta() {
-    $('#bChuleta').hidden = false;
-    $('#bChuleta').onclick = () => abrirChuleta();
-    $('#bCerrarChuleta').onclick = cerrarChuleta;
-    capa.addEventListener('click', e => { if (e.target === capa) cerrarChuleta(); });
-    try {
-      const html = window.CHULETA_EMBEBIDA || await (await fetch(T.chuleta, { cache: 'no-cache' })).text();
-      const cuerpo = $('#cuerpoChuleta');
-      cuerpo.innerHTML = html;
-      cuerpo.querySelectorAll('pre.py').forEach(pre => pre.innerHTML = pinta(pre.textContent.replace(/^\n/, '')));
-      const secs = [...cuerpo.querySelectorAll('section')];
-      $('#pestanas').innerHTML = secs.map(s => '<button data-tema="' + s.dataset.tema + '" data-color="' + (s.dataset.color || '') + '" style="--c:var(--' + (s.dataset.color || 'naranja') + ')">' + esc(s.dataset.nombre) + '</button>').join('');
-      $('#pestanas').querySelectorAll('button').forEach(b => b.onclick = () => verTema(b.dataset.tema));
-      $('#tituloChuleta').textContent = 'CHULETA · ' + (T.materia || '');
-      chuletaLista = true;
-      verTema(secs[0] && secs[0].dataset.tema);
-    } catch (e) { $('#bChuleta').hidden = true; }
-  }
-  function verTema(tema) {
-    const cuerpo = $('#cuerpoChuleta');
-    let hay = false;
-    cuerpo.querySelectorAll('section').forEach(s => { const on = s.dataset.tema === tema; s.classList.toggle('on', on); hay = hay || on; });
-    if (!hay) { const s = cuerpo.querySelector('section'); if (s) { s.classList.add('on'); tema = s.dataset.tema; } }
-    $('#pestanas').querySelectorAll('button').forEach(b => { const on = b.dataset.tema === tema; b.classList.toggle('on', on); if (on) b.scrollIntoView({ block: 'nearest', inline: 'center' }); });
-    cuerpo.scrollTop = 0;
-  }
-  function abrirChuleta(tema) {
-    if (!chuletaLista) return;
-    const actual = lista[pos] && lista[pos].p.tema;
-    verTema(tema || actual || null);
-    capa.classList.add('on');
-    $('#bCerrarChuleta').focus();
-  }
-  function cerrarChuleta() { capa.classList.remove('on'); }
-
+  let chuleta = null;
   /* ---------- teclado ---------- */
   document.addEventListener('keydown', e => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
-    if (capa.classList.contains('on')) { if (e.key === 'Escape') cerrarChuleta(); return; }
-    if ((e.key === 'c' || e.key === 'C') && chuletaLista) { abrirChuleta(); return; }
+    if (chuleta && chuleta.abierta()) { if (e.key === 'Escape') chuleta.cerrar(); return; }
+    if ((e.key === 'c' || e.key === 'C') && chuleta && chuleta.lista()) { chuleta.abrir(); return; }
     if (!lista.length || pos < 0 || $('#bot').hidden) return;
     const n = '1234'.indexOf(e.key);
     if (n >= 0 && !resp[pos] && lista[pos].orden[n] !== undefined) { responder(lista[pos].orden[n]); return; }
