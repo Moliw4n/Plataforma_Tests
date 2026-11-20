@@ -80,7 +80,7 @@ test.describe('validarBanco', () => {
     tiene(con(t => { t.preguntas[0].ok = '1'; }), 'ok debe ser');
     tiene(con(t => { t.preguntas[0].ok = -1; }), 'ok debe ser');
   });
-  test('pocas opciones', () => tiene(con(t => { t.preguntas[0].ops = ['solo una']; }), 'al menos 2'));
+  test('pocas opciones', () => tiene(con(t => { t.preguntas[0].ops = ['solo una']; }), '2 a 6'));
   test('sin «sol» o «trampa»: error, salvo que se pida lo contrario', () => {
     tiene(con(t => { delete t.preguntas[0].sol; }), 'sol');
     tiene(con(t => { t.preguntas[0].trampa = '  '; }), 'trampa');

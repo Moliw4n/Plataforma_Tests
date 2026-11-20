@@ -1,61 +1,11 @@
-/* Pruebas del SQL de supabase/ contra un Postgres REAL y LOCAL (embedded-postgres, en una carpeta
-   temporal). Nunca toca Supabase. Se ejecuta con: npm run test:sql
-   Simula lo que Supabase pone de serie: los roles anon y authenticated, el esquema `extensions`
-   y auth.jwt(). */
+/* Pruebas del SQL de supabase/ (01 a 05) contra un Postgres REAL y LOCAL. Nunca toca Supabase.
+   Se ejecuta con: npm run test:sql   (la ayuda común está en pruebas/ayuda-sql.js) */
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-const EmbeddedPostgres = require('embedded-postgres').default;
-const { Client } = require('pg');
+const { SQL, iniciar, parar, conectar, baseNueva, como } = require('./ayuda-sql');
 
-let PUERTO;   // se elige un puerto libre al arrancar
-const libre = () => new Promise((ok, mal) => { const srv = require('net').createServer(); srv.listen(0, '127.0.0.1', () => { const p = srv.address().port; srv.close(() => ok(p)); }); srv.on('error', mal); });
-const SQL = f => fs.readFileSync(path.join(__dirname, '..', 'supabase', f), 'utf8');
-const PRELUDIO = `
-  do $r$ begin
-    if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
-    if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated nologin; end if;
-  end $r$;
-  grant anon, authenticated to current_user;
-  create schema if not exists extensions;
-  create schema if not exists auth;
-  create or replace function auth.jwt() returns jsonb language sql stable as
-    $$ select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
-  grant usage on schema auth, extensions to anon, authenticated;
-  grant usage on schema public to anon, authenticated;
-`;
-
-let pg, dir;
-const conexiones = [];
-async function conectar(db) {
-  const c = new Client({ host: 'localhost', port: PUERTO, user: 'postgres', password: 'postgres', database: db });
-  await c.connect(); conexiones.push(c); return c;
-}
-async function baseNueva(nombre, ficheros = ['01_esquema.sql', '03_profesor_alumnos.sql']) {
-  await pg.createDatabase(nombre);
-  const c = await conectar(nombre);
-  await c.query(PRELUDIO);
-  for (const f of ficheros) await c.query(SQL(f));
-  return c;
-}
-// Ejecuta una consulta «como» un rol (lo que haría la web pública), y vuelve a ser superusuario.
-async function como(c, rol, sql, params) {
-  await c.query('set role ' + rol);
-  try { return await c.query(sql, params); } finally { await c.query('reset role'); }
-}
-
-test.before(async () => {
-  PUERTO = await libre();
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kiron-pg-'));
-  pg = new EmbeddedPostgres({ databaseDir: dir, user: 'postgres', password: 'postgres', port: PUERTO, persistent: false });
-  await pg.initialise(); await pg.start();
-});
-test.after(async () => {
-  for (const c of conexiones) await c.end().catch(() => {});
-  await pg.stop(); fs.rmSync(dir, { recursive: true, force: true });
-});
+test.before(iniciar);
+test.after(parar);
 
 test('01 y 03 se pueden ejecutar dos veces seguidas sin romper nada', async () => {
   const c = await baseNueva('idem');

@@ -39,7 +39,10 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
   **Los bancos de examen (con soluciones) NO van al repo**: es público. Van al servidor, subidos desde el panel.
 - Base de datos: `supabase/01_esquema.sql` (tablas, RLS, `entrar`, `guardar_intento`),
   `03_profesor_alumnos.sql` (alta/baja de alumnos), `04_latido.sql` (anti-pausa) y
-  `05_datos_prueba.sql` (alumnos inventados, SOLO proyecto de pruebas; se niega a correr en uno real).
+  `05_datos_prueba.sql` (alumnos inventados, SOLO proyecto de pruebas; se niega a correr en uno real),
+  `06_contenido.sql` (fase 1: `bancos`, `items` con soluciones, `juegos`, `asignaciones`, `partidas`, `respuestas`, `eventos`; RLS cerrada,
+  el profesor solo LEE las tablas y escribe con `profe_subir_banco`, `profe_crear_juego`, `profe_asignar`, `profe_publicar_notas`…).
+  La validación de preguntas de SQL (`_validar_item`) y la de JS (`validarBanco`) deben coincidir: lo comprueba `npm run test:sql`.
   El usuario los ejecuta a mano en el SQL Editor de Supabase: **dale siempre el SQL listo y dile qué debe salir**.
 - Pruebas (`pruebas/`): `npm test` (Playwright a 1280 y 390 px, Supabase simulado: nunca toca el real;
   la simulación es automática), `npm run test:sql` (Postgres local embebido), `npm run test:latido`,

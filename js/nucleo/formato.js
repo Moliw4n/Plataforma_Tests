@@ -64,6 +64,7 @@ export function validarBanco(t, { soportados = TIPOS_SOPORTADOS, exigirSolTrampa
     const q = 'Pregunta ' + (i + 1) + (p && p.id ? ' (' + p.id + ')' : '') + ': ';
     if (!p || typeof p !== 'object') { e.push(q + 'no es un objeto'); return; }
     if (!esTexto(p.id)) e.push(q + 'falta el id');
+    else if (!/^[A-Za-z0-9_-]{1,40}$/.test(p.id)) e.push(q + 'el id solo puede llevar letras, números, - y _ (hasta 40)');
     else if (vistos.has(p.id)) e.push(q + 'el id está repetido'); else vistos.add(p.id);
     if (!TIPOS_CONOCIDOS.includes(p.tipo)) { e.push(q + 'tipo «' + p.tipo + '» desconocido'); return; }
     if (!soportados.includes(p.tipo)) { e.push(q + 'el tipo «' + p.tipo + '» todavía no se puede jugar'); return; }
@@ -73,7 +74,7 @@ export function validarBanco(t, { soportados = TIPOS_SOPORTADOS, exigirSolTrampa
       if (!esTexto(p.trampa)) e.push(q + 'falta «trampa»');
     }
     if (p.tipo === 'opcion_multiple') {
-      if (!Array.isArray(p.ops) || p.ops.length < 2 || !p.ops.every(o => typeof o === 'string')) e.push(q + 'ops debe ser una lista de al menos 2 textos');
+      if (!Array.isArray(p.ops) || p.ops.length < 2 || p.ops.length > 6 || !p.ops.every(o => typeof o === 'string')) e.push(q + 'ops debe ser una lista de 2 a 6 textos');
       else if (!Number.isInteger(p.ok) || p.ok < 0 || p.ok >= p.ops.length) e.push(q + 'ok debe ser el número de la opción correcta (0 a ' + (p.ops.length - 1) + ')');
     }
     if (p.tipo === 'verdadero_falso' && typeof p.ok !== 'boolean') e.push(q + 'ok debe ser true o false');
@@ -83,11 +84,12 @@ export function validarBanco(t, { soportados = TIPOS_SOPORTADOS, exigirSolTrampa
       if (p.unidad !== undefined && !esTexto(p.unidad)) e.push(q + 'unidad debe ser un texto');
     }
     if (p.tipo === 'respuesta_corta') {
-      if (!Array.isArray(p.aceptadas) || !p.aceptadas.length || !p.aceptadas.every(a => esTexto(a))) e.push(q + 'aceptadas debe ser una lista con al menos una respuesta');
+      if (!Array.isArray(p.aceptadas) || !p.aceptadas.length || p.aceptadas.length > 20 || !p.aceptadas.every(a => esTexto(a))) e.push(q + 'aceptadas debe ser una lista de 1 a 20 respuestas');
       if (p.pista !== undefined && !esTexto(p.pista)) e.push(q + 'pista debe ser un texto');
     }
     if (p.categoria !== undefined && cats && !cats[p.categoria] && !['imprime', 'error', 'hueco'].includes(p.categoria)) e.push(q + 'la categoría «' + p.categoria + '» no está en «categorias»');
     if (p.dificultad !== undefined && ![1, 2, 3].includes(p.dificultad)) e.push(q + 'dificultad debe ser 1, 2 o 3');
+    if (p.tema !== undefined && !esTexto(p.tema)) e.push(q + 'tema debe ser un texto');
     if (p.criterio !== undefined && !esTexto(p.criterio)) e.push(q + 'criterio debe ser un texto, por ejemplo «2.1»');
     if (p.etiquetas !== undefined && !(Array.isArray(p.etiquetas) && p.etiquetas.every(esTexto))) e.push(q + 'etiquetas debe ser una lista de textos');
   });
