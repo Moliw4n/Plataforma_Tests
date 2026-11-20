@@ -283,15 +283,27 @@ test.describe('modo profesor (&modo=profe)', () => {
   });
 });
 
-test.describe('fallos conocidos (anotados al hacer la fase 0, sin arreglar todavía)', () => {
-  test('modo profe en móvil: la cabecera cabe en 390 px', async ({ page }) => {
-    test.fixme(test.info().project.name === 'movil',
-      'En modo profe la cabecera no cabe y la página se ensancha a ~455 px (el botón CHULETA se corta). ' +
-      'Viene de `.modo-profe .marca{flex:none;overflow:visible}` en css/estilo.css.');
-    await page.goto(URL + '&modo=profe');
-    await page.click('#bEmpezar');
-    await sinDesbordeHorizontal(page);
-  });
+test.describe('modo profe en pantallas estrechas', () => {
+  for (const ancho of [390, 360]) {
+    test('la cabecera cabe en ' + ancho + ' px y el cartel se lee entero', async ({ page }) => {
+      test.skip(test.info().project.name !== 'movil', 'solo tiene sentido en pantalla de móvil');
+      await page.setViewportSize({ width: ancho, height: 844 });
+      await page.goto(URL + '&modo=profe');
+      await expect(page.locator('.aviso-profe')).toBeVisible();
+      await sinDesbordeHorizontal(page);
+      // el cartel no se corta con puntos suspensivos
+      expect(await page.locator('.aviso-profe').evaluate(e => e.scrollWidth <= e.clientWidth)).toBe(true);
+      await page.click('#bEmpezar');
+      await sinDesbordeHorizontal(page);
+      // ya con el contador a la vista, el cartel sigue entero (antes se cortaba aquí)
+      expect(await page.locator('.aviso-profe').evaluate(e => e.scrollWidth <= e.clientWidth)).toBe(true);
+      // contador y botón CHULETA dentro de la pantalla
+      for (const sel of ['#contador', '#bChuleta']) {
+        const caja = await page.locator(sel).boundingBox();
+        expect(caja.x + caja.width, sel).toBeLessThanOrEqual(ancho);
+      }
+    });
+  }
 });
 
 test.describe('chuleta', () => {

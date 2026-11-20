@@ -3,6 +3,7 @@ const { defineConfig, devices } = require('@playwright/test');
 // Las mismas pruebas se ejecutan a 1280 px (escritorio) y a 390 px (móvil).
 module.exports = defineConfig({
   testDir: 'pruebas',
+  testMatch: '**/*.spec.js',   // los *.test.js son de Node (SQL y latido) y los lanzan sus propios scripts
   timeout: 30000,
   fullyParallel: true,
   reporter: [['list']],
