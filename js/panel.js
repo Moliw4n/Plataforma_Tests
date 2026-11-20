@@ -122,7 +122,10 @@
         'En Supabase → SQL Editor ejecuta:<br><code>insert into public.profesores(email) values (\'' + esc(ses.email) + '\');</code><br><br>y recarga esta página.</div>';
       return;
     }
-    const ids = [...new Set([...TESTS_CONOCIDOS, ...intentos.map(i => i.test_id)])];
+    // La lista de tests sale de tests/index.json (la misma que lee Kronos)
+    let indice = [];
+    try { const r = await fetch('tests/index.json', { cache: 'no-cache' }); if (r.ok) indice = (await r.json()).map(t => t.id); } catch (e) {}
+    const ids = [...new Set([...indice, ...TESTS_CONOCIDOS, ...intentos.map(i => i.test_id)])];
     await Promise.all(ids.map(async id => {
       try { const r = await fetch('tests/' + encodeURIComponent(id) + '.json', { cache: 'no-cache' }); if (r.ok) tests[id] = await r.json(); } catch (e) {}
     }));
