@@ -211,7 +211,25 @@ table.rg td:first-child{white-space:nowrap}
 .q.sin-codigo{grid-template-columns:1fr;max-width:860px;margin:0 auto;gap:6px}
 .q.sin-codigo .enun{margin-bottom:6px}
 .aviso-profe{background:var(--ambar);color:var(--oscuro);border-radius:99px;padding:4px 12px;font-size:11px;letter-spacing:.08em}
-.modo-profe .marca{display:block!important}
+.modo-profe .marca{display:block!important;flex:none;overflow:visible}
+.modo-profe .marca .aviso-profe{color:var(--oscuro)}   /* .marca span lo ponía gris sobre ámbar (ilegible) */
+/* Modo profe en pantallas estrechas: el cartel «NO SE GUARDA», el contador y CHULETA tienen que caber (390 px y 360 px).
+   Solo afecta a .modo-profe: el modo alumno no cambia. */
+@media (max-width:620px){
+  .modo-profe .marca{flex:0 1 auto;min-width:0;overflow:hidden}
+  .modo-profe .aviso-profe{display:block;overflow:hidden;text-overflow:ellipsis;font-size:10px;letter-spacing:.03em;padding:4px 9px}
+  .modo-profe .btn-chuleta{padding:8px 10px;gap:6px;font-size:11px;letter-spacing:.04em}
+  .modo-profe .btn-chuleta svg{width:16px;height:16px}
+}
+/* Móviles (≤ 430 px): CHULETA se queda solo con el icono para que el cartel se lea entero. El texto sigue ahí para lectores de pantalla. */
+@media (max-width:430px){
+  .modo-profe .btn-chuleta{font-size:0;gap:0;padding:8px 10px}
+  .modo-profe .btn-chuleta svg{width:18px;height:18px}
+}
 .guardado.profe{background:rgba(255,193,69,.12);color:var(--ambar)}
 .acciones a.btn{text-decoration:none}
 a.btn{color:var(--tinta)}
+/* logo: la K de Kronos reflejada en turquesa + AIROS, alineado por abajo */
+.marca{display:flex;align-items:center;gap:8px;color:var(--mut)}
+.marca .logo-kiron{height:22px;aspect-ratio:226/73;width:auto;flex:none;display:block}   /* proporción del viewBox de img/logo-kiron.svg */
+.marca span{color:var(--mut);overflow:hidden;text-overflow:ellipsis}

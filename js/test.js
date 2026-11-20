@@ -11,6 +11,7 @@
   const chipTipo = t => { const d = T && T.tipos && T.tipos[t];
     return d ? '<span class="tipo" style="background:var(--' + d.color + ')">' + esc(d.nombre) + '</span>'
              : '<span class="tipo t-' + t + '">' + (NOMBRE_TIPO[t] || t) + '</span>'; };
+  const LOGO_KIRON = '<svg class="logo-kiron" role="img" aria-label="Kiron"><use href="img/logo-kiron.svg#logo"/></svg>';   // el logo se define en img/logo-kiron.svg; aquí solo se referencia
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
   /* ---------- resaltado de Python ---------- */
@@ -68,12 +69,12 @@
       E.innerHTML = '<div class="cargando">No encuentro este test. Revisa el enlace que te ha pasado tu profesor.</div>';
       return;
     }
-    document.title = T.titulo + ' · ' + (T.materia || 'Test');
-    $('#marca').innerHTML = esc(T.materia || 'TEST') + ' <span>· ' + esc(T.titulo) + '</span>';
+    document.title = T.titulo + ' · Kiron';
+    $('#marca').innerHTML = LOGO_KIRON + ' <span>· ' + esc(T.materia || '') + ' · ' + esc(T.titulo) + '</span>';
     if (T.chuleta) prepararChuleta();
     if (MODO_PROFE) {
       document.body.classList.add('modo-profe');
-      $('#marca').innerHTML = '<span class="aviso-profe">MODO PROFESOR · NO SE GUARDA</span>';
+      $('#marca').innerHTML = '<span class="aviso-profe">PROFE · NO SE GUARDA</span>';
     }
     if (CFG && !MODO_PROFE) acceso(); else portada();
   }
