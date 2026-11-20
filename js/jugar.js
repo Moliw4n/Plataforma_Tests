@@ -12,6 +12,7 @@ import { pintar as pintarOpcionMultiple } from './nucleo/preguntas/opcion_multip
 (function () {
   'use strict';
   const $ = s => document.querySelector(s);
+  const LOGO_KAIROS = '<svg class="logo-kairos" viewBox="0 0 264 73" role="img" aria-label="Kairos"><use href="img/logo-kairos.svg#k"/><text x="88" y="72.4" font-family="Orbitron, sans-serif" font-weight="800" font-size="50" letter-spacing="6" fill="#eef2fb">AIROS</text></svg>';
   const CFG = window.CONFIG || null;
   // Modo profesor (…&modo=profe): sin código y sin guardar nada.
   const MODO_PROFE = new URLSearchParams(location.search).get('modo') === 'profe';
@@ -37,7 +38,7 @@ import { pintar as pintarOpcionMultiple } from './nucleo/preguntas/opcion_multip
       return;
     }
     document.title = T.titulo + ' · Kairos';
-    $('#marca').innerHTML = 'KAIR<b class="k0">0</b>S <span>· ' + esc(T.materia || '') + ' · ' + esc(T.titulo) + '</span>';
+    $('#marca').innerHTML = LOGO_KAIROS + ' <span>· ' + esc(T.materia || '') + ' · ' + esc(T.titulo) + '</span>';
     ctx = {
       alumno: null, juego: null, contenido: T,
       api: { rpc },
