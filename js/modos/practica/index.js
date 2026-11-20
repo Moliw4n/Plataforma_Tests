@@ -2,6 +2,7 @@
    «por qué» y «la trampa», se puede repetir las veces que se quiera. Guarda cada intento. */
 import { esc, barajar, tituloBonito } from '../../nucleo/util.js';
 import { resultadoNormalizado } from '../../nucleo/modos.js';
+import { aFormato2 } from '../../nucleo/formato.js';
 import { pintar as pintarPregunta } from '../../nucleo/preguntas/opcion_multiple.js';
 
 const $ = s => document.querySelector(s);
@@ -17,8 +18,8 @@ let intento = null;      // lo último que se envió a guardar (formato de guard
 let vista = null;        // lo que devuelve el renderizador de la pregunta que se ve
 let estadoGuardado = 'local';   // 'guardando' | 'ok' | 'error' | 'local' | 'profe'
 
-// Etiqueta de tipo: usa los tipos del test si los trae ({tipos:{id:{nombre,color}}})
-const chipTipo = t => { const d = T && T.tipos && T.tipos[t];
+// Etiqueta de categoría: usa las del test si las trae ({categorias:{id:{nombre,color}}})
+const chipTipo = t => { const d = T && T.categorias && T.categorias[t];
   return d ? '<span class="tipo" style="background:var(--' + d.color + ')">' + esc(d.nombre) + '</span>'
            : '<span class="tipo t-' + t + '">' + (NOMBRE_TIPO[t] || t) + '</span>'; };
 
@@ -26,7 +27,7 @@ const chipTipo = t => { const d = T && T.tipos && T.tipos[t];
 function portada() {
   $('#bot').hidden = true; barra.innerHTML = ''; $('#contador').textContent = '';
   const n = T.preguntas.length;
-  const tipos = [...new Set(T.preguntas.map(p => p.tipo))];
+  const tipos = [...new Set(T.preguntas.map(p => p.categoria))];
   const alumno = ctx.alumno;
   E.innerHTML =
     '<div class="portada">' +
@@ -164,7 +165,7 @@ function resumen() {
   const seg = Math.round((Date.now() - inicioIntento) / 1000);
   const C = 2 * Math.PI * 70;
   const porTipo = {};
-  lista.forEach(({ p }, i) => { const t = porTipo[p.tipo] || (porTipo[p.tipo] = { n: 0, ok: 0 }); t.n++; if (resp[i].ok) t.ok++; });
+  lista.forEach(({ p }, i) => { const t = porTipo[p.categoria] || (porTipo[p.categoria] = { n: 0, ok: 0 }); t.n++; if (resp[i].ok) t.ok++; });
   const falladas = lista.filter((_, i) => !resp[i].ok).map(x => x.p);
   E.innerHTML =
     '<div class="portada final">' +
@@ -235,7 +236,7 @@ export default {
   tiposPregunta: ['opcion_multiple'],
 
   async iniciar(c) {
-    ctx = c; T = c.contenido; E = c.contenedor; barra = $('#barra');
+    ctx = c; T = aFormato2(c.contenido); E = c.contenedor; barra = $('#barra');   // siempre formato 2 (si ya lo es, no cambia nada)
     lista = []; resp = []; pos = 0; intento = null; vista = null; estadoGuardado = 'local';
     c.temaActual = () => lista[pos] && lista[pos].p.tema;   // para que la chuleta abra en el tema de la pregunta
     $('#bAnt').onclick = () => { if (pos > 0) ir(pos - 1); };

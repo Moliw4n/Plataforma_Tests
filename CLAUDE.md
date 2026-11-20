@@ -27,12 +27,18 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
   - `js/config.js` — entornos: producción por defecto; `?entorno=pruebas` solo desde localhost.
   - `js/panel.js`, `css/estilo.css`, `css/panel.css`.
 - Contenido: `tests/index.json` (lista) y `tests/<id>.json`; chuletas en `chuletas/*.html`.
+  **Formato 2** (`js/nucleo/formato.js`): `tipo` = tipo de pregunta (`opcion_multiple`, …) y `categoria` = la
+  etiqueta de color de antes (`imprime`, `error`, `hueco`…); metadatos opcionales `dificultad` (1-3), `criterio`,
+  `etiquetas`. Los archivos de `tests/` siguen en **formato 1** (el panel los lee así) y la web los convierte al
+  cargar con `aFormato2()` (idempotente). Herramienta: `npm run formato -- validar|comprobar|convertir <archivo>`.
+  **Los bancos de examen (con soluciones) NO van al repo**: es público. Van al servidor, subidos desde el panel.
 - Base de datos: `supabase/01_esquema.sql` (tablas, RLS, `entrar`, `guardar_intento`),
   `03_profesor_alumnos.sql` (alta/baja de alumnos), `04_latido.sql` (anti-pausa) y
   `05_datos_prueba.sql` (alumnos inventados, SOLO proyecto de pruebas; se niega a correr en uno real).
   El usuario los ejecuta a mano en el SQL Editor de Supabase: **dale siempre el SQL listo y dile qué debe salir**.
 - Pruebas (`pruebas/`): `npm test` (Playwright a 1280 y 390 px, Supabase simulado: nunca toca el real;
-  la simulación es automática), `npm run test:sql` (Postgres local embebido), `npm run test:latido`.
+  la simulación es automática), `npm run test:sql` (Postgres local embebido), `npm run test:latido`,
+  `npm run test:formato`.
   GitHub Actions las lanza en cada subida (`.github/workflows/pruebas.yml`); `latido.yml` llama a
   `latido()` cada 3 días (solo corre desde `main`).
 - Modo profe en móvil: cabecera ajustada a 390 y 360 px (CHULETA solo icono en ≤ 430 px); la cubre `pruebas/alumno.spec.js`.

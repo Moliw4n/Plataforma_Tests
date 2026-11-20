@@ -7,6 +7,7 @@ import { esc, tituloBonito } from './nucleo/util.js';
 import { crearChuleta } from './nucleo/chuleta.js';
 import { mostrarAcceso } from './nucleo/acceso.js';
 import { cargarModo } from './nucleo/modos.js';
+import { aFormato2, validarBanco } from './nucleo/formato.js';
 import { pintar as pintarOpcionMultiple } from './nucleo/preguntas/opcion_multiple.js';
 
 (function () {
@@ -27,10 +28,13 @@ import { pintar as pintarOpcionMultiple } from './nucleo/preguntas/opcion_multip
     try {
       if (window.TEST_EMBEBIDO) T = window.TEST_EMBEBIDO;
       else { const r = await fetch('tests/' + encodeURIComponent(id) + '.json', { cache: 'no-cache' }); if (!r.ok) throw 0; T = await r.json(); }
+      T = aFormato2(T);   // formato 1 o 2: de aquí en adelante, siempre formato 2
     } catch (e) {
       E.innerHTML = '<div class="cargando">No encuentro este test. Revisa el enlace que te ha pasado tu profesor.</div>';
       return;
     }
+    const problemas = validarBanco(T);
+    if (problemas.length) console.warn('Kiron: el test «' + T.id + '» tiene problemas:\n- ' + problemas.join('\n- '));
     try { modo = await cargarModo(T.modo || 'practica'); }
     catch (e) {
       console.error(e);

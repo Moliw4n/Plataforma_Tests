@@ -7,7 +7,9 @@
     "test:escritorio": "playwright test --project=escritorio",
     "test:movil": "playwright test --project=movil",
     "test:sql": "node --test pruebas/sql.test.js",
-    "test:latido": "node --test pruebas/latido.test.js"
+    "test:latido": "node --test pruebas/latido.test.js",
+    "test:formato": "node --test pruebas/formato.test.js",
+    "formato": "node scripts/formato.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.49.1",

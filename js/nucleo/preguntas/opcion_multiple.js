@@ -4,7 +4,7 @@
    opciones: { orden, respuesta, chipTipo, hayChuleta, alResponder(oi), alVerChuleta(tema) }
      orden      índices de las opciones en el orden en que se enseñan
      respuesta  {elegida, ok} si ya estaba contestada (al volver a la pregunta), o null
-     chipTipo   función tipo → HTML de la etiqueta de color
+     chipTipo   función categoría → HTML de la etiqueta de color (la categoría es p.categoria; p.tipo es el tipo de pregunta)
    mostrarCorreccion(c): c = {elegida, ok}. Marca la opción elegida, el veredicto y la explicación. */
 import { esc } from '../util.js';
 import { pinta, conLineas, consola } from '../codigo.js';
@@ -15,23 +15,23 @@ export function pintar(p, contenedor, o) {
   let resp = o.respuesta || null;
   const r = resp;
   let h = '<div class="q' + (r ? ' resuelta' : '') + (p.code ? '' : ' sin-codigo') + '">';
-  h += '<div class="izq"><div class="chips">' + o.chipTipo(p.tipo) + '<span class="act">' + esc(p.act || '') + '</span></div>';
+  h += '<div class="izq"><div class="chips">' + o.chipTipo(p.categoria) + '<span class="act">' + esc(p.act || '') + '</span></div>';
   h += '<p class="enun">' + esc(p.enun) + '</p>';
   if (p.code) h += '<pre class="codigo">' + conLineas(p.code) + '</pre>';
   const htmlConsola = !p.salida ? '' : '<div class="consola"><span class="et">LO QUE SALE DE VERDAD' +
-       (p.tipo === 'hueco' ? ' (CON LA BUENA)' : '') +
+       (p.categoria === 'hueco' ? ' (CON LA BUENA)' : '') +
        (p.stdin ? ' · EL USUARIO ESCRIBE ' + esc(p.stdin.trim().split('\n').join(', ')) : '') +
        '</span><pre>' + consola(p.salida) + '</pre></div>';
   if (htmlConsola) h += '<div class="solu solo-escritorio">' + htmlConsola + '</div>';
   h += '</div><div class="der">';
-  const mono = p.tipo === 'imprime' || p.tipo === 'hueco';
+  const mono = p.categoria === 'imprime' || p.categoria === 'hueco';
   h += '<div class="ops">' + o.orden.map((oi, j) => {
     const cls = ['op'];
     if (oi === p.ok) cls.push('ok');
     if (r && r.elegida === oi) cls.push('elegida', oi === p.ok ? 'bien' : 'mal');
     const marca = r ? (oi === p.ok ? '✓' : (r.elegida === oi ? '✗' : '')) : '';
     return '<button class="' + cls.join(' ') + '" data-oi="' + oi + '"' + (r ? ' disabled' : '') + '>' +
-      '<span class="l">' + LET[j] + '</span><span class="tx' + (mono ? ' mono' : '') + '">' + (p.tipo === 'hueco' ? pinta(p.ops[oi]) : esc(p.ops[oi])) + '</span>' +
+      '<span class="l">' + LET[j] + '</span><span class="tx' + (mono ? ' mono' : '') + '">' + (p.categoria === 'hueco' ? pinta(p.ops[oi]) : esc(p.ops[oi])) + '</span>' +
       '<span class="marca-op">' + marca + '</span></button>';
   }).join('') + '</div>';
   h += '<div class="veredicto"></div>';
