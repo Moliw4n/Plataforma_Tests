@@ -1,0 +1,22 @@
+# Latido anti-pausa: el plan gratuito de Supabase pausa un proyecto tras una semana sin actividad.
+# Cada 3 días se llama a latido() (que escribe una fila). También se puede lanzar a mano desde
+# la pestaña Actions → Latido → Run workflow.
+# OJO: GitHub solo ejecuta tareas programadas de la rama principal (main), y las desactiva si el
+# repositorio pasa 60 días sin ninguna actividad (un commit basta para reactivarlas).
+name: Latido
+
+on:
+  schedule:
+    - cron: '17 6 */3 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  latido:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: .github/scripts/latido.sh

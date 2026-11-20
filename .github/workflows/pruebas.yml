@@ -1,0 +1,39 @@
+# Pruebas automáticas en cada subida y en cada pull request.
+# Si algo falla, GitHub marca la subida con una cruz roja y te avisa por correo.
+name: Pruebas
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # SQL contra un Postgres local y efímero. Nunca toca Supabase.
+      - name: Pruebas del SQL
+        run: npm run test:sql
+      - name: Pruebas del latido
+        run: npm run test:latido
+      # Páginas con un navegador real y Supabase simulado, a 1280 px y a 390 px.
+      - name: Instalar el navegador
+        run: npx playwright install --with-deps chromium
+      - name: Pruebas de las páginas
+        run: npm test
+      - name: Guardar el informe si falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultados-playwright
+          path: test-results/
+          retention-days: 7

@@ -6,8 +6,8 @@ module.exports = defineConfig({
   timeout: 30000,
   fullyParallel: true,
   reporter: [['list']],
-  // Usa el Google Chrome instalado (en GitHub Actions también viene instalado)
-  use: { baseURL: 'http://localhost:4173', trace: 'retain-on-failure', channel: 'chrome' },
+  // En tu Mac usa el Google Chrome instalado; en GitHub Actions, el Chromium que instala el flujo de trabajo
+  use: { baseURL: 'http://localhost:4173', trace: 'retain-on-failure', ...(process.env.CI ? {} : { channel: 'chrome' }) },
   webServer: {
     command: 'node pruebas/servidor.js',
     url: 'http://localhost:4173/jugar.html',
