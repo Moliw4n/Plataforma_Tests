@@ -1,7 +1,9 @@
 /* Kiron · página del alumno (el «runner»)
-   Abre: jugar.html?t=<id-del-test>   (carga tests/<id>.json; test.html es un alias que reenvía aquí) · &modo=profe = sin código y sin guardar.
-   Carga el contenido, pone la cabecera y la chuleta, pide el código y entrega el control al MODO
-   que corresponda (por ahora siempre `practica`). El contrato de los modos está en nucleo/modos.js. */
+   Dos formas de abrirla:
+     jugar.html?t=<id-del-test>   práctica: carga tests/<id>.json (test.html es un alias que reenvía aquí) · &modo=profe = sin código y sin guardar.
+     jugar.html?j=<id-del-juego>  examen: pide el código y busca ese juego entre los asignados a su grupo (mis_juegos);
+                                  el contenido NO está aquí: lo manda el servidor, sin soluciones. &modo=profe no vale: siempre hace falta código.
+   Pide el código y entrega el control al MODO que corresponda. El contrato de los modos está en nucleo/modos.js. */
 import { rpc } from './nucleo/api.js';
 import { esc, tituloBonito } from './nucleo/util.js';
 import { crearChuleta } from './nucleo/chuleta.js';
@@ -16,7 +18,9 @@ import { RENDERIZADORES } from './nucleo/preguntas/index.js';
   const LOGO_KIRON = '<svg class="logo-kiron" role="img" aria-label="Kiron"><use href="img/logo-kiron.svg#logo"/></svg>';   // el logo se define en img/logo-kiron.svg; aquí solo se referencia
   const CFG = window.CONFIG || null;
   // Modo profesor (…&modo=profe): sin código y sin guardar nada.
-  const MODO_PROFE = new URLSearchParams(location.search).get('modo') === 'profe';
+  const PARAMS = new URLSearchParams(location.search);
+  const JUEGO_ID = PARAMS.get('j');
+  const MODO_PROFE = !JUEGO_ID && PARAMS.get('modo') === 'profe';
   const E = $('#escena'), barra = $('#barra');
 
   let T = null;          // el contenido (test)
@@ -24,7 +28,8 @@ import { RENDERIZADORES } from './nucleo/preguntas/index.js';
   let ctx = null;        // lo que se le entrega al modo
 
   async function cargar() {
-    const id = new URLSearchParams(location.search).get('t') || window.TEST_POR_DEFECTO;
+    if (JUEGO_ID) return cargarJuego();
+    const id = PARAMS.get('t') || window.TEST_POR_DEFECTO;
     try {
       if (window.TEST_EMBEBIDO) T = window.TEST_EMBEBIDO;
       else { const r = await fetch('tests/' + encodeURIComponent(id) + '.json', { cache: 'no-cache' }); if (!r.ok) throw 0; T = await r.json(); }
@@ -70,8 +75,43 @@ import { RENDERIZADORES } from './nucleo/preguntas/index.js';
   }
   async function salir() {
     ctx.alumno = null;
-    await modo.terminar();
-    acceso('Has salido. Escribe tu código para volver a entrar.');
+    if (modo) await modo.terminar();
+    if (JUEGO_ID) accesoJuego('Has salido. Escribe tu código para volver a entrar.'); else acceso('Has salido. Escribe tu código para volver a entrar.');
+  }
+
+  /* ---------- examen: jugar.html?j=<juego> ---------- */
+  function cargarJuego() {
+    document.title = 'Examen · Kiron';
+    $('#marca').innerHTML = LOGO_KIRON + ' <span>· Examen</span>';
+    ctx = { alumno: null, juego: null, contenido: null, api: { rpc }, nucleo: { preguntas: RENDERIZADORES },
+            contenedor: E, chuleta: null, modoProfe: false, temaActual: () => null, salir };
+    if (!CFG) { E.innerHTML = '<div class="cargando">No hay conexión con el servidor. Avisa a tu profesor.</div>'; return; }
+    accesoJuego();
+  }
+  function accesoJuego(mensaje) {
+    $('#bot').hidden = true; $('#reloj').hidden = true; barra.innerHTML = ''; $('#contador').textContent = '';
+    mostrarAcceso({ contenedor: E, mensaje, sup: 'Examen', titulo: 'Tu examen', alEntrar: s => { ctx.alumno = s; abrirJuego(); } });
+  }
+  function mensajeJuego(texto, { reintentar = false } = {}) {
+    E.innerHTML = '<div class="portada"><div class="sup">EXAMEN</div><p class="enun">' + esc(texto) + '</p><div class="acciones">' +
+      (reintentar ? '<button class="btn pri" id="bReintentarJuego">Reintentar</button>' : '') + '<button class="btn" id="bSalirJuego">No soy yo</button></div></div>';
+    if (reintentar) $('#bReintentarJuego').onclick = abrirJuego;
+    $('#bSalirJuego').onclick = salir;
+  }
+  async function abrirJuego() {
+    E.innerHTML = '<div class="cargando">Buscando tu examen…</div>';
+    let r;
+    try { r = await rpc('mis_juegos', { p_codigo: ctx.alumno.codigo }, { reintentos: 1 }); }
+    catch (e) { return mensajeJuego('No hay conexión con el servidor. Comprueba internet y vuelve a probar.', { reintentar: true }); }
+    if (!r.ok) return mensajeJuego(r.motivo === 'espera' ? 'Demasiados intentos seguidos. Espera un minuto y vuelve a probar.' : 'No he podido comprobar tu código. Vuelve a entrar.');
+    const juego = (r.juegos || []).find(j => j.juego === JUEGO_ID);
+    if (!juego) return mensajeJuego('No tienes asignado este examen. Revisa el enlace que te ha pasado tu profesor.');
+    try { modo = await cargarModo(juego.modo); }
+    catch (e) { console.error(e); return mensajeJuego('Este examen necesita algo que todavía no está disponible. Avisa a tu profesor.'); }
+    document.title = juego.titulo + ' · Kiron';
+    $('#marca').innerHTML = LOGO_KIRON + ' <span>· ' + esc(juego.titulo) + '</span>';
+    ctx.juego = juego;
+    modo.iniciar(ctx);
   }
 
   cargar();

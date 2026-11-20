@@ -8,14 +8,19 @@
    mostrarCorreccion(c): c = {elegida, ok}. Marca la opción elegida, el veredicto y la explicación. */
 import { esc } from '../util.js';
 import { pinta, conLineas, consola } from '../codigo.js';
-import { categoriaDe } from './comun.js';
+import { categoriaDe, pintarOpcionesExamen } from './comun.js';
 
-const LET = 'ABCD';
+const LET = 'ABCDEF';
 
 // Corrección en el navegador (solo para práctica: la solución viaja con la pregunta). dada = índice de la opción elegida.
 export const corregir = (p, dada) => ({ ok: dada === p.ok, correcta: p.ok });
 
 export function pintar(p, contenedor, o) {
+  // Modo examen: las opciones ya vienen barajadas del servidor; el alumno contesta por POSICIÓN y no se corrige nada en pantalla.
+  if (o.examen) {
+    const mono = p.categoria === 'imprime' || p.categoria === 'hueco';
+    return pintarOpcionesExamen(p, contenedor, o, p.ops.map((t, i) => ({ valor: i, letra: LET[i], texto: p.categoria === 'hueco' ? pinta(t) : esc(t), mono })));
+  }
   let resp = o.respuesta || null;
   const r = resp;
   let h = '<div class="q' + (r ? ' resuelta' : '') + (p.code ? '' : ' sin-codigo') + '">';

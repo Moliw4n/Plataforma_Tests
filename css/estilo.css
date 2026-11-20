@@ -247,3 +247,21 @@ a.btn{color:var(--tinta)}
 .marca{display:flex;align-items:center;gap:8px;color:var(--mut)}
 .marca .logo-kiron{height:22px;aspect-ratio:226/73;width:auto;flex:none;display:block}   /* proporción del viewBox de img/logo-kiron.svg */
 .marca span{color:var(--mut);overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- modo examen: sin corrección a la vista ---------- */
+.q.en-examen .op.elegida{border-color:var(--cian);background:rgba(56,198,224,.14)}
+.q.en-examen .op.elegida .l{background:var(--cian);color:var(--oscuro)}
+.q.en-examen .op:not(.elegida):hover{border-color:var(--borde)}
+.barra i.hecha{background:var(--cian)}
+.reloj{font-family:Orbitron,sans-serif;font-weight:800;font-size:15px;white-space:nowrap;color:var(--tinta);padding:5px 11px;border-radius:99px;background:var(--panel);border:1px solid var(--borde)}
+.reloj.poco{color:var(--oscuro);background:var(--ambar);border-color:var(--ambar)}
+.reloj.muy-poco{color:var(--oscuro);background:var(--rojo);border-color:var(--rojo)}
+.aviso-examen{display:flex;gap:10px;align-items:center;border-radius:var(--r);padding:10px 14px;font-weight:700;font-size:15px;background:rgba(255,193,69,.14);color:var(--ambar);border:1px solid rgba(255,193,69,.4)}
+.aviso-examen.rojo{background:rgba(255,107,94,.14);color:var(--rojo);border-color:rgba(255,107,94,.4)}
+.rejilla button.hecha{border-color:var(--cian);color:var(--cian);background:rgba(56,198,224,.14)}
+.rejilla button.vacia{border-color:var(--ambar);color:var(--ambar);background:rgba(255,193,69,.1)}
+.reglas-examen{display:flex;flex-direction:column;gap:8px;margin:6px 0 14px;padding:0;list-style:none;max-width:560px;text-align:left}
+.reglas-examen li{display:flex;gap:10px;align-items:flex-start;font-weight:600;color:var(--mut);line-height:1.35}
+.reglas-examen li::before{content:"›";color:var(--naranja);font-weight:800}
+.avisos-examen{max-width:860px;margin:10px auto 0;padding:0 16px;display:flex;flex-direction:column;gap:8px}
+.avisos-examen:empty{display:none}

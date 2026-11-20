@@ -41,3 +41,27 @@ export function enlazarChuleta(contenedor, o) {
   const vc = contenedor.querySelector('.ver-chuleta');
   if (vc) vc.onclick = () => o.alVerChuleta(vc.dataset.tema);
 }
+
+/* Opciones pulsables SIN corrección, para el modo examen (opción múltiple y verdadero/falso).
+   opciones: [{ valor, letra, texto (ya escapado), mono? }]. El alumno puede cambiar de opción hasta entregar.
+   opciones de `o`: { respuesta:{dada}|null, alResponder(valor), chipTipo } */
+export function pintarOpcionesExamen(p, contenedor, o, opciones) {
+  let elegida = o.respuesta ? o.respuesta.dada : undefined;
+  const html = opciones.map(x =>
+    '<button type="button" class="op' + (x.valor === elegida ? ' elegida' : '') + '" data-valor="' + escAttr(JSON.stringify(x.valor)) +
+    '" aria-pressed="' + (x.valor === elegida) + '"><span class="l">' + x.letra + '</span><span class="tx' + (x.mono ? ' mono' : '') + '">' + x.texto + '</span></button>').join('');
+  contenedor.innerHTML = '<div class="q en-examen' + (p.code ? '' : ' sin-codigo') + '">' + izquierda(p, o) +
+    '<div class="der"><div class="ops">' + html + '</div></div></div>';
+  contenedor.querySelectorAll('.op').forEach(b => b.onclick = () => {
+    const v = JSON.parse(b.dataset.valor);
+    elegida = v;
+    contenedor.querySelectorAll('.op').forEach(x => { const on = x === b; x.classList.toggle('elegida', on); x.setAttribute('aria-pressed', String(on)); });
+    o.alResponder(v);
+  });
+  return { respuesta: () => (elegida === undefined ? null : { dada: elegida }), bloquear() {}, mostrarCorreccion() {}, pendiente: () => null };
+}
+
+// Etiqueta de color a partir del nombre del tipo, cuando la pregunta no trae categoría propia
+export const NOMBRES_TIPO = { opcion_multiple: 'Elige la correcta', verdadero_falso: '¿Verdadero o falso?', numerica: 'Haz la cuenta', respuesta_corta: 'Respuesta corta',
+  imprime: '¿Qué imprime?', error: 'Encuentra el error', hueco: 'Completa el hueco' };
+export const chipPorDefecto = t => '<span class="tipo t-' + t + '">' + esc(NOMBRES_TIPO[t] || t) + '</span>';

@@ -15,9 +15,10 @@ const cargarTest = id => JSON.parse(fs.readFileSync(path.join(__dirname, '..', '
 const test = base.test.extend({
   /* servidor: simula Supabase y registra lo que recibe.
      servidor.guardados → cuerpos de guardar_intento · servidor.llamadas → nombres de funciones llamadas
-     servidor.modoGuardar = 'ok' | 'error' → qué contesta guardar_intento */
+     servidor.modoGuardar = 'ok' | 'error' → qué contesta guardar_intento
+     servidor.examen = await crearServidorFalso() → atiende mis_juegos, empezar_partida, responder, evento, terminar_partida y mi_resultado */
   servidor: [async ({ page }, use) => {
-    const s = { guardados: [], llamadas: [], inesperadas: [], modoGuardar: 'ok' };
+    const s = { guardados: [], llamadas: [], inesperadas: [], modoGuardar: 'ok', examen: null };   // examen: servidor falso del examen (opcional)
     await page.route('**/*', ruta => {
       const url = new URL(ruta.request().url());
       if (url.hostname === 'localhost') return ruta.continue();
@@ -36,6 +37,12 @@ const test = base.test.extend({
       if (fn === 'guardar_intento') {
         s.guardados.push(args);
         return s.modoGuardar === 'error' ? json({ message: 'fallo simulado' }, 500) : json({ ok: true });
+      }
+      // Funciones del examen: las atiende el servidor falso (pruebas/servidor-examen-falso.js) si el test lo ha puesto en s.examen
+      if (s.examen && ['mis_juegos', 'empezar_partida', 'responder', 'evento', 'terminar_partida', 'mi_resultado'].includes(fn)) {
+        if (s.examen.red === false) return ruta.abort();                 // corte de internet simulado
+        const resp = s.examen.llamar(fn, args);
+        return s.examen.latencia ? setTimeout(() => json(resp), s.examen.latencia) : json(resp);
       }
       s.inesperadas.push(url.href);
       return json({}, 404);

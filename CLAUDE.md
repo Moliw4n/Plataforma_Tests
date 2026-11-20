@@ -23,7 +23,11 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
     `codigo.js` (resaltado), `util.js`, `modos.js` (contrato de los modos), `preguntas/<tipo>.js`
     (un renderizador por tipo: `pintar(item, contenedor, opciones)`).
   - `js/modos/<modo>/index.js` — un modo por carpeta, con el contrato de `nucleo/modos.js`.
-    Hoy solo `practica`. Un test puede pedir otro con `"modo": "…"`; sin él, `practica`.
+    Hoy `practica` (tests de `tests/*.json`; un test puede pedir otro con `"modo": "…"`) y `examen`.
+  - **Examen**: se abre con `jugar.html?j=<id-del-juego>` (siempre con código; `&modo=profe` no vale). El contenido NO está en el repo:
+    lo manda el servidor sin soluciones (`empezar_partida`), corrige el servidor (`responder`) y la nota no se ve hasta que el profesor la publica.
+    Cada preg. se contesta por POSICIÓN; se puede cambiar hasta entregar; si se corta internet las respuestas esperan y se reenvían solas;
+    recargar reanuda; salir de la pestaña se anota (`evento`). Los renderizadores de `preguntas/` aceptan `examen: true` (sin corrección a la vista).
   - `js/config.js` — entornos: producción por defecto; `?entorno=pruebas` solo desde localhost.
   - `js/panel.js`, `css/estilo.css`, `css/panel.css`.
 - Contenido: `tests/index.json` (lista) y `tests/<id>.json`; chuletas en `chuletas/*.html`.
@@ -51,7 +55,8 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
   con unos 3.800 caracteres y los vectores compartidos. Las pruebas de SQL usan bases UTF8 y simulan los privilegios por defecto de Supabase.
   El usuario los ejecuta a mano en el SQL Editor de Supabase: **dale siempre el SQL listo y dile qué debe salir**.
 - Pruebas (`pruebas/`): `npm test` (Playwright a 1280 y 390 px, Supabase simulado: nunca toca el real;
-  la simulación es automática), `npm run test:sql` (Postgres local embebido), `npm run test:latido`,
+  la simulación es automática; el examen se prueba con `pruebas/servidor-examen-falso.js`), `npm run test:sql` (Postgres local embebido,
+  incluye `contrato-examen.test.js`: el servidor falso y el SQL real deben responder con la MISMA FORMA; si cambias una función de 07, cambia también el falso), `npm run test:latido`,
   `npm run test:formato`, `npm run test:preguntas`.
   GitHub Actions las lanza en cada subida (`.github/workflows/pruebas.yml`); `latido.yml` llama a
   `latido()` cada 3 días (solo corre desde `main`).

@@ -16,10 +16,10 @@ export function crearApi(cfg, { tiempoMs = 15000 } = {}) {
      reintentos (0 por defecto): solo se repite si NO llegó respuesta (red caída) o el servidor
      dijo 502/503/504. Nunca se reintenta tras otro error, para no duplicar nada.
      Ojo: no pongas reintentos en funciones que escriben (guardar_intento) si no son idempotentes. */
-  async function rpc(fn, args = {}, { reintentos = 0 } = {}) {
+  async function rpc(fn, args = {}, { reintentos = 0, keepalive = false } = {}) {
     for (let intento = 0; ; intento++) {
       try {
-        return await una(fn, args);
+        return await una(fn, args, keepalive);
       } catch (e) {
         const reintentable = e.tipo === 'red' || (e.tipo === 'http' && [502, 503, 504].includes(e.status));
         if (!reintentable || intento >= reintentos) throw e;
@@ -28,7 +28,8 @@ export function crearApi(cfg, { tiempoMs = 15000 } = {}) {
     }
   }
 
-  async function una(fn, args) {
+  // keepalive: la petición sigue aunque la página se oculte o se cierre (para avisos como «ha salido de la pestaña»)
+  async function una(fn, args, keepalive) {
     const ctl = new AbortController();
     const reloj = setTimeout(() => ctl.abort(), tiempoMs);
     let r;
@@ -37,7 +38,8 @@ export function crearApi(cfg, { tiempoMs = 15000 } = {}) {
         method: 'POST',
         headers: { 'apikey': cfg.supabaseKey, 'Content-Type': 'application/json' },
         body: JSON.stringify(args),
-        signal: ctl.signal
+        signal: ctl.signal,
+        keepalive: !!keepalive
       });
     } catch (e) {
       throw ctl.signal.aborted ? new ApiError('tiempo', 'Tiempo agotado') : new ApiError('red', 'Sin conexión');

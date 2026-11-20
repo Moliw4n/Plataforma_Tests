@@ -3,13 +3,14 @@
    Respuesta del alumno (dada): true | false.
    Misma interfaz que todos los tipos: pintar(item, contenedor, opciones) → { respuesta(), bloquear(), mostrarCorreccion(c) }
    opciones: { respuesta, chipTipo, hayChuleta, alResponder(dada), alVerChuleta(tema) } · respuesta = {dada, ok} | null */
-import { marco, pintarVeredicto, enlazarChuleta } from './comun.js';
+import { marco, pintarVeredicto, enlazarChuleta, pintarOpcionesExamen } from './comun.js';
 
 export const corregir = (p, dada) => ({ ok: dada === p.ok, correcta: p.ok });
 
 const OPCIONES = [{ v: true, l: 'V', t: 'Verdadero' }, { v: false, l: 'F', t: 'Falso' }];
 
 export function pintar(p, contenedor, o) {
+  if (o.examen) return pintarOpcionesExamen(p, contenedor, o, OPCIONES.map(x => ({ valor: x.v, letra: x.l, texto: x.t })));   // sin corrección a la vista
   let resp = o.respuesta || null;
   const r = resp;
   const ops = OPCIONES.map(x => {

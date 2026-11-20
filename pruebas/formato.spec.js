@@ -16,6 +16,7 @@ test('un test en formato 2 se ve IGUAL que el mismo en formato 1 (portada y preg
   await servir(page, 'f2', F.aFormato2(T1));
   await fijarAzar(page);
   await page.goto('jugar.html?t=f2&modo=profe');
+  await page.waitForSelector('#bEmpezar');          // esperar a que la portada esté pintada
   const portada2 = await page.locator('#escena').innerHTML();
   await page.click('#bEmpezar');
   const pregunta2 = await page.locator('#escena').innerHTML();
@@ -23,6 +24,7 @@ test('un test en formato 2 se ve IGUAL que el mismo en formato 1 (portada y preg
   const p1 = await (await browser.newContext({ viewport: page.viewportSize() })).newPage();
   await fijarAzar(p1);
   await p1.goto('jugar.html?t=' + ID + '&modo=profe');
+  await p1.waitForSelector('#bEmpezar');
   const portada1 = await p1.locator('#escena').innerHTML();
   await p1.click('#bEmpezar');
   const pregunta1 = await p1.locator('#escena').innerHTML();
