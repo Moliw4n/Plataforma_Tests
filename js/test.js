@@ -2,6 +2,8 @@
    Abre: test.html?t=<id-del-test>   (carga tests/<id>.json)
    De momento funciona sin conexión a la base de datos: el resultado de cada intento
    queda en `intento` y se pasa a guardarIntento(), que más adelante enviará a Supabase. */
+import { rpc } from './nucleo/api.js';
+
 (function () {
   'use strict';
   const $ = s => document.querySelector(s);
@@ -45,16 +47,6 @@
   const CFG = window.CONFIG || null;
   // Modo profesor (test.html?t=…&modo=profe): sin código y sin guardar nada.
   const MODO_PROFE = new URLSearchParams(location.search).get('modo') === 'profe';
-
-  async function rpc(fn, args) {
-    const r = await fetch(CFG.supabaseUrl + '/rest/v1/rpc/' + fn, {
-      method: 'POST',
-      headers: { 'apikey': CFG.supabaseKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify(args)
-    });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    return r.json();
-  }
 
   const E = $('#escena'), barra = $('#barra');
 
@@ -105,7 +97,7 @@
       if (codigo.length !== 6) { msg.textContent = 'El código tiene 6 caracteres, por ejemplo ABC-123.'; inp.classList.add('mal'); inp.focus(); return; }
       $('#bEntrar').disabled = true; msg.textContent = 'Comprobando…';
       try {
-        const r = await rpc('entrar', { p_codigo: codigo });
+        const r = await rpc('entrar', { p_codigo: codigo }, { reintentos: 1 });
         if (r.ok) { sesion = { codigo, alumno: r.alumno, grupo: r.grupo }; portada(); return; }
         msg.textContent = r.motivo === 'espera' ? 'Demasiados intentos seguidos. Espera un minuto y vuelve a probar.' : 'Ese código no existe. Revísalo: no hay ceros ni letras O.';
         inp.classList.add('mal');
