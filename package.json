@@ -1,0 +1,13 @@
+{
+  "name": "kairos-pruebas",
+  "private": true,
+  "description": "Solo herramientas de prueba. La web se sirve tal cual, sin compilar.",
+  "scripts": {
+    "test": "playwright test",
+    "test:escritorio": "playwright test --project=escritorio",
+    "test:movil": "playwright test --project=movil"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.49.1"
+  }
+}
