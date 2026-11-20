@@ -189,3 +189,9 @@ table.rg td:first-child{white-space:nowrap}
 .guardado.ok{background:rgba(63,207,134,.13);color:var(--verde)}
 .guardado.guardando{background:var(--panel);color:var(--mut)}
 .guardado.error{background:rgba(255,107,94,.13);color:var(--rojo)}
+
+/* consola de la solución: a la izquierda en el ordenador, debajo de las opciones en el móvil */
+.solo-movil{display:none}
+@media (max-width:860px){.solo-escritorio{display:none!important}.resuelta .solo-movil{display:block}}
+/* en pantallas táctiles, sin efecto hover pegado al tocar */
+@media (hover:none){.op:not([disabled]):hover{border-color:var(--borde);background:var(--panel)}}

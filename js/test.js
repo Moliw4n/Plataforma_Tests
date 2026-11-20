@@ -156,10 +156,11 @@
     h += '<div class="izq"><div class="chips"><span class="tipo t-' + p.tipo + '">' + (NOMBRE_TIPO[p.tipo] || p.tipo) + '</span><span class="act">' + esc(p.act || '') + '</span></div>';
     h += '<p class="enun">' + esc(p.enun) + '</p>';
     h += '<pre class="codigo">' + conLineas(p.code) + '</pre>';
-    h += '<div class="solu"><div class="consola"><span class="et">LO QUE SALE DE VERDAD' +
+    const htmlConsola = '<div class="consola"><span class="et">LO QUE SALE DE VERDAD' +
          (p.tipo === 'hueco' ? ' (CON LA BUENA)' : '') +
          (p.stdin ? ' · EL USUARIO ESCRIBE ' + esc(p.stdin.trim().split('\n').join(', ')) : '') +
-         '</span><pre>' + consola(p.salida) + '</pre></div></div>';
+         '</span><pre>' + consola(p.salida) + '</pre></div>';
+    h += '<div class="solu solo-escritorio">' + htmlConsola + '</div>';
     h += '</div><div class="der">';
     const mono = p.tipo !== 'error';
     h += '<div class="ops">' + orden.map((oi, j) => {
@@ -171,9 +172,9 @@
         '<span class="l">' + LET[j] + '</span><span class="tx' + (mono ? ' mono' : '') + '">' + (p.tipo === 'hueco' ? pinta(p.ops[oi]) : esc(p.ops[oi])) + '</span>' +
         '<span class="marca-op">' + marca + '</span></button>';
     }).join('') + '</div>';
-    const bien = r && r.ok;
-    h += '<div class="veredicto ' + (bien ? 'bien' : 'fallo') + '"><span class="ico">' + (bien ? '✓' : '✗') + '</span>' + (bien ? '¡CORRECTO!' : 'NO ES ESA') + '</div>';
+    h += '<div class="veredicto"></div>';
     h += '<div class="solu">';
+    h += '<div class="solo-movil">' + htmlConsola + '</div>';
     if (p.sol) h += '<div class="caja porque"><b>POR QUÉ</b>' + esc(p.sol) + '</div>';
     if (p.trampa) h += '<div class="caja trampa"><b>LA TRAMPA</b>' + esc(p.trampa) + '</div>';
     if (T.chuleta && p.tema) h += '<button class="ver-chuleta" data-tema="' + esc(p.tema) + '">Repasar esto en la chuleta →</button>';
@@ -181,16 +182,31 @@
     E.innerHTML = h;
     E.querySelectorAll('.op:not([disabled])').forEach(b => b.onclick = () => responder(+b.dataset.oi));
     const vc = E.querySelector('.ver-chuleta'); if (vc) vc.onclick = () => abrirChuleta(vc.dataset.tema);
+    if (r) pintarVeredicto(r.ok);
     t0 = Date.now();
     actualizarBarra();
     window.scrollTo({ top: 0 });
+  }
+  function pintarVeredicto(bien) {
+    const v = E.querySelector('.veredicto');
+    v.className = 'veredicto ' + (bien ? 'bien' : 'fallo');
+    v.innerHTML = '<span class="ico">' + (bien ? '✓' : '✗') + '</span>' + (bien ? '¡CORRECTO!' : 'NO ES ESA');
   }
 
   function responder(oi) {
     if (resp[pos]) return;
     const p = lista[pos].p;
     resp[pos] = { id: p.id, elegida: oi, ok: oi === p.ok, ms: Date.now() - t0 };
-    ir(pos);
+    E.querySelectorAll('.op').forEach(b => {
+      const o = +b.dataset.oi;
+      b.disabled = true;
+      if (o === oi) b.classList.add('elegida', o === p.ok ? 'bien' : 'mal');
+      b.querySelector('.marca-op').textContent = o === p.ok ? '✓' : (o === oi ? '✗' : '');
+    });
+    pintarVeredicto(oi === p.ok);
+    E.querySelector('.q').classList.add('resuelta');
+    actualizarBarra();
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     // llevar la vista a la explicación, sin que la tape la barra de abajo
     setTimeout(() => {
       // baja solo lo justo para que se vea entera la explicación (sin pasarse del «¡Correcto!»)
