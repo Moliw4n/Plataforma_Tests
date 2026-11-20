@@ -215,7 +215,7 @@ table.rg td:first-child{white-space:nowrap}
 .guardado.profe{background:rgba(255,193,69,.12);color:var(--ambar)}
 .acciones a.btn{text-decoration:none}
 a.btn{color:var(--tinta)}
-/* logo KAIR0S: el cero en naranja, como el R0N0S de Kronos */
-.marca{color:var(--tinta)}
-.marca .k0{color:var(--naranja);font-weight:800}
-.marca span{color:var(--mut)}
+/* logo: la K de Kronos reflejada en turquesa + AIROS, alineado por abajo */
+.marca{display:flex;align-items:center;gap:8px;color:var(--mut)}
+.marca .logo-kairos{height:22px;width:auto;flex:none;display:block}
+.marca span{color:var(--mut);overflow:hidden;text-overflow:ellipsis}

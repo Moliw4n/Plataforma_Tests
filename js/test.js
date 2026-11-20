@@ -13,6 +13,7 @@ import { rpc } from './nucleo/api.js';
   const chipTipo = t => { const d = T && T.tipos && T.tipos[t];
     return d ? '<span class="tipo" style="background:var(--' + d.color + ')">' + esc(d.nombre) + '</span>'
              : '<span class="tipo t-' + t + '">' + (NOMBRE_TIPO[t] || t) + '</span>'; };
+  const LOGO_KAIROS = '<svg class="logo-kairos" viewBox="0 0 264 73" role="img" aria-label="Kairos"><use href="img/logo-kairos.svg#k"/><text x="88" y="72.4" font-family="Orbitron, sans-serif" font-weight="800" font-size="50" letter-spacing="6" fill="#eef2fb">AIROS</text></svg>';
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
   /* ---------- resaltado de Python ---------- */
@@ -61,7 +62,7 @@ import { rpc } from './nucleo/api.js';
       return;
     }
     document.title = T.titulo + ' · Kairos';
-    $('#marca').innerHTML = 'KAIR<b class="k0">0</b>S <span>· ' + esc(T.materia || '') + ' · ' + esc(T.titulo) + '</span>';
+    $('#marca').innerHTML = LOGO_KAIROS + ' <span>· ' + esc(T.materia || '') + ' · ' + esc(T.titulo) + '</span>';
     if (T.chuleta) prepararChuleta();
     if (MODO_PROFE) {
       document.body.classList.add('modo-profe');
