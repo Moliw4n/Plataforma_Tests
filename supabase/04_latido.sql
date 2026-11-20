@@ -1,5 +1,5 @@
 -- =====================================================================
--- Kairos · 04_latido.sql  (fase 0)
+-- Kiron · 04_latido.sql  (fase 0)
 -- «Latido» anti-pausa: el plan gratuito de Supabase pausa un proyecto tras una semana sin
 -- actividad. Una tarea de GitHub Actions llama a latido() cada 3 días y así nunca está quieto.
 -- Ejecutar en Supabase → SQL Editor → New query → Run. Se puede repetir sin romper nada.

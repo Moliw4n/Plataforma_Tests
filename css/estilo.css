@@ -231,5 +231,5 @@ table.rg td:first-child{white-space:nowrap}
 a.btn{color:var(--tinta)}
 /* logo: la K de Kronos reflejada en turquesa + AIROS, alineado por abajo */
 .marca{display:flex;align-items:center;gap:8px;color:var(--mut)}
-.marca .logo-kairos{height:22px;width:auto;flex:none;display:block}
+.marca .logo-kiron{height:22px;aspect-ratio:226/73;width:auto;flex:none;display:block}   /* proporción del viewBox de img/logo-kiron.svg */
 .marca span{color:var(--mut);overflow:hidden;text-overflow:ellipsis}

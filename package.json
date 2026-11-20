@@ -1,5 +1,5 @@
 {
-  "name": "kairos-pruebas",
+  "name": "kiron-pruebas",
   "private": true,
   "description": "Solo herramientas de prueba. La web se sirve tal cual, sin compilar.",
   "scripts": {

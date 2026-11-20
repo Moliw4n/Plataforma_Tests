@@ -20,7 +20,7 @@
   window.ENTORNO = nombre;
   if (!ENTORNOS[nombre]) {
     // Pidieron pruebas pero no está configurado: mejor sin conexión que tocar los datos reales.
-    console.warn('Kairos: el entorno «' + nombre + '» no está configurado. Sin conexión a Supabase.');
+    console.warn('Kiron: el entorno «' + nombre + '» no está configurado. Sin conexión a Supabase.');
     window.CONFIG = null;
   } else window.CONFIG = ENTORNOS[nombre];
 })();

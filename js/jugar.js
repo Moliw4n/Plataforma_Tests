@@ -1,4 +1,4 @@
-/* Kairos · página del alumno (el «runner»)
+/* Kiron · página del alumno (el «runner»)
    Abre: jugar.html?t=<id-del-test>   (carga tests/<id>.json; test.html es un alias que reenvía aquí) · &modo=profe = sin código y sin guardar.
    Carga el contenido, pone la cabecera y la chuleta, pide el código y entrega el control al MODO
    que corresponda (por ahora siempre `practica`). El contrato de los modos está en nucleo/modos.js. */
@@ -12,7 +12,7 @@ import { pintar as pintarOpcionMultiple } from './nucleo/preguntas/opcion_multip
 (function () {
   'use strict';
   const $ = s => document.querySelector(s);
-  const LOGO_KAIROS = '<svg class="logo-kairos" viewBox="0 0 264 73" role="img" aria-label="Kairos"><use href="img/logo-kairos.svg#k"/><text x="88" y="72.4" font-family="Orbitron, sans-serif" font-weight="800" font-size="50" letter-spacing="6" fill="#eef2fb">AIROS</text></svg>';
+  const LOGO_KIRON = '<svg class="logo-kiron" role="img" aria-label="Kiron"><use href="img/logo-kiron.svg#logo"/></svg>';   // el logo se define en img/logo-kiron.svg; aquí solo se referencia
   const CFG = window.CONFIG || null;
   // Modo profesor (…&modo=profe): sin código y sin guardar nada.
   const MODO_PROFE = new URLSearchParams(location.search).get('modo') === 'profe';
@@ -37,8 +37,8 @@ import { pintar as pintarOpcionMultiple } from './nucleo/preguntas/opcion_multip
       E.innerHTML = '<div class="cargando">Este test necesita algo que todavía no está disponible. Avisa a tu profesor.</div>';
       return;
     }
-    document.title = T.titulo + ' · Kairos';
-    $('#marca').innerHTML = LOGO_KAIROS + ' <span>· ' + esc(T.materia || '') + ' · ' + esc(T.titulo) + '</span>';
+    document.title = T.titulo + ' · Kiron';
+    $('#marca').innerHTML = LOGO_KIRON + ' <span>· ' + esc(T.materia || '') + ' · ' + esc(T.titulo) + '</span>';
     ctx = {
       alumno: null, juego: null, contenido: T,
       api: { rpc },

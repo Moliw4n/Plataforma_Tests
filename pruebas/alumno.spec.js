@@ -363,7 +363,7 @@ test.describe('enlaces que ya tienen los alumnos', () => {
     await expect(page.locator('#bChuleta')).toBeVisible();
     await page.click('#bEmpezar');
     await expect(page.locator('#contador')).toHaveText('1/' + T1.preguntas.length);
-    await expect(page).toHaveTitle(/Kairos/);
+    await expect(page).toHaveTitle(/Kiron/);
   });
 
   test('un test que no existe da un mensaje, no una página rota', async ({ page, servidor }) => {

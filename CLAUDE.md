@@ -1,8 +1,8 @@
-# Kairos — guía para Claude
+# Kiron — guía para Claude
 
-Kairos es la plataforma de tests y juegos de Mario Molina (IES Santa Bárbara, La Felguera) para
+Kiron es la plataforma de tests y juegos de Mario Molina (IES Santa Bárbara, La Felguera) para
 sus alumnos. Es la pareja de **Kronos**, su cuaderno del profesor (`~/Development/Kronos-aula`):
-Kronos es la cabina de mando, Kairos el gimnasio de los alumnos.
+Kronos es la cabina de mando, Kiron el gimnasio de los alumnos.
 
 **Antes de trabajar en algo grande, lee `docs/plan-entrenador.md`** (visión, arquitectura, fases).
 La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-tests.md`.
@@ -55,7 +55,7 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
 ## Estilo
 - Interfaz y mensajes en español, cercanos y claros para alumnos de 16-17 años.
 - Visual: fondo oscuro `#0f1830`, Orbitron para títulos, Raleway para texto (fuentes locales en
-  `fonts/`, no Google), etiquetas de color por tipo de pregunta. Logo `KAIR0S` con el cero naranja.
+  `fonts/`, no Google), etiquetas de color por tipo de pregunta. Logo de Kiron: la K de Kronos reflejada + «IRON», todo en turquesa `#2ed3c0`, definido solo en `img/logo-kiron.svg` (las páginas lo referencian con `<use>`; los iconos llevan solo la K).
 - Cada pregunta lleva `sol` (por qué) y `trampa`: es la seña de identidad.
 
 ## Calendario

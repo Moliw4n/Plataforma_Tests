@@ -1,8 +1,6 @@
-# Kairos (el Entrenador) — plan de reorganización y de juegos
+# Kiron (el Entrenador) — plan de reorganización y de juegos
 
-> **Nombre**: la plataforma se llama **Kairos**. Los griegos tenían dos palabras para el tiempo:
-> *chronos*, el que se mide, y *kairos*, el momento oportuno. Kronos mide; Kairos es el
-> momento de aprender. Logo con el mismo truco que Kronos: KAIR0S, con el cero en naranja.
+> **Nombre**: La plataforma se llama Kiron (Quirón, en griego Kheiron). En la mitología es hijo de Kronos y el gran entrenador de héroes: educó a Aquiles, Jasón y Asclepio. Kronos es el cuaderno del profesor; Kiron entrena a los alumnos, que son los héroes en formación.
 
 > Documento de planificación (20 nov 2026). Recoge la ambición del proyecto y lo que hay que
 > hacer **antes** de construir juegos para que cada juego nuevo sea poco trabajo.

@@ -1,5 +1,5 @@
 -- =====================================================================
--- Kairos · 05_datos_prueba.sql  (fase 0)
+-- Kiron · 05_datos_prueba.sql  (fase 0)
 -- SOLO PARA EL PROYECTO DE PRUEBAS. Crea un grupo y 5 alumnos INVENTADOS para ensayar.
 -- Ejecutar después de 01_esquema.sql y 03_profesor_alumnos.sql. Se puede repetir.
 --

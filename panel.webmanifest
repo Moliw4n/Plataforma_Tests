@@ -1,6 +1,6 @@
 {
-  "name": "Kairos · Panel del profesor",
-  "short_name": "Kairos",
+  "name": "Kiron · Panel del profesor",
+  "short_name": "Kiron",
   "start_url": "panel.html",
   "scope": "./",
   "display": "standalone",

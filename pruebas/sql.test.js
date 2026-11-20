@@ -48,7 +48,7 @@ async function como(c, rol, sql, params) {
 
 test.before(async () => {
   PUERTO = await libre();
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kairos-pg-'));
+  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kiron-pg-'));
   pg = new EmbeddedPostgres({ databaseDir: dir, user: 'postgres', password: 'postgres', port: PUERTO, persistent: false });
   await pg.initialise(); await pg.start();
 });
