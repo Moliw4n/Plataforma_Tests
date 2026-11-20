@@ -35,7 +35,7 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
   la simulación es automática), `npm run test:sql` (Postgres local embebido), `npm run test:latido`.
   GitHub Actions las lanza en cada subida (`.github/workflows/pruebas.yml`); `latido.yml` llama a
   `latido()` cada 3 días (solo corre desde `main`).
-- Fallo conocido sin arreglar: en modo profe en móvil la cabecera no cabe (prueba marcada `fixme`).
+- Modo profe en móvil: cabecera ajustada a 390 y 360 px (CHULETA solo icono en ≤ 430 px); la cubre `pruebas/alumno.spec.js`.
 
 ## Reglas que no se negocian
 1. **Ningún dato personal en internet.** El alumno es `GRUPO-nn` + un código de 6 caracteres

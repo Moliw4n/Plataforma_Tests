@@ -10,7 +10,8 @@ const path = require('path');
 const EmbeddedPostgres = require('embedded-postgres').default;
 const { Client } = require('pg');
 
-const PUERTO = 54329;
+let PUERTO;   // se elige un puerto libre al arrancar
+const libre = () => new Promise((ok, mal) => { const srv = require('net').createServer(); srv.listen(0, '127.0.0.1', () => { const p = srv.address().port; srv.close(() => ok(p)); }); srv.on('error', mal); });
 const SQL = f => fs.readFileSync(path.join(__dirname, '..', 'supabase', f), 'utf8');
 const PRELUDIO = `
   do $r$ begin
@@ -46,6 +47,7 @@ async function como(c, rol, sql, params) {
 }
 
 test.before(async () => {
+  PUERTO = await libre();
   dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kairos-pg-'));
   pg = new EmbeddedPostgres({ databaseDir: dir, user: 'postgres', password: 'postgres', port: PUERTO, persistent: false });
   await pg.initialise(); await pg.start();
