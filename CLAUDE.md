@@ -59,5 +59,6 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
 - Cada pregunta lleva `sol` (por qué) y `trampa`: es la seña de identidad.
 
 ## Calendario
-- Examen de Python de TDA II el **25 nov 2026**. Hasta entonces, cambios grandes en una rama
-  aparte; en `main` solo arreglos pequeños.
+- Examen de Python de TDA II el **25 nov 2026**: es solo una fecha de referencia; **ya no hay
+  congelación de `main`**. Mientras haya alumnos usando la plataforma, lo grande se hace igualmente
+  en una rama aparte con las pruebas en verde, y solo se sube a `main` con el visto bueno del usuario.
