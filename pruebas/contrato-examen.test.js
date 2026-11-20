@@ -31,9 +31,9 @@ test.before(async () => {
   await c.query("insert into grupos(id, nombre) values ('TDA2', 'TDA II'), ('TDA1', 'TDA I')");
   await c.query("insert into alumnos(id, grupo, codigo_hash) values ('TDA2-01', 'TDA2', public._hash_codigo('AAA222')), ('TDA1-01', 'TDA1', public._hash_codigo('CCC444'))");
   await comoUsuario(c, PROFE, 'select public.profe_subir_banco($1::jsonb)', [JSON.stringify(bancoDePrueba())]);
-  await comoUsuario(c, PROFE, 'select public.profe_crear_juego($1::jsonb)', [JSON.stringify({ id: 'ex', modo: 'examen', titulo: 'Examen de prueba', bancos: ['grande'], reglas: { preguntas: 6, tiempo_min: 20 } })]);
+  await comoUsuario(c, PROFE, 'select public.profe_crear_juego($1::jsonb)', [JSON.stringify({ id: 'ex', modo: 'examen', titulo: 'Examen de prueba', bancos: ['grande'], reglas: { preguntas: 12, tiempo_min: 20 } })]);   // las 12 del banco: así salen TODOS los tipos y no depende del azar
   await comoUsuario(c, PROFE, "select public.profe_asignar('ex', 'TDA2', null, null, 1, true)");
-  falso = await crearServidorFalso({ asignacion: { mostrar_soluciones: true } });
+  falso = await crearServidorFalso({ asignacion: { mostrar_soluciones: true }, reglas: { preguntas: 12 }, ids: ['t1mc', 't2mc', 't1vf', 't1n', 't2c', 't3mc', 't1fija', 't2fija', 't3fija', 't2vf', 't3vf', 't3n'] });
 });
 test.after(parar);
 
@@ -74,7 +74,7 @@ test('el falso y el SQL real responden con la misma forma en cada paso del exame
   await ambos('empezar_partida (reanudar)', () => real('empezar_partida', cod, asg), () => falso.llamar('empezar_partida', { p_codigo: cod, p_asignacion: 1 }));
   // 3) responder: cada tipo, bien y rechazado
   const dadaPara = i => i.tipo === 'opcion_multiple' ? 0 : i.tipo === 'verdadero_falso' ? true : 'texto';
-  const ires = er.items[0], ifal = ef.items[0];
+  const ires = er.items.find(i => i.tipo === 'opcion_multiple'), ifal = ef.items.find(i => i.tipo === 'opcion_multiple');   // una de opción múltiple: 'x' es un dato malo ahí
   await ambos('responder', () => real('responder', cod, er.partida, ires.clave, dadaPara(ires), 1234), () => falso.llamar('responder', { p_codigo: cod, p_partida: ef.partida, p_item: ifal.clave, p_dada: dadaPara(ifal), p_ms: 1234 }));
   await ambos('responder (dato malo)', () => real('responder', cod, er.partida, ires.clave, 'x', null), () => falso.llamar('responder', { p_codigo: cod, p_partida: ef.partida, p_item: ifal.clave, p_dada: 'x', p_ms: null }));
   await ambos('responder (item que no está)', () => real('responder', cod, er.partida, 'grande/nada', 1, null), () => falso.llamar('responder', { p_codigo: cod, p_partida: ef.partida, p_item: 'grande/nada', p_dada: 1, p_ms: null }));
@@ -90,6 +90,6 @@ test('el falso y el SQL real responden con la misma forma en cada paso del exame
   await ambos('empezar_partida (sin intentos)', () => real('empezar_partida', cod, asg), () => falso.llamar('empezar_partida', { p_codigo: cod, p_asignacion: 1 }));
   await comoUsuario(c, PROFE, 'select public.profe_publicar_notas($1::bigint, true)', [asg]); falso.publicarNotas(true);
   const { r: pr } = await ambos('mi_resultado (publicado, con revisión)', () => real('mi_resultado', cod, er.partida), () => falso.llamar('mi_resultado', { p_codigo: cod, p_partida: ef.partida }));
-  assert.ok(Array.isArray(pr.revision) && pr.revision.length === 6);
+  assert.ok(Array.isArray(pr.revision) && pr.revision.length === 12);
   await ambos('mis_juegos (con nota publicada)', () => real('mis_juegos', cod), () => falso.llamar('mis_juegos', { p_codigo: cod }));
 });

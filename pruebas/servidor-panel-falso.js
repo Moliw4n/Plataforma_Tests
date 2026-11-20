@@ -44,6 +44,7 @@ async function crearServidorPanel(datos = {}) {
     const nombre = m[1];
     if (nombre.startsWith('rpc')) return error(404, 'no encontrado');
     const tabla = TABLAS[nombre]; if (!tabla) return error(404, 'tabla desconocida');
+    if (S.sinExamenes && ['bancos', 'juegos', 'asignaciones'].includes(nombre)) return error(404, 'Could not find the table public.' + nombre + ' in the schema cache', { code: 'PGRST205' });   // aún no se ejecutaron los SQL 06-08
     if (S.noEsProfesor) return { status: 200, body: [] };                         // RLS: una sesión que no es profesor ve 0 filas
     const select = url.searchParams.get('select');
     if (nombre === 'alumnos' && (!select || select.includes('*') || select.includes('codigo_hash'))) return error(403, 'permission denied for table alumnos');
@@ -128,4 +129,29 @@ function intentosDePrueba() {
   ];
 }
 
-module.exports = { crearServidorPanel, intentosDePrueba, EMAIL, CLAVE };
+// Un examen ya hecho por parte del grupo TDA2: lo que devolverían profe_resultados y profe_estadisticas_examen (misma forma que el SQL real)
+function datosExamen() {
+  const respuestas = (...estados) => estados.map((e, k) => ({ id: 'u1/q' + (k + 1), respondida: e !== 'blanco', ok: e === 'ok', dada: e === 'blanco' ? null : k % 2, ms: e === 'blanco' ? null : 3000 + k * 1000 }));
+  const ev = (salidas = 0, fuera = 0, recargas = 0, sin_red = 0) => ({ salidas, vueltas: salidas, recargas, sin_red, segundos_fuera: fuera });
+  const P = (partida, alumno, estado, nota, acier, seg, eventos, resp, intento = 1) => ({ partida, alumno, juego: 'ex1', intento, estado, empezada: '2026-11-25T09:00:00+00:00',
+    terminada: estado === 'en_curso' ? null : '2026-11-25T09:25:00+00:00', segundos: estado === 'en_curso' ? null : seg, total: estado === 'en_curso' ? null : 4, aciertos: estado === 'en_curso' ? null : acier,
+    nota, puntos: 0, por_criterio: { '2.1': 0.5 }, eventos, respuestas: resp });
+  const pregunta = (n, enun, tipo, tema, aciertos, fallos, blancos, reparto) => ({ clave: 'u1/q' + n, enun, tipo, tema, criterio: '2.1', n: aciertos + fallos + blancos, respondidas: aciertos + fallos, aciertos, fallos, blancos,
+    pct_fallo: Math.round((fallos + blancos) / (aciertos + fallos + blancos) * 1000) / 10, ms_tipico: 4000 + n * 1000, reparto: reparto || null });
+  return {
+    bancos: [{ id: 'u1', titulo: 'Banco U1 · Python', materia: 'TDA II', unidad: 'U1', version: 1 }],
+    juegos: [{ id: 'ex1', modo: 'examen', titulo: 'Examen U1 · Python', bancos: ['u1'], reglas: { preguntas: 20, tiempo_min: 30, penalizacion: 0, equilibrar: 'tema' } }],
+    asignaciones: [{ id: 1, juego: 'ex1', grupo: 'TDA2', desde: null, hasta: null, intentos: 1, mostrar_soluciones: false, notas_publicadas: false }],
+    resultados: { 1: { partidas: [
+      P('aaaaaaaa-0000-4000-8000-000000000001', 'TDA2-01', 'entregada', 7.5, 3, 1500, ev(2, 42), respuestas('ok', 'ok', 'mal', 'ok')),
+      P('aaaaaaaa-0000-4000-8000-000000000002', 'TDA2-02', 'en_curso', null, null, null, ev(0, 0, 1), respuestas('ok', 'blanco', 'blanco', 'blanco'))
+    ] } },
+    estadisticas: { 1: [
+      pregunta(3, 'La pregunta más fallada', 'opcion_multiple', 'bucles', 0, 1, 0, [{ texto: 'opción uno', veces: 0, correcta: true }, { texto: 'la trampa', veces: 1, correcta: false }, { texto: 'opción tres', veces: 0, correcta: false }, { texto: 'opción cuatro', veces: 0, correcta: false }]),
+      pregunta(1, 'Una pregunta fácil', 'verdadero_falso', 'variables', 1, 0, 0),
+      pregunta(2, 'Otra pregunta', 'respuesta_corta', 'cadenas', 1, 0, 0)
+    ] }
+  };
+}
+
+module.exports = { crearServidorPanel, intentosDePrueba, datosExamen, EMAIL, CLAVE };

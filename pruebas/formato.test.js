@@ -6,7 +6,9 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const RAIZ = path.join(__dirname, '..');
-const leer = id => JSON.parse(fs.readFileSync(path.join(RAIZ, 'tests', id + '.json'), 'utf8'));
+// Las pruebas de CONVERSIÓN parten de copias congeladas del formato 1 (los de tests/ ya están en formato 2)
+const leer = id => JSON.parse(fs.readFileSync(path.join(__dirname, 'datos', id + '.formato1.json'), 'utf8'));
+const leerDisco = id => JSON.parse(fs.readFileSync(path.join(RAIZ, 'tests', id + '.json'), 'utf8'));
 const IDS = JSON.parse(fs.readFileSync(path.join(RAIZ, 'tests', 'index.json'), 'utf8')).map(t => t.id);
 let F;
 test.before(async () => { F = await import(path.join(RAIZ, 'js', 'nucleo', 'formato.js')); });
@@ -14,7 +16,17 @@ const clon = o => JSON.parse(JSON.stringify(o));
 
 test('el índice y los archivos de tests coinciden', () => {
   assert.ok(IDS.length >= 2);
-  for (const id of IDS) assert.equal(leer(id).id, id);
+  for (const id of IDS) assert.equal(leerDisco(id).id, id);
+});
+
+test('los tests de tests/*.json están en formato 2, son válidos y equivalen exactamente al formato 1 de siempre', () => {
+  for (const id of IDS) {
+    const t = leerDisco(id);
+    assert.equal(t.formato, 2, id);
+    assert.deepEqual(F.validarBanco(t), [], id);
+    assert.deepEqual(F.aFormato1(t), leer(id), id + ': el formato 2 de disco pierde algo respecto al formato 1');
+    assert.deepEqual(t, F.aFormato2(leer(id)), id + ': no coincide con convertir el antiguo');
+  }
 });
 
 for (const id of ['tda2-u1-python-practica', 'tda1-u1u2-repaso']) {
@@ -51,7 +63,7 @@ for (const id of ['tda2-u1-python-practica', 'tda1-u1u2-repaso']) {
     });
 
     test('la herramienta de línea de órdenes valida y comprueba', () => {
-      const f = path.join(RAIZ, 'tests', id + '.json');
+      const f = path.join(__dirname, 'datos', id + '.formato1.json');
       for (const orden of ['validar', 'comprobar']) {
         const r = spawnSync('node', ['scripts/formato.mjs', orden, f], { cwd: RAIZ, encoding: 'utf8' });
         assert.equal(r.status, 0, r.stderr + r.stdout);

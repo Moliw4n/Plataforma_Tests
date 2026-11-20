@@ -2,6 +2,9 @@
    - Entra con tu usuario de Supabase (correo + contraseña).
    - Los NOMBRES reales salen de tu CSV privado y solo se guardan en este navegador
      (localStorage). Nunca se envían a Supabase ni a ningún sitio. */
+import { aFormato2 } from './nucleo/formato.js';
+import { crearExamenes } from './panel-examenes.js';
+
 (function () {
   'use strict';
   const $ = s => document.querySelector(s);
@@ -9,7 +12,7 @@
   const LET = 'ABCD';
   const NOMBRE_TIPO = { imprime: '¿Qué imprime?', error: 'Encuentra el error', hueco: 'Completa el hueco' };
   const TESTS_CONOCIDOS = ['tda2-u1-python-practica', 'tda1-u1u2-repaso'];
-  const chipTipo = (T, t) => { const d = T && T.tipos && T.tipos[t];
+  const chipTipo = (T, t) => { const d = T && T.categorias && T.categorias[t];
     return d ? '<span class="tipo" style="background:var(--' + d.color + ')">' + esc(d.nombre) + '</span>'
              : '<span class="tipo t-' + t + '">' + (NOMBRE_TIPO[t] || t) + '</span>'; };
   const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -31,6 +34,7 @@
   /* ---------- estado ---------- */
   let ses = null;                 // {token, refresh, email, exp}
   let grupos = [], alumnos = [], intentos = [];
+  let EX = null;                  // el módulo de exámenes (null si en esta base aún no están instalados los SQL 06-08)
   const tests = {};               // id -> test JSON
   let nombres = guarda.get('pt_nombres', {});   // 'TDA2-07' -> 'Nombre'
   const f = guarda.get('pt_filtros', { grupo: '', test: '', vista: 'inicio', soloPrimero: false });
@@ -64,7 +68,11 @@
       if (reintento && await renovar()) return api(ruta, opciones, false);
       cerrarSesion('Tu sesión ha caducado. Vuelve a entrar.'); throw new Error('401');
     }
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+    if (!r.ok) {
+      const e = new Error('HTTP ' + r.status);
+      try { e.detalle = (await r.json()).message || ''; } catch (x) { e.detalle = ''; }   // el motivo que da el servidor (p. ej. «banco_en_uso»)
+      e.status = r.status; throw e;
+    }
     return r.status === 204 ? null : r.json();
   }
 
@@ -127,10 +135,13 @@
     try { const r = await fetch('tests/index.json', { cache: 'no-cache' }); if (r.ok) indice = (await r.json()).map(t => t.id); } catch (e) {}
     const ids = [...new Set([...indice, ...TESTS_CONOCIDOS, ...intentos.map(i => i.test_id)])];
     await Promise.all(ids.map(async id => {
-      try { const r = await fetch('tests/' + encodeURIComponent(id) + '.json', { cache: 'no-cache' }); if (r.ok) tests[id] = await r.json(); } catch (e) {}
+      try { const r = await fetch('tests/' + encodeURIComponent(id) + '.json', { cache: 'no-cache' }); if (r.ok) tests[id] = aFormato2(await r.json()); } catch (e) {}
     }));
     if (!grupos.some(g => g.id === f.grupo)) f.grupo = grupos[0].id;
     if (!ids.includes(f.test)) f.test = testDelGrupo(ids);
+    try { EX = crearExamenes(P); if (!await EX.cargar()) EX = null; }   // sin las tablas de exámenes, el panel funciona exactamente como antes
+    catch (e) { return; }                                                // 401: ya se ha pedido entrar otra vez
+    if (EX === null && (f.vista === 'gestion' || f.vista === 'examen')) f.vista = 'inicio';
     pintar();
   }
 
@@ -173,6 +184,8 @@
   function pintar() {
     guarda.set('pt_filtros', f);
     if (f.vista === 'inicio') return pintarInicio();
+    if (EX && f.vista === 'gestion') return EX.pintarGestion();
+    if (EX && f.vista === 'examen') return EX.pintarResultados();
     const T = tests[f.test];
     const hayNombres = Object.keys(nombres).length > 0;
     const fs = filas();
@@ -241,7 +254,7 @@
     return ids.filter(id => id.toUpperCase().startsWith(g.toUpperCase() + '-'));
   }
   function pintarInicio() {
-    let h = '<div class="inicio-cab"><h1>Hola 👋</h1><button class="btn" id="bRecargar">↻ Actualizar</button></div>';
+    let h = '<div class="inicio-cab"><h1>Hola 👋</h1><span class="espacio"></span>' + (EX ? '<button class="btn" id="bGestion">⚙ Gestionar exámenes</button>' : '') + '<button class="btn" id="bRecargar">↻ Actualizar</button></div>';
     h += grupos.map(g => {
       const als = alumnos.filter(a => a.grupo === g.id && a.activo);
       const ids = new Set(als.map(a => a.id));
@@ -267,10 +280,12 @@
               '<button class="btn" data-copiar="' + esc(enlaceAlumno(id)) + '">🔗 Enlace</button>' +
             '</div></div>';
         }).join('') : '<div class="vacio">Este grupo todavía no tiene tests.</div>') +
+        (EX ? EX.tarjetas(g.id) : '') +
       '</section>';
     }).join('');
     app.innerHTML = h;
     $('#bRecargar').onclick = arrancar;
+    if (EX) EX.enlazarInicio();
     app.querySelectorAll('[data-res]').forEach(b => b.onclick = () => {
       const [g, t] = b.dataset.res.split('|'); f.grupo = g; f.test = t; f.vista = 'alumnos'; pintar(); window.scrollTo({ top: 0 });
     });
@@ -352,7 +367,7 @@
       const peorOp = reparto.filter(x => p && x.j !== p.ok).sort((a, b) => b.c - a.c)[0];
       return '<div class="pfila">' +
         '<div>' +
-          '<div class="cab-p"><span class="idp">' + esc(s.id.toUpperCase()) + '</span>' + (p ? chipTipo(T, p.tipo) + '<span class="act">' + esc(p.act) + '</span>' : '') + '</div>' +
+          '<div class="cab-p"><span class="idp">' + esc(s.id.toUpperCase()) + '</span>' + (p ? chipTipo(T, p.categoria) + '<span class="act">' + esc(p.act) + '</span>' : '') + '</div>' +
           (p ? '<div class="enun-p">' + esc(p.enun) + '</div><details><summary>Ver ' + (p.code ? 'código y ' : '') + 'opciones</summary>' + (p.code ? '<pre class="codigo">' + esc(p.code) + '</pre>' : '') +
             '<div class="reparto" style="margin-top:10px">' + reparto.map(x => '<div class="' + (x.j === p.ok ? 'ok' : '') + '"><span class="l">' + LET[x.j] + '</span><code style="white-space:pre-wrap;font-size:13px">' + esc(x.o) + '</code><span>' + x.c + '</span></div>').join('') + '</div></details>' : '<div class="enun-p">(pregunta que ya no está en el test)</div>') +
           (peorOp && peorOp.c ? '<div class="trampa-mas"><b>LA RESPUESTA EQUIVOCADA MÁS ELEGIDA · ' + peorOp.c + ' VECES</b><code>' + esc(peorOp.o) + '</code></div>' : '') +
@@ -405,7 +420,7 @@
       caja.querySelectorAll('.mapa button').forEach(o => o.classList.toggle('on', o === b));
       ver.hidden = false;
       ver.innerHTML = !p ? 'Esta pregunta ya no está en el test.' :
-        '<div class="cab-p">' + chipTipo(T, p.tipo) + ' <b>' + esc(p.enun) + '</b></div>' +
+        '<div class="cab-p">' + chipTipo(T, p.categoria) + ' <b>' + esc(p.enun) + '</b></div>' +
         (p.code ? '<pre class="codigo" style="font-size:14px;padding:10px 12px">' + esc(p.code) + '</pre>' : '') +
         p.ops.map((o, j) => '<div class="op-mini' + (j === p.ok ? ' ok' : '') + (j === r.elegida ? ' elegida' + (r.ok ? '' : ' mal') : '') + '"><b>' + LET[j] + '</b><code>' + esc(o) + '</code><span class="m">' + (j === r.elegida ? (r.ok ? '✓ eligió esta' : '✗ eligió esta') : (j === p.ok ? '✓ correcta' : '')) + '</span></div>').join('') +
         '<div class="dato-p">Tardó ' + fmtSeg((r.ms || 0) / 1000) + ' en contestar.</div>';
@@ -414,9 +429,9 @@
     capa.classList.add('on');
   }
 
-  function confirmar(texto) {
+  function confirmar(texto, boton = 'Borrar', peligro = true) {
     return new Promise(res => {
-      const d = $('#dialogo'); $('#dlgTexto').textContent = texto; d.hidden = false; $('#dlgNo').focus();
+      const d = $('#dialogo'); $('#dlgTexto').textContent = texto; $('#dlgSi').textContent = boton; $('#dlgSi').classList.toggle('peligro', peligro); d.hidden = false; $('#dlgNo').focus();
       const fin = v => { d.hidden = true; res(v); };
       $('#dlgSi').onclick = () => fin(true); $('#dlgNo').onclick = () => fin(false);
     });
@@ -465,6 +480,15 @@
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   }
+
+  /* ---------- lo que comparte con el módulo de exámenes (js/panel-examenes.js) ---------- */
+  function abrirModal(titulo, html) { $('#tituloDetalle').textContent = titulo; $('#cuerpoDetalle').innerHTML = html; capa.classList.add('on'); return $('#cuerpoDetalle'); }
+  const P = {
+    app, esc, api, confirmar, abrirModal, cerrarModal: () => capa.classList.remove('on'), f, guarda,
+    pintar: () => pintar(), recargar: () => arrancar(),
+    grupos: () => grupos, alumnos: () => alumnos, tests: () => tests,
+    nombreDe, numDe, fmtNota, fmtNotaTxt, fmtSeg, fmtFecha, media, haceCuanto, chipTipo
+  };
 
   /* ---------- inicio ---------- */
   ses = sesionTab.get();

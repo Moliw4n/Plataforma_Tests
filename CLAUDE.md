@@ -29,12 +29,15 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
     Cada preg. se contesta por POSICIÓN; se puede cambiar hasta entregar; si se corta internet las respuestas esperan y se reenvían solas;
     recargar reanuda; salir de la pestaña se anota (`evento`). Los renderizadores de `preguntas/` aceptan `examen: true` (sin corrección a la vista).
   - `js/config.js` — entornos: producción por defecto; `?entorno=pruebas` solo desde localhost.
-  - `js/panel.js`, `css/estilo.css`, `css/panel.css`.
+  - `js/panel.js` (módulo ES) y `js/panel-examenes.js`: la parte de EXÁMENES del panel (subir bancos desde un archivo del
+    ordenador, crear un examen, asignarlo a un grupo, ver resultados y salidas de pestaña, publicar notas, estadísticas). Si en la
+    base aún no se han ejecutado los SQL 06-08, el panel funciona exactamente como antes. `css/estilo.css`, `css/panel.css`.
 - Contenido: `tests/index.json` (lista) y `tests/<id>.json`; chuletas en `chuletas/*.html`.
   **Formato 2** (`js/nucleo/formato.js`): `tipo` = tipo de pregunta (`opcion_multiple`, …) y `categoria` = la
   etiqueta de color de antes (`imprime`, `error`, `hueco`…); metadatos opcionales `dificultad` (1-3), `criterio`,
-  `etiquetas`. Los archivos de `tests/` siguen en **formato 1** (el panel los lee así) y la web los convierte al
-  cargar con `aFormato2()` (idempotente). Herramienta: `npm run formato -- validar|comprobar|convertir <archivo>`.
+  `etiquetas`. Los archivos de `tests/` están en **formato 2** (cambio de significado de `tipo` para Kronos: ver
+  `docs/formato-contenido.md`); la web y el panel normalizan siempre al cargar con `aFormato2()` (idempotente, acepta también el
+  formato 1; las copias congeladas del formato 1 para las pruebas están en `pruebas/datos/`). Herramienta: `npm run formato -- validar|comprobar|convertir <archivo>`.
   **Tipos de pregunta que se juegan hoy** (`js/nucleo/preguntas/index.js`, cada uno con `pintar` y `corregir`):
   `opcion_multiple` (`ops`, `ok`), `verdadero_falso` (`ok: true|false`), `numerica` (`valor`, `tolerancia?`, `unidad?`),
   `respuesta_corta` (`aceptadas[]`, `pista?`). En lo guardado, opción múltiple usa `elegida` y los demás `dada`.
@@ -47,6 +50,7 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
   `06_contenido.sql` (fase 1: `bancos`, `items` con soluciones, `juegos`, `asignaciones`, `partidas`, `respuestas`, `eventos`; RLS cerrada,
   el profesor solo LEE las tablas y escribe con `profe_subir_banco`, `profe_crear_juego`, `profe_asignar`, `profe_publicar_notas`…).
   La validación de preguntas de SQL (`_validar_item`) y la de JS (`validarBanco`) deben coincidir: lo comprueba `npm run test:sql`.
+  `08_panel_examen.sql` (fase 1: `profe_resultados` en el resultado normalizado, `profe_estadisticas_examen`, `profe_borrar_partida`),
   `07_examen.sql` (fase 1: funciones del ALUMNO, siempre con su código: `mis_juegos`, `empezar_partida` (elige y baraja las
   preguntas, reanuda si había una en marcha), `responder` (corrige en el servidor y NO dice si acertó), `evento`,
   `terminar_partida`, `mi_resultado` (la nota solo se ve si el profesor la publica)). Lo que ve el alumno sale de una LISTA BLANCA
@@ -57,7 +61,8 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
 - Pruebas (`pruebas/`): `npm test` (Playwright a 1280 y 390 px, Supabase simulado: nunca toca el real;
   la simulación es automática; el examen se prueba con `pruebas/servidor-examen-falso.js`), `npm run test:sql` (Postgres local embebido,
   incluye `contrato-examen.test.js`: el servidor falso y el SQL real deben responder con la MISMA FORMA; si cambias una función de 07, cambia también el falso), `npm run test:latido`,
-  `npm run test:formato`, `npm run test:preguntas`.
+  `npm run test:formato`, `npm run test:preguntas`. El panel se prueba con `pruebas/servidor-panel-falso.js` (login, tablas y
+  funciones `profe_*`; `contrato-panel.test.js` comprueba que tiene la misma forma que el SQL real).
   GitHub Actions las lanza en cada subida (`.github/workflows/pruebas.yml`); `latido.yml` llama a
   `latido()` cada 3 días (solo corre desde `main`).
 - Modo profe en móvil: cabecera ajustada a 390 y 360 px (CHULETA solo icono en ≤ 430 px); la cubre `pruebas/alumno.spec.js`.

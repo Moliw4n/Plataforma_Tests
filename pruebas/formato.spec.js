@@ -1,10 +1,12 @@
 /* La web juega tests en formato 1 y en formato 2 exactamente igual. */
 const { test, expect, entrar, hacerTest, cargarTest, CODIGO_BUENO } = require('./fixtures');
 const path = require('path');
+const fs = require('fs');
 const { pathToFileURL } = require('url');
 
 const ID = 'tda2-u1-python-practica';
-const T1 = cargarTest(ID);
+const T1 = cargarTest(ID);                                                   // el de disco (formato 2)
+const T1_VIEJO = JSON.parse(fs.readFileSync(path.join(__dirname, 'datos', ID + '.formato1.json'), 'utf8'));   // el formato 1 de siempre
 let F;
 test.beforeAll(async () => { F = await import(pathToFileURL(path.join(__dirname, '..', 'js', 'nucleo', 'formato.js')).href); });
 
@@ -13,7 +15,8 @@ const fijarAzar = page => page.addInitScript(() => { let s = 4242; Math.random =
 const servir = (page, nombre, cuerpo) => page.route('**/tests/' + nombre + '.json', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify(cuerpo) }));
 
 test('un test en formato 2 se ve IGUAL que el mismo en formato 1 (portada y pregunta)', async ({ page, browser }) => {
-  await servir(page, 'f2', F.aFormato2(T1));
+  await servir(page, 'f2', F.aFormato2(T1_VIEJO));
+  await servir(page, 'f1', T1_VIEJO);
   await fijarAzar(page);
   await page.goto('jugar.html?t=f2&modo=profe');
   await page.waitForSelector('#bEmpezar');          // esperar a que la portada esté pintada
@@ -23,7 +26,8 @@ test('un test en formato 2 se ve IGUAL que el mismo en formato 1 (portada y preg
 
   const p1 = await (await browser.newContext({ viewport: page.viewportSize() })).newPage();
   await fijarAzar(p1);
-  await p1.goto('jugar.html?t=' + ID + '&modo=profe');
+  await p1.route('**/tests/f1.json', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify(T1_VIEJO) }));
+  await p1.goto('jugar.html?t=f1&modo=profe');
   await p1.waitForSelector('#bEmpezar');
   const portada1 = await p1.locator('#escena').innerHTML();
   await p1.click('#bEmpezar');

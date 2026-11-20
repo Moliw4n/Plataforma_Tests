@@ -1,0 +1,705 @@
+{
+  "id": "tda1-u1u2-repaso",
+  "titulo": "Repaso U1 y U2 · El ordenador y el sistema operativo",
+  "materia": "TDA I",
+  "unidad": "U1 · U2",
+  "version": 1,
+  "chuleta": "chuletas/tda1-u1u2.html",
+  "tipos": {
+    "concepto": {
+      "nombre": "Concepto",
+      "color": "cian"
+    },
+    "calculo": {
+      "nombre": "Haz la cuenta",
+      "color": "ambar"
+    },
+    "caso": {
+      "nombre": "Caso práctico",
+      "color": "verde"
+    }
+  },
+  "fuente": "TDA/TDA I/Examen U1-U2 (30 preguntas) + 10 nuevas",
+  "preguntas": [
+    {
+      "id": "q01",
+      "tipo": "concepto",
+      "act": "U1 · Bits y ASCII",
+      "tema": "binario",
+      "enun": "Cuando escribes una letra en un documento, ¿qué guarda realmente el ordenador?",
+      "ops": [
+        "La letra con su propio código de colores en hexadecimal",
+        "La forma de la letra tal como se ve en la pantalla",
+        "Su número en la tabla de caracteres, escrito en binario",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 2,
+      "sol": "El ordenador no guarda letras: guarda números. Cada carácter tiene su número en una tabla (ASCII, Unicode) y ese número se guarda en binario.",
+      "trampa": "Pensar que se guarda el dibujo de la letra. La forma la pone la fuente al mostrarla en pantalla.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q02",
+      "tipo": "calculo",
+      "act": "U1 · Hexadecimal",
+      "tema": "binario",
+      "enun": "¿Cuánto vale 2F, escrito en hexadecimal, en decimal?",
+      "ops": [
+        "17",
+        "47",
+        "215",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 1,
+      "sol": "La primera cifra vale 16 veces más: 2 × 16 = 32. F vale 15. 32 + 15 = 47.",
+      "trampa": "Leer la F como 1 o juntar las cifras como si fueran decimales. La F vale 15.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q03",
+      "tipo": "caso",
+      "act": "U1 · Averías",
+      "tema": "averias",
+      "enun": "Un equipo no arranca. ¿Qué es lo primero que hay que comprobar?",
+      "ops": [
+        "Que la fuente tiene la potencia adecuada para lo montado",
+        "Que le llega corriente: cable, regleta e interruptor de la fuente",
+        "Que los módulos de RAM están bien encajados en sus ranuras",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 1,
+      "sol": "Se diagnostica de lo más probable y barato a lo más raro. Que no llegue corriente es la causa más frecuente y se comprueba en un minuto.",
+      "trampa": "Empezar por lo complicado. La RAM suelta es el paso 2, no el 1.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q04",
+      "tipo": "calculo",
+      "act": "U1 · Unidades",
+      "tema": "medir",
+      "enun": "Tienes fibra de 1.000 Mb/s y el navegador marca 118 MB/s al descargar. ¿Qué ocurre?",
+      "ops": [
+        "Va casi al máximo, porque 1.000 Mb/s son unos 125 MB/s",
+        "Le falta velocidad, porque 1 Mb equivale exactamente a 1 MB",
+        "Le falta velocidad, porque debería marcar 1.000 MB/s",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 0,
+      "sol": "Mb son megabits y MB, megabytes. Un byte son 8 bits: 1.000 ÷ 8 = 125 MB/s. Con 118 va casi al máximo.",
+      "trampa": "Confundir la b minúscula (bit) con la B mayúscula (byte).",
+      "fija_ultima": true
+    },
+    {
+      "id": "q05",
+      "tipo": "calculo",
+      "act": "U1 · Binario",
+      "tema": "binario",
+      "enun": "¿Cómo se escribe el número decimal 200 en binario, con ocho bits?",
+      "ops": [
+        "10011000",
+        "11000100",
+        "11001000",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 2,
+      "sol": "200 = 128 + 64 + 8. Pones un 1 en esos pesos y un 0 en los demás: 11001000. Comprobación: es par, así que acaba en 0.",
+      "trampa": "Equivocarse al restar pesos. Vuelve a sumar los pesos con 1: tiene que salir 200.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q06",
+      "tipo": "concepto",
+      "act": "U1 · Memorias",
+      "tema": "componentes",
+      "enun": "El procesador necesita un dato. ¿En qué orden lo busca?",
+      "ops": [
+        "Caché L1, L2 y L3 y, si no está en ninguna, en la RAM del equipo",
+        "Primero en la RAM, luego en la caché L3 y por último en la L1",
+        "Primero en el disco, luego en la RAM y al final en la caché",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 0,
+      "sol": "Busca de lo más cercano y rápido a lo más lejano y lento: L1, L2, L3 y, solo si no está, la RAM.",
+      "trampa": "Pensar que empieza por la RAM porque es «la memoria». La caché está dentro del procesador.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q07",
+      "tipo": "concepto",
+      "act": "U1 · Hercios",
+      "tema": "medir",
+      "enun": "Un procesador anuncia 3,5 GHz. ¿Qué significa ese dato?",
+      "ops": [
+        "Que ejecuta 3,5 programas a la vez sin llegar a ralentizarse",
+        "Que su reloj da 3.500 millones de pasos por cada segundo",
+        "Que guarda 3,5 gigabytes de datos dentro de su caché interna",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 1,
+      "sol": "Los hercios miden cuántas veces por segundo se repite algo. Giga es mil millones: 3,5 GHz son 3.500 millones de tics del reloj por segundo.",
+      "trampa": "Confundir GHz con GB. Uno es frecuencia (velocidad del reloj) y el otro, cantidad de datos.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q08",
+      "tipo": "concepto",
+      "act": "U1 · Componentes",
+      "tema": "componentes",
+      "enun": "¿Cuál de estos componentes guarda los datos de forma que sobreviven al apagar el equipo?",
+      "ops": [
+        "La tarjeta de red",
+        "La memoria RAM",
+        "El procesador",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 3,
+      "sol": "Ninguna de las tres. Lo que sobrevive al apagado está en el almacenamiento: el SSD o el disco duro.",
+      "trampa": "Elegir la RAM porque «es memoria». La RAM se queda en blanco al apagar.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q09",
+      "tipo": "caso",
+      "act": "U1 · Averías",
+      "tema": "averias",
+      "enun": "Un equipo no arranca. Cambias la RAM, el cable de vídeo y la fuente a la vez y funciona. ¿Qué has conseguido?",
+      "ops": [
+        "Que funcione, sin saber cuál de las tres piezas fallaba",
+        "Dejar el equipo listo y evitar que esa avería se repita luego",
+        "Localizar la avería, que estaba en la pieza más cara de las tres",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 0,
+      "sol": "Si cambias tres cosas a la vez y funciona, no sabes cuál era. Hay que cambiar una sola cosa cada vez y volver a probar.",
+      "trampa": "Creer que funcionar es lo mismo que diagnosticar.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q10",
+      "tipo": "calculo",
+      "act": "U1 · Binario",
+      "tema": "binario",
+      "enun": "¿Cuánto vale en decimal el byte 00101101?",
+      "ops": [
+        "44",
+        "55",
+        "43",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 3,
+      "sol": "Ninguna: vale 45. Los unos están en los pesos 32, 8, 4 y 1: 32 + 8 + 4 + 1 = 45. Es impar, y por eso acaba en 1.",
+      "trampa": "Dejarse un peso al sumar. Truco: si acaba en 1, el número es impar, así que 44 no puede ser.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q11",
+      "tipo": "concepto",
+      "act": "U1 · RAM",
+      "tema": "componentes",
+      "enun": "¿Por qué un módulo de RAM DDR5 no entra en una placa que es DDR4?",
+      "ops": [
+        "Porque la muesca de su base está en otro sitio y no encaja en ella",
+        "Porque la placa no admite módulos de más de 8 GB de capacidad",
+        "Porque lleva menos pines y se queda flojo dentro de la ranura",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 0,
+      "sol": "Cada generación tiene la muesca en un sitio distinto, a propósito, para que no se pueda montar donde no debe. DDR4 y DDR5 tienen los mismos pines (288).",
+      "trampa": "Pensar que es por los pines o la capacidad. Lo que las separa es la muesca.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q12",
+      "tipo": "caso",
+      "act": "U1 · Averías",
+      "tema": "averias",
+      "enun": "Un equipo se cuelga y se reinicia sin ningún patrón. ¿Qué dos componentes son los sospechosos habituales?",
+      "ops": [
+        "La fuente de alimentación y los módulos de memoria RAM",
+        "El procesador y el disipador de calor del equipo",
+        "El disco duro y la tarjeta de red inalámbrica",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 0,
+      "sol": "Los fallos que no se repiten igual suelen ser la fuente o la RAM. Son las averías más difíciles de cazar.",
+      "trampa": "Pensar en temperatura. El calor da un patrón: se apaga tras un rato o al hacer algo exigente.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q13",
+      "tipo": "caso",
+      "act": "U1 · Memorias",
+      "tema": "componentes",
+      "enun": "Se va la luz mientras escribes un trabajo que no habías guardado. ¿Qué ha pasado con ese texto?",
+      "ops": [
+        "Se ha perdido, porque el disco duro se apaga antes de poder escribirlo",
+        "Se ha perdido, porque estaba en la RAM, que se borra sin corriente",
+        "Se conserva, porque Word lo copia siempre en la memoria caché",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 1,
+      "sol": "Lo que estás usando y no has guardado está en la RAM, y la RAM se borra sin corriente. Guardar es copiarlo al almacenamiento.",
+      "trampa": "Echarle la culpa al disco. El texto nunca llegó al disco porque no lo guardaste.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q14",
+      "tipo": "caso",
+      "act": "U1 · Codificación",
+      "tema": "binario",
+      "enun": "Un texto muestra «GijÃ³n» en lugar de «Gijón». ¿Qué ha pasado?",
+      "ops": [
+        "La letra ó no existe en Unicode y se sustituye",
+        "Se guardó en UTF-8 y se leyó con otra codificación",
+        "El archivo está dañado y hay que volver a descargarlo",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 1,
+      "sol": "En UTF-8 la ó ocupa dos bytes. El programa que lo lee cree que cada byte es una letra y dibuja dos símbolos raros.",
+      "trampa": "Pensar que el archivo está roto. Está bien: se lee con otro «diccionario».",
+      "fija_ultima": true
+    },
+    {
+      "id": "q15",
+      "tipo": "concepto",
+      "act": "U1 · Almacenamiento",
+      "tema": "componentes",
+      "enun": "¿Por qué un SSD hace que un equipo parezca mucho más ágil que con un disco duro?",
+      "ops": [
+        "Porque su reloj interno marca más gigahercios que el procesador",
+        "Porque guarda los datos en la RAM y no los pierde al apagar",
+        "Porque tarda mucho menos en empezar a entregar cada dato pedido",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 2,
+      "sol": "Lo que manda es el tiempo de acceso: lo que tarda en empezar a dar un dato. El ordenador pide miles de trocitos y el SSD los encuentra casi al instante.",
+      "trampa": "Fijarse solo en los MB/s de la caja. Importa más lo que tarda en encontrar cada dato.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q16",
+      "tipo": "calculo",
+      "act": "U1 · Binario",
+      "tema": "binario",
+      "enun": "¿Cuánto vale 00010110 en decimal?",
+      "ops": [
+        "22",
+        "16",
+        "26",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 0,
+      "sol": "Los unos están en los pesos 16, 4 y 2: 16 + 4 + 2 = 22. Es par y acaba en 0: cuadra.",
+      "trampa": "Contar los pesos desde la izquierda. El peso 1 es el de la derecha.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q17",
+      "tipo": "calculo",
+      "act": "U1 · Hexadecimal",
+      "tema": "binario",
+      "enun": "¿Cómo se escribe 200 en hexadecimal?",
+      "ops": [
+        "C8",
+        "8C",
+        "20",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 0,
+      "sol": "Se divide entre 16: 200 ÷ 16 = 12 y sobran 8. El cociente (12 = C) es la primera cifra y el resto (8), la segunda: C8.",
+      "trampa": "Poner las cifras al revés (8C) o copiar el número decimal.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q18",
+      "tipo": "calculo",
+      "act": "U1 · Hexadecimal",
+      "tema": "binario",
+      "enun": "Un color web es #4EA72E. ¿Cuánto verde lleva, de 0 a 255?",
+      "ops": [
+        "78",
+        "167",
+        "46",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 1,
+      "sol": "#RRGGBB: el segundo byte es el verde, A7. A = 10: 10 × 16 + 7 = 167.",
+      "trampa": "Coger el primer byte (rojo, 78) o el último (azul, 46).",
+      "fija_ultima": true
+    },
+    {
+      "id": "q19",
+      "tipo": "caso",
+      "act": "U1 · Conexiones",
+      "tema": "averias",
+      "enun": "Un equipo con tarjeta gráfica dedicada arranca, se oyen los ventiladores, pero la pantalla se queda negra. ¿Qué miras primero?",
+      "ops": [
+        "Que el cable de la pantalla esté en la tarjeta gráfica y no en la placa",
+        "Que el procesador tenga bien puesta la pasta térmica",
+        "Que la fuente dé los vatios suficientes para la gráfica",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 0,
+      "sol": "Con gráfica dedicada, el cable de la pantalla va a la tarjeta. Enchufado a la salida de la placa, el equipo arranca bien y la pantalla se queda negra.",
+      "trampa": "Pensar en una avería grave. Es de las «averías» más frecuentes y se arregla cambiando el cable de sitio.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q20",
+      "tipo": "caso",
+      "act": "U1 · Averías",
+      "tema": "averias",
+      "enun": "Un disco duro empieza a hacer un chasquido rítmico. ¿Qué haces?",
+      "ops": [
+        "Sacar ya una copia de los datos, porque el disco está fallando",
+        "Seguir usándolo con normalidad hasta que deje de arrancar",
+        "Desfragmentarlo para que el brazo se mueva menos y deje de sonar",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 0,
+      "sol": "El chasquido rítmico es de las pocas señales que dan prisa de verdad: el brazo está fallando. Hay que sacar los datos ya, no mañana.",
+      "trampa": "Esperar a ver si se pasa. Cuando el disco deja de arrancar, recuperar los datos es mucho más difícil.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q21",
+      "tipo": "caso",
+      "act": "U1 · RAM",
+      "tema": "componentes",
+      "enun": "Un ordenador con poca RAM va a tirones al abrir muchas pestañas. ¿Por qué?",
+      "ops": [
+        "Porque al llenarse la RAM el sistema recurre al disco, mucho más lento",
+        "Porque el procesador se calienta y baja su frecuencia de reloj",
+        "Porque el navegador limita la velocidad cuando hay poca memoria",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 0,
+      "sol": "Cuando la RAM se llena, el sistema usa el disco como si fuera memoria. El disco es entre mil y cien mil veces más lento: de ahí los tirones.",
+      "trampa": "Echarle la culpa al procesador. Por eso ampliar RAM suele notarse más que cambiar de procesador.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q22",
+      "tipo": "concepto",
+      "act": "U1 · Hercios",
+      "tema": "medir",
+      "enun": "Un Pentium 4 de 2004 iba a 3,8 GHz. Un procesador actual va a 3 GHz. ¿Cuál es más rápido?",
+      "ops": [
+        "El Pentium 4, porque tiene más gigahercios",
+        "Los dos igual, porque la diferencia de GHz es muy pequeña",
+        "El Pentium 4, porque los procesadores antiguos eran más simples",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 3,
+      "sol": "Ninguna: es más rápido el actual, y con mucho. Hace mucho más trabajo en cada paso y tiene varios núcleos. Los GHz solo se comparan dentro de la misma familia.",
+      "trampa": "Comparar procesadores solo por los GHz. Es como juzgar dos coches solo por las revoluciones del motor.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q23",
+      "tipo": "concepto",
+      "act": "U2 · Extensiones",
+      "tema": "archivos",
+      "enun": "¿Por qué es peligroso que Windows oculte las extensiones de los archivos?",
+      "ops": [
+        "Porque un programa puede hacerse pasar por un documento",
+        "Porque el antivirus no analiza archivos sin extensión visible",
+        "Porque los archivos ocultos ocupan espacio sin que lo notes",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 0,
+      "sol": "Un archivo factura.pdf.exe se ve como factura.pdf si las extensiones están ocultas. Parece un documento y es un programa.",
+      "trampa": "Confundir extensiones ocultas con archivos ocultos. Son ajustes distintos.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q24",
+      "tipo": "concepto",
+      "act": "U2 · Rutas",
+      "tema": "archivos",
+      "enun": "¿Qué es la ruta de un archivo?",
+      "ops": [
+        "El nombre del programa con el que se abre ese archivo",
+        "Su dirección completa, desde la raíz del disco hasta él",
+        "El tamaño máximo que admite el sistema de archivos del disco",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 1,
+      "sol": "La ruta es el camino completo desde la raíz del disco, carpeta a carpeta, hasta el archivo.",
+      "trampa": "Confundirla con el programa que lo abre. Eso lo decide la extensión.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q25",
+      "tipo": "caso",
+      "act": "U2 · Dónde se configura",
+      "tema": "configurar",
+      "enun": "En Windows 11, ¿dónde se cambia la escala de la pantalla?",
+      "ops": [
+        "Configuración → Aplicaciones → Inicio",
+        "Configuración → Cuentas",
+        "Configuración → Personalización → Fondo",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 3,
+      "sol": "Ninguna: está en Configuración → Sistema → Pantalla. Si no te acuerdas, escribe «escala» en el buscador de Configuración.",
+      "trampa": "Buscarlo en Personalización porque «cambia cómo se ve». No memorices menús: usa el buscador.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q26",
+      "tipo": "concepto",
+      "act": "U2 · Navegador",
+      "tema": "configurar",
+      "enun": "¿Qué son las cookies de terceros?",
+      "ops": [
+        "Las que guardan tu sesión abierta dentro del sitio que estás visitando",
+        "Las que el sistema crea al instalar un programa nuevo en el equipo",
+        "Las de sitios distintos al que visitas, que sirven para seguirte",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 2,
+      "sol": "Son cookies de otros sitios (anunciantes, rastreadores) que te siguen de una web a otra. Por eso conviene bloquearlas.",
+      "trampa": "Confundirlas con las que mantienen tu sesión: esas son del propio sitio.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q27",
+      "tipo": "caso",
+      "act": "U2 · Sistemas de archivos",
+      "tema": "archivos",
+      "enun": "Un pendrive de 32 GB vacío no deja copiar una película de 6 GB. ¿Por qué?",
+      "ops": [
+        "Porque está en FAT32, que no admite archivos de más de 4 GB",
+        "Porque la película está dañada y por eso no cabe entera",
+        "Porque el pendrive reserva casi todo su espacio para el sistema",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 0,
+      "sol": "FAT32 no admite archivos de más de 4 GB, aunque haya espacio de sobra. Se soluciona formateándolo en exFAT.",
+      "trampa": "Pensar que está lleno. No es que no quepa en el pendrive: es que el archivo no cabe entero en FAT32.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q28",
+      "tipo": "caso",
+      "act": "U2 · Configurar",
+      "tema": "configurar",
+      "enun": "Un ordenador de aula por el que pasan cientos de personas. ¿Qué configuración tiene sentido?",
+      "ops": [
+        "Dar a cada alumno una cuenta de administrador para que instale",
+        "Que no quede rastro de nadie y que todos los equipos sean iguales",
+        "Abrir todos los programas al iniciar para ahorrar tiempo después",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 1,
+      "sol": "Se configura según quién lo usa: que no quede nada del anterior, que arranque rápido y que todos los equipos sean iguales.",
+      "trampa": "Configurar por costumbre. La pregunta es «qué necesita quien lo usa».",
+      "fija_ultima": true
+    },
+    {
+      "id": "q29",
+      "tipo": "caso",
+      "act": "U2 · Navegador",
+      "tema": "configurar",
+      "enun": "Un alumno cierra el navegador del aula sin cerrar su sesión de Educastur. ¿Qué ajuste evita que entre el siguiente?",
+      "ops": [
+        "Bloquear las notificaciones que envían los sitios web al escritorio",
+        "Usar siempre conexiones seguras HTTPS en todas las páginas visitadas",
+        "Borrar las cookies y los datos de los sitios al cerrar el navegador",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 2,
+      "sol": "La sesión abierta se guarda en una cookie. Si las cookies se borran al cerrar el navegador, el siguiente tiene que entrar con lo suyo.",
+      "trampa": "Pensar en HTTPS. Cifra la conexión, pero no cierra la sesión de nadie.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q30",
+      "tipo": "concepto",
+      "act": "U2 · Cuentas",
+      "tema": "configurar",
+      "enun": "¿Por qué se recomienda usar a diario una cuenta normal y no la de administrador?",
+      "ops": [
+        "Porque las cuentas normales se copian solas en la nube de Microsoft",
+        "Porque la cuenta de administrador consume más recursos del equipo",
+        "Porque cualquier programa que ejecutes heredaría tus permisos",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 2,
+      "sol": "Administrador es un permiso, no «el que más sabe». Cualquier programa que ejecutes, incluido uno malicioso, hereda ese poder.",
+      "trampa": "Pensar que es por rendimiento. No gasta más: es una cuestión de seguridad.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q31",
+      "tipo": "concepto",
+      "act": "U2 · Familias",
+      "tema": "so",
+      "enun": "¿Cuál de estos sistemas operativos lleva por dentro el núcleo Linux?",
+      "ops": [
+        "iOS",
+        "Windows",
+        "macOS",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 3,
+      "sol": "Ninguno de los tres. Llevan Linux por dentro Android y las distribuciones GNU/Linux. macOS e iOS vienen de Unix, pero no son Linux.",
+      "trampa": "Elegir macOS porque «se parece a Linux». Comparten antepasado (Unix), pero no son Linux.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q32",
+      "tipo": "caso",
+      "act": "U2 · Arranque",
+      "tema": "so",
+      "enun": "Quieres instalar un sistema operativo desde un pendrive. ¿Qué hay que cambiar en la UEFI?",
+      "ops": [
+        "La resolución con la que arranca el equipo al encenderlo",
+        "El sistema de archivos del disco duro, de NTFS a FAT32",
+        "El orden de arranque, para que mire primero el pendrive",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 2,
+      "sol": "La UEFI decide desde dónde arranca el equipo. Hay que poner el pendrive el primero de la lista. Se entra pulsando Supr o F2 al encender.",
+      "trampa": "Pensar que hay que tocar el disco duro. Eso lo hará el instalador después.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q33",
+      "tipo": "concepto",
+      "act": "U2 · Núcleo",
+      "tema": "so",
+      "enun": "¿Qué es el núcleo, o kernel, de un sistema operativo?",
+      "ops": [
+        "El programa de la placa base que arranca antes que nada",
+        "La parte del sistema que habla directamente con el hardware",
+        "La carpeta del disco donde se guardan los controladores",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 1,
+      "sol": "El núcleo es la única parte del sistema que habla directamente con el hardware. Los programas le piden las cosas a él.",
+      "trampa": "Confundirlo con la UEFI. La UEFI está en la placa y arranca antes que el sistema.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q34",
+      "tipo": "caso",
+      "act": "U2 · Extensiones",
+      "tema": "archivos",
+      "enun": "Le cambias la extensión a una foto, de .jpg a .docx. ¿Qué ocurre?",
+      "ops": [
+        "Se convierte en un documento de Word con la foto dentro",
+        "Se corrompe y se pierde el contenido de la imagen",
+        "Sigue siendo la foto; Word intentará abrirla y no podrá",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 2,
+      "sol": "La extensión es parte del nombre, no del contenido. Cambiarla solo cambia con qué programa se intenta abrir.",
+      "trampa": "Creer que renombrar convierte el archivo. Para convertir hace falta un programa.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q35",
+      "tipo": "concepto",
+      "act": "U2 · Memoria",
+      "tema": "so",
+      "enun": "Se cuelga una pestaña del navegador pero el resto del ordenador sigue funcionando. ¿Por qué?",
+      "ops": [
+        "Porque el navegador guarda copias automáticas de la sesión abierta",
+        "Porque el sistema aísla la memoria de cada programa y cierra solo el que falla",
+        "Porque el procesador detecta el error y reinicia solo ese núcleo",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 1,
+      "sol": "El sistema operativo da a cada programa su trozo de RAM e impide que uno toque la del otro. Por eso puede cerrar solo el que falla.",
+      "trampa": "Pensar que lo arregla el procesador. Lo hace el sistema operativo.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q36",
+      "tipo": "caso",
+      "act": "U2 · Elegir sistema",
+      "tema": "elegir",
+      "enun": "Te dan un portátil de 2012 con 4 GB de RAM para navegar y escribir. ¿Qué sistema propones?",
+      "ops": [
+        "Linux ligero, porque el equipo no mueve un sistema actual",
+        "macOS, porque está muy optimizado para cualquier equipo",
+        "La última versión de Windows, porque es la más segura de todas",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 0,
+      "sol": "Con poco procesador y poca RAM, un sistema actual lo ahoga. Una distribución Linux ligera lo devuelve a la vida.",
+      "trampa": "Elegir macOS. Solo se puede usar en equipos de Apple.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q37",
+      "tipo": "concepto",
+      "act": "U2 · Libre y gratuito",
+      "tema": "elegir",
+      "enun": "¿Qué diferencia al software libre del que solo es gratuito?",
+      "ops": [
+        "Que puedes ver cómo está hecho, modificarlo y compartirlo",
+        "Que no necesita actualizaciones ni mantenimiento de ningún tipo",
+        "Que siempre lo desarrolla una administración pública europea",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 0,
+      "sol": "Gratuito solo significa que no pagas. Libre significa que puedes usarlo, ver cómo está hecho, modificarlo y compartirlo.",
+      "trampa": "Pensar que libre y gratuito son lo mismo. Algo gratuito puede ser cerrado y dejar de ser gratis mañana.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q38",
+      "tipo": "caso",
+      "act": "U2 · Sistemas de archivos",
+      "tema": "archivos",
+      "enun": "Vas a usar un pendrive en ordenadores Windows, Mac y en la tele, y a veces con archivos de más de 4 GB. ¿En qué formato lo pones?",
+      "ops": [
+        "FAT32",
+        "NTFS",
+        "exFAT",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 2,
+      "sol": "exFAT es el sustituto moderno de FAT32: lo leen casi todos los aparatos y no tiene el límite de 4 GB por archivo.",
+      "trampa": "Elegir FAT32 porque lo lee todo. No admite archivos de más de 4 GB.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q39",
+      "tipo": "concepto",
+      "act": "U2 · Familias",
+      "tema": "so",
+      "enun": "¿Cuál de estas afirmaciones es cierta?",
+      "ops": [
+        "Android e iOS comparten antepasado con macOS, pero Windows no",
+        "Windows y Android descienden los dos de Unix",
+        "Todos los sistemas operativos vienen del mismo núcleo original",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 0,
+      "sol": "macOS e iOS vienen de Unix, y Android lleva Linux, que es de la misma familia. Windows tiene su propio tronco. Por eso usa otra barra en las rutas.",
+      "trampa": "Pensar que todos vienen del mismo sitio. Hay dos o tres troncos y Windows va aparte.",
+      "fija_ultima": true
+    },
+    {
+      "id": "q40",
+      "tipo": "caso",
+      "act": "U2 · Cuentas",
+      "tema": "configurar",
+      "enun": "Un portátil lo usáis tres hermanos. ¿Qué conviene configurar?",
+      "ops": [
+        "Una cuenta de usuario para cada uno",
+        "Una sola cuenta de administrador que compartís los tres",
+        "Una cuenta de invitado sin contraseña para que entre cualquiera",
+        "Ninguna de las anteriores"
+      ],
+      "ok": 0,
+      "sol": "Cada cuenta tiene su sesión, sus archivos y sus ajustes, y separa lo de uno de lo del otro.",
+      "trampa": "Compartir una cuenta por comodidad. Así cualquiera ve y borra lo de los demás.",
+      "fija_ultima": true
+    }
+  ]
+}
