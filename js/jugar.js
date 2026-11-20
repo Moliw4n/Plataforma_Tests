@@ -8,7 +8,7 @@ import { crearChuleta } from './nucleo/chuleta.js';
 import { mostrarAcceso } from './nucleo/acceso.js';
 import { cargarModo } from './nucleo/modos.js';
 import { aFormato2, validarBanco } from './nucleo/formato.js';
-import { pintar as pintarOpcionMultiple } from './nucleo/preguntas/opcion_multiple.js';
+import { RENDERIZADORES } from './nucleo/preguntas/index.js';
 
 (function () {
   'use strict';
@@ -46,7 +46,7 @@ import { pintar as pintarOpcionMultiple } from './nucleo/preguntas/opcion_multip
     ctx = {
       alumno: null, juego: null, contenido: T,
       api: { rpc },
-      nucleo: { pintar: { opcion_multiple: pintarOpcionMultiple } },
+      nucleo: { preguntas: RENDERIZADORES },
       contenedor: E, chuleta: null, modoProfe: MODO_PROFE,
       temaActual: () => null,          // lo sustituye el modo
       salir

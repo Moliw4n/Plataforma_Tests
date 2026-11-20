@@ -8,14 +8,18 @@
    mostrarCorreccion(c): c = {elegida, ok}. Marca la opción elegida, el veredicto y la explicación. */
 import { esc } from '../util.js';
 import { pinta, conLineas, consola } from '../codigo.js';
+import { categoriaDe } from './comun.js';
 
 const LET = 'ABCD';
+
+// Corrección en el navegador (solo para práctica: la solución viaja con la pregunta). dada = índice de la opción elegida.
+export const corregir = (p, dada) => ({ ok: dada === p.ok, correcta: p.ok });
 
 export function pintar(p, contenedor, o) {
   let resp = o.respuesta || null;
   const r = resp;
   let h = '<div class="q' + (r ? ' resuelta' : '') + (p.code ? '' : ' sin-codigo') + '">';
-  h += '<div class="izq"><div class="chips">' + o.chipTipo(p.categoria) + '<span class="act">' + esc(p.act || '') + '</span></div>';
+  h += '<div class="izq"><div class="chips">' + o.chipTipo(categoriaDe(p)) + '<span class="act">' + esc(p.act || '') + '</span></div>';
   h += '<p class="enun">' + esc(p.enun) + '</p>';
   if (p.code) h += '<pre class="codigo">' + conLineas(p.code) + '</pre>';
   const htmlConsola = !p.salida ? '' : '<div class="consola"><span class="et">LO QUE SALE DE VERDAD' +

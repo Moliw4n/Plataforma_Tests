@@ -16,7 +16,7 @@ export const FORMATO_ACTUAL = 2;
 
 // Tipos de pregunta del plan (4.2). Los de SOPORTADOS tienen renderizador en nucleo/preguntas/.
 export const TIPOS_CONOCIDOS = ['opcion_multiple', 'verdadero_falso', 'respuesta_corta', 'numerica', 'ordenar', 'emparejar', 'huecos', 'codigo'];
-export const TIPOS_SOPORTADOS = ['opcion_multiple'];
+export const TIPOS_SOPORTADOS = ['opcion_multiple', 'verdadero_falso', 'numerica', 'respuesta_corta'];   // = TIPOS_JUGABLES de preguntas/index.js (hay un test que lo comprueba)
 
 /* formato 1 → formato 2. No modifica el original. Si ya es formato 2, lo devuelve igual. */
 export function aFormato2(t) {
@@ -75,6 +75,16 @@ export function validarBanco(t, { soportados = TIPOS_SOPORTADOS, exigirSolTrampa
     if (p.tipo === 'opcion_multiple') {
       if (!Array.isArray(p.ops) || p.ops.length < 2 || !p.ops.every(o => typeof o === 'string')) e.push(q + 'ops debe ser una lista de al menos 2 textos');
       else if (!Number.isInteger(p.ok) || p.ok < 0 || p.ok >= p.ops.length) e.push(q + 'ok debe ser el número de la opción correcta (0 a ' + (p.ops.length - 1) + ')');
+    }
+    if (p.tipo === 'verdadero_falso' && typeof p.ok !== 'boolean') e.push(q + 'ok debe ser true o false');
+    if (p.tipo === 'numerica') {
+      if (typeof p.valor !== 'number' || !Number.isFinite(p.valor)) e.push(q + 'valor debe ser un número');
+      if (p.tolerancia !== undefined && !(typeof p.tolerancia === 'number' && Number.isFinite(p.tolerancia) && p.tolerancia >= 0)) e.push(q + 'tolerancia debe ser un número mayor o igual que 0');
+      if (p.unidad !== undefined && !esTexto(p.unidad)) e.push(q + 'unidad debe ser un texto');
+    }
+    if (p.tipo === 'respuesta_corta') {
+      if (!Array.isArray(p.aceptadas) || !p.aceptadas.length || !p.aceptadas.every(a => esTexto(a))) e.push(q + 'aceptadas debe ser una lista con al menos una respuesta');
+      if (p.pista !== undefined && !esTexto(p.pista)) e.push(q + 'pista debe ser un texto');
     }
     if (p.categoria !== undefined && cats && !cats[p.categoria] && !['imprime', 'error', 'hueco'].includes(p.categoria)) e.push(q + 'la categoría «' + p.categoria + '» no está en «categorias»');
     if (p.dificultad !== undefined && ![1, 2, 3].includes(p.dificultad)) e.push(q + 'dificultad debe ser 1, 2 o 3');

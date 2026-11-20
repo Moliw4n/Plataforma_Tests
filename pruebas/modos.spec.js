@@ -17,7 +17,7 @@ test.describe('contrato', () => {
       const m = await cargarModo('practica');
       return { id: m.id, nombre: m.nombre, necesita: m.necesita, tipos: m.tiposPregunta, iniciar: typeof m.iniciar, terminar: typeof m.terminar };
     });
-    expect(r).toEqual({ id: 'practica', nombre: 'Práctica', necesita: { directo: false, servidor: true }, tipos: ['opcion_multiple'], iniciar: 'function', terminar: 'function' });
+    expect(r).toEqual({ id: 'practica', nombre: 'Práctica', necesita: { directo: false, servidor: true }, tipos: ['opcion_multiple', 'verdadero_falso', 'numerica', 'respuesta_corta'], iniciar: 'function', terminar: 'function' });
   });
 
   test('un modo que no cumple el contrato se rechaza con un motivo claro', async ({ page }) => {
