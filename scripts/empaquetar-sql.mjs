@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-export const ARCHIVOS = ['01_esquema.sql', '03_profesor_alumnos.sql', '04_latido.sql', '05_datos_prueba.sql', '06_contenido.sql', '07_examen.sql', '08_panel_examen.sql'];
+export const ARCHIVOS = ['01_esquema.sql', '03_profesor_alumnos.sql', '04_latido.sql', '05_datos_prueba.sql', '06_contenido.sql', '07_examen.sql', '08_panel_examen.sql', '09_directo.sql'];
 export const DESTINO = path.join(RAIZ, 'supabase', 'paquete_pruebas.sql');
 
 const CABECERA = `-- =====================================================================
@@ -37,18 +37,21 @@ end $guarda$;
 const COMPROBACION = `
 -- =====================================================================
 -- COMPROBACIÓN FINAL. Debe salir exactamente esta fila:
---   tablas = 13 · tablas_sin_rls = 0 · alumnos_de_prueba = 5 · funciones_alumno = 9 · funciones_profe = 12
+--   tablas = 16 · tablas_sin_rls = 0 · alumnos_de_prueba = 5 · funciones_alumno = 12 · funciones_profe = 18
 -- =====================================================================
 select
   (select count(*) from information_schema.tables where table_schema = 'public' and table_name in
-     ('grupos', 'alumnos', 'intentos', 'accesos_fallidos', 'profesores', 'latidos', 'bancos', 'items', 'juegos', 'asignaciones', 'partidas', 'respuestas', 'eventos')) as tablas,
+     ('grupos', 'alumnos', 'intentos', 'accesos_fallidos', 'profesores', 'latidos', 'bancos', 'items', 'juegos', 'asignaciones', 'partidas', 'respuestas', 'eventos',
+      'directo_sesiones', 'directo_participantes', 'directo_respuestas')) as tablas,
   (select count(*) from pg_tables where schemaname = 'public' and not rowsecurity) as tablas_sin_rls,
   (select count(*) from public.alumnos where grupo = 'PRUEBA') as alumnos_de_prueba,
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname in
-     ('entrar', 'guardar_intento', 'latido', 'mis_juegos', 'empezar_partida', 'responder', 'evento', 'terminar_partida', 'mi_resultado')) as funciones_alumno,
+     ('entrar', 'guardar_intento', 'latido', 'mis_juegos', 'empezar_partida', 'responder', 'evento', 'terminar_partida', 'mi_resultado',
+      'directo_unirse', 'directo_estado', 'directo_responder')) as funciones_alumno,
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname in
      ('profe_alta_alumnos', 'profe_baja_alumno', 'profe_subir_banco', 'profe_borrar_banco', 'profe_crear_juego', 'profe_asignar', 'profe_publicar_notas',
-      'profe_borrar_asignacion', 'profe_cerrar_caducadas', 'profe_resultados', 'profe_estadisticas_examen', 'profe_borrar_partida')) as funciones_profe;
+      'profe_borrar_asignacion', 'profe_cerrar_caducadas', 'profe_resultados', 'profe_estadisticas_examen', 'profe_borrar_partida',
+      'profe_directo_crear', 'profe_directo_estado', 'profe_directo_avanzar', 'profe_directo_terminar', 'profe_directo_activas', 'profe_directo_borrar')) as funciones_profe;
 `;
 
 export function construirPaquete() {

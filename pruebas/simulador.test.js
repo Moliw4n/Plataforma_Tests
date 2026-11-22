@@ -8,12 +8,13 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const { crearServidorFalso, bancoDePrueba } = require('./servidor-examen-falso');
+const { crearServidorDirecto } = require('./servidor-directo-falso');
 
 const RAIZ = path.join(__dirname, '..');
 const SCRIPT = path.join(RAIZ, 'scripts', 'simular-clase.mjs');
 const CLAVE = 'sb_publishable_PRUEBA_LOCAL';
-let S, servidor, puerto, tmp, banco, estado;
-const gancho = { fuga: null, soluciones: false };
+let S, servidor, puerto, tmp, banco, estado, Dd = null;
+const gancho = { fuga: null, soluciones: false, directo: null };
 
 const crear = async () => {
   S = await crearServidorFalso({ reglas: { preguntas: 12 }, alumnos: { CCC444: { id: 'TDA2-03', grupo: 'TDA2' }, DDD555: { id: 'TDA2-04', grupo: 'TDA2' }, EEE666: { id: 'TDA2-05', grupo: 'TDA2' } } });   // los 5 de prueba, todos del mismo grupo
@@ -34,6 +35,10 @@ test.before(async () => {
         return enviar(200, k < 0 ? { ok: false, motivo: 'codigo' } : { ok: true, alumno: 'PRUEBA-0' + (k + 1), grupo: 'PRUEBA' });
       }
       if (rpc && req.method === 'POST' && rpc[1] === 'latido') return enviar(200, { ok: true, escrito: false });
+      if (rpc && req.method === 'POST' && Dd && ['directo_unirse', 'directo_estado', 'directo_responder'].includes(rpc[1])) {     // las funciones del directo, con un gancho para provocar fallos
+        const r = Dd.llamar(rpc[1], JSON.parse(cuerpo || '{}'));
+        return enviar(200, gancho.directo ? gancho.directo(rpc[1], r) : r);
+      }
       if (rpc && req.method === 'POST') {
         const r = S.llamar(rpc[1], JSON.parse(cuerpo || '{}'));
         if (r === null) return enviar(403, { code: '42501', message: 'permission denied for function ' + rpc[1] });       // profe_* e internas: no están al alcance de la web pública
@@ -167,5 +172,78 @@ test.describe('detecta los fallos de seguridad del servidor', () => {
     const r = await jugar();
     for (const t of ['alumnos', 'partidas', 'items', 'respuestas', 'profesores']) assert.match(r.salida, new RegExp('✓ tabla «' + t + '»'));
     for (const f of ['profe_resultados', 'profe_publicar_notas', '_corregir_item']) assert.match(r.salida, new RegExp('✓ «' + f + '»'));
+  });
+});
+
+test.describe('directo: una clase de hasta 25 alumnos', () => {
+  const pausa = ms => new Promise(r => setTimeout(r, ms));
+  // 25 alumnos de prueba (los 5 de siempre y LOAD06…LOAD25), todos del grupo de la sala
+  const alumnos25 = () => Object.fromEntries([['AAA222', 1], ['BBB333', 2], ['CCC444', 3], ['DDD555', 4], ['EEE666', 5], ...Array.from({ length: 20 }, (_, k) => ['LOAD' + String(k + 6).padStart(2, '0'), k + 6])]
+    .map(([cod, n]) => [cod, { id: 'PRUEBA-' + String(n).padStart(2, '0'), grupo: 'TDA2' }]));
+  const sala = async (preguntas = ['t1mc', 't1vf', 't2mc'], tiempoS = 4) => { gancho.directo = null; Dd = await crearServidorDirecto({ preguntas, tiempoS, alumnos: alumnos25() }); };
+  // El «profesor»: espera a que entren todos, empieza, cierra cada pregunta y pasa a la siguiente, hasta el final
+  const conducir = async (n, preguntas = 3, yaDentro = 0, cierre = 3500) => {
+    while (Dd.participantes.length < n + yaDentro) await pausa(40);
+    await pausa(250); Dd.avanzar();
+    for (let q = 0; q < preguntas; q++) { await pausa(cierre); Dd.avanzar(); await pausa(450); Dd.avanzar(); }
+  };
+  const directo = (n, extra = []) => lanzar(['directo', '--url', URL_LOCAL(), '--key', CLAVE, '--sala', Dd ? Dd.sala : '123456', '--alumnos', String(n), '--sondeo', '90', '--maximo', '1', ...extra]);
+  const clase = async (n, preguntas = 3, yaDentro = 0, cierre = 3500) => { const [r] = await Promise.all([directo(n), conducir(n, preguntas, yaDentro, cierre)]); return r; };
+
+  test('25 alumnos juegan a la vez: todo cuadra y el informe mide el tráfico', async () => {
+    await sala();
+    const r = await clase(25);
+    assert.equal(r.codigo, 0, r.salida);
+    assert.match(r.salida, /25 de 25 alumnos dentro de la sala/); assert.match(r.salida, /todos los apodos son distintos/); assert.match(r.salida, /25 de 25 alumnos llegaron al final/);
+    assert.match(r.salida, /ninguna solución llegó al móvil antes de tiempo/); assert.match(r.salida, /PICO \d+ en un solo segundo/); assert.match(r.salida, /directo_estado/); assert.match(r.salida, /ninguna petición falló/);
+    assert.match(r.salida, /Todo correcto/);
+    assert.equal(Dd.participantes.length, 25); assert.equal(Dd.estado, 'terminada');
+    assert.ok(Dd.respuestas.length > 25, 'respuestas ' + Dd.respuestas.length);
+    const porAlumno = {}; for (const x of Dd.respuestas) porAlumno[x.alumno] = (porAlumno[x.alumno] || 0) + x.puntos;
+    for (const p of Dd.participantes) assert.equal(p.puntos, porAlumno[p.alumno] || 0, p.alumno);       // los puntos de cada uno son la suma de sus respuestas
+    assert.match(r.salida, /se le cae la red/); assert.match(r.salida, /recarga y conserva su apodo/);
+  });
+  test('«--alumnos» más pequeño, y los de relleno que ya estaban en la sala no estorban', async () => {
+    await sala(); Dd.sembrar([300, 100]);
+    const r = await clase(4, 3, 2);
+    assert.equal(r.codigo, 0, r.salida); assert.match(r.salida, /4 de 4 alumnos dentro/);
+  });
+  test('una sala que no existe: lo dice y falla', async () => {
+    await sala();
+    const r = await lanzar(['directo', '--url', URL_LOCAL(), '--key', CLAVE, '--sala', '999999', '--alumnos', '3', '--sondeo', '90']);
+    assert.equal(r.codigo, 1, r.salida); assert.match(r.salida, /no existe, ya terminó o no es del grupo/);
+  });
+  test('sin --sala explica qué falta; con el servidor de producción se niega', async () => {
+    const r = await lanzar(['directo', '--url', URL_LOCAL(), '--key', CLAVE]);
+    assert.equal(r.codigo, 2); assert.match(r.salida, /Falta --sala/);
+    const prod = fs.readFileSync(path.join(RAIZ, 'js', 'config.js'), 'utf8').match(/https:\/\/[a-z0-9]+\.supabase\.co/)[0];
+    const r2 = await lanzar(['directo', '--url', prod, '--key', CLAVE, '--sala', '123456']);
+    assert.notEqual(r2.codigo, 0); assert.match(r2.salida, /PRODUCCIÓN/);
+  });
+  test('alumnos que el servidor no conoce (falta 10_alumnos_carga.sql): lo explica', async () => {
+    await sala(); Dd.alumnos = { AAA222: { id: 'PRUEBA-01', grupo: 'TDA2' } };
+    const r = await lanzar(['directo', '--url', URL_LOCAL(), '--key', CLAVE, '--sala', Dd.sala, '--alumnos', '3', '--sondeo', '90']);
+    assert.equal(r.codigo, 1, r.salida); assert.match(r.salida, /10_alumnos_carga\.sql/);
+  });
+
+  test.describe('SABE DETECTAR los fallos del servidor (cada uno provocado a propósito)', () => {
+    const con = async (hook, esperado) => {
+      await sala(['t1mc', 't1vf'], 2); gancho.directo = hook;          // sala corta (2 preguntas de 2 s) para que cada fallo provocado tarde poco
+      const r = await clase(6, 2, 0, 1800);
+      gancho.directo = null;
+      assert.equal(r.codigo, 1, 'debería haber fallado:\n' + r.salida); assert.match(r.salida, esperado, r.salida);
+    };
+    test('el resultado trae «la trampa» de la pregunta al móvil', () => con((fn, r) => { if (fn === 'directo_estado' && r.resultado) r.resultado.trampa = 'LA TRAMPA'; return r; }, /manda «trampa» al móvil/));
+    test('el servidor cuela la solución con la pregunta abierta', () => con((fn, r) => { if (fn === 'directo_estado' && r.pregunta) r.pregunta.sol = 'LA SOLUCIÓN'; return r; }, /campos que no son de la lista blanca: sol/));
+    test('la solución aparece fuera del resultado', () => con((fn, r) => { if (fn === 'directo_estado' && r.pregunta) r.sol = 'x'; return r; }, /manda «sol» fuera del resultado/));
+    test('responder dice si acertó', () => con((fn, r) => (fn === 'directo_responder' && r.ok ? { ...r, acerto: true } : r), /dice si acertó/));
+    test('el reparto de lo que contestaron los demás llega al móvil', () => con((fn, r) => { if (fn === 'directo_estado' && r.resultado) r.resultado.reparto = [{ texto: 'x', veces: 3 }]; return r; }, /manda «reparto» al móvil/));
+    test('acertar da más de 1000 puntos', () => con((fn, r) => { if (fn === 'directo_estado' && r.resultado && r.resultado.ok) r.resultado.puntos = 1500; return r; }, /acertó y le dan 1500 puntos/));
+    test('fallar o no contestar da puntos', () => con((fn, r) => { if (fn === 'directo_estado' && r.resultado && !r.resultado.ok) r.resultado.puntos = 200; return r; }, /(no contestó|falló) y (tiene|le dan) 200 puntos/));
+    test('se pierde una respuesta ya confirmada', () => con((fn, r) => { if (fn === 'directo_responder' && r.ok) Dd.respuestas.pop(); return r; }, /confirmó su respuesta .* pero luego dice que no contestó/));
+    test('contestar dos veces no se rechaza', () => con((fn, r) => (fn === 'directo_responder' && r.motivo === 'ya_respondida' ? { ok: true } : r), /contestar dos veces la misma pregunta no fue rechazado/));
+    test('dos alumnos con el mismo apodo', () => con((fn, r) => (fn === 'directo_unirse' && r.ok ? { ...r, apodo: 'Zorro Azul' } : r), /apodos son distintos/));
+    test('el marcador viene desordenado', () => con((fn, r) => { if (fn === 'directo_estado' && r.marcador) r.marcador = [...r.marcador].reverse(); return r; }, /marcador no está ordenado/));
+    test('la posición final no es la que toca', () => con((fn, r) => { if (fn === 'directo_estado' && r.estado === 'terminada') r.posicion = 1; return r; }, /su posición final es 1/));
   });
 });

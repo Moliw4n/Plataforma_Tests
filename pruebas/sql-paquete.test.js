@@ -34,7 +34,7 @@ test.describe('en un proyecto nuevo (vacío)', () => {
   test('se instala de una vez y la fila de comprobación sale como dice el archivo', async () => {
     const r = await c.query(fs.readFileSync(P.DESTINO, 'utf8'));
     const ultima = Array.isArray(r) ? r[r.length - 1] : r;
-    assert.deepEqual(ultima.rows[0], { tablas: '13', tablas_sin_rls: '0', alumnos_de_prueba: '5', funciones_alumno: '9', funciones_profe: '12' });
+    assert.deepEqual(ultima.rows[0], { tablas: '16', tablas_sin_rls: '0', alumnos_de_prueba: '5', funciones_alumno: '12', funciones_profe: '18' });
   });
   test('se puede ejecutar otra vez sin romper nada', async () => {
     const r = await c.query(fs.readFileSync(P.DESTINO, 'utf8'));
@@ -70,4 +70,37 @@ test('la guarda: una base con alumnos REALES no se toca (ni una tabla nueva)', a
   assert.equal((await c.query("select to_regclass('public.bancos') as t")).rows[0].t, null, 'no debe haber creado nada');
   assert.equal((await c.query("select to_regclass('public.latidos') as t")).rows[0].t, null);
   assert.equal((await c.query('select count(*)::int n from public.alumnos')).rows[0].n, 1);
+});
+
+test.describe('10_alumnos_carga.sql: 20 alumnos de prueba más, para simular una clase de 25 en el directo', () => {
+  let c;
+  test.before(async () => { c = await baseNueva('carga', []); await c.query(fs.readFileSync(P.DESTINO, 'utf8')); });
+  const anon = (sql, p) => como(c, 'anon', sql, p);
+
+  test('añade PRUEBA-06 … PRUEBA-25 (25 en total) y se puede repetir', async () => {
+    let r = await c.query(SQL('10_alumnos_carga.sql'));
+    assert.equal((Array.isArray(r) ? r[r.length - 1] : r).rows[0].alumnos_de_prueba, '25');
+    r = await c.query(SQL('10_alumnos_carga.sql'));
+    assert.equal((Array.isArray(r) ? r[r.length - 1] : r).rows[0].alumnos_de_prueba, '25');
+  });
+  test('cada uno entra con su código LOADnn; los que no existen, no; y los 5 de siempre siguen funcionando', async () => {
+    for (const n of [6, 7, 13, 25]) {
+      const cod = 'LOAD' + String(n).padStart(2, '0');
+      assert.deepEqual((await anon('select public.entrar($1) as r', [cod])).rows[0].r, { ok: true, alumno: 'PRUEBA-' + String(n).padStart(2, '0'), grupo: 'PRUEBA' }, cod);
+    }
+    assert.equal((await anon('select public.entrar($1) as r', ['LOAD26'])).rows[0].r.ok, false);
+    assert.equal((await anon('select public.entrar($1) as r', ['LOAD05'])).rows[0].r.ok, false);
+    assert.deepEqual((await anon('select public.entrar($1) as r', ['AAA222'])).rows[0].r, { ok: true, alumno: 'PRUEBA-01', grupo: 'PRUEBA' });
+  });
+  test('en una base con alumnos REALES se niega y no cambia nada', async () => {
+    const real = await baseNueva('carga_real', ['01_esquema.sql', '03_profesor_alumnos.sql', '05_datos_prueba.sql']);
+    await real.query("insert into public.grupos(id, nombre) values ('TDA2', 'TDA II')");
+    await real.query("insert into public.alumnos(id, grupo, codigo_hash) values ('TDA2-07', 'TDA2', public._hash_codigo('K7M4QX'))");
+    await assert.rejects(real.query(SQL('10_alumnos_carga.sql')), /alumnos reales/);
+    assert.equal((await real.query('select count(*)::int n from public.alumnos')).rows[0].n, 6);
+  });
+  test('sin el grupo PRUEBA (falta 05) lo dice claro', async () => {
+    const vacio = await baseNueva('carga_vacia', ['01_esquema.sql', '03_profesor_alumnos.sql']);
+    await assert.rejects(vacio.query(SQL('10_alumnos_carga.sql')), /Falta el grupo PRUEBA/);
+  });
 });

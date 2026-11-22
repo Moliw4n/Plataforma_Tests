@@ -34,6 +34,8 @@ async function crearServidorDirecto(opciones = {}) {
     if (d.tipo === 'opcion_multiple') o.ops = d.ops.slice();            // el orden de la sala es fijo
     return o;
   };
+  // Como el SQL real: nunca se repite un apodo en la misma sala (aquí, 10 nombres y luego se les añade un número)
+  const apodoNuevo = () => { const i = S.participantes.length; return APODOS[i % APODOS.length] + (i >= APODOS.length ? ' ' + (Math.floor(i / APODOS.length) + 1) : ''); };
   const participante = a => S.participantes.find(p => p.alumno === a.id);
   const respDe = (alumno, q) => S.respuestas.find(r => r.alumno === alumno && r.pregunta === q);
   const ordenar = () => [...S.participantes].sort((x, y) => y.puntos - x.puntos || (x.apodo < y.apodo ? -1 : 1));
@@ -63,7 +65,7 @@ async function crearServidorDirecto(opciones = {}) {
       alDia();
       if (S.estado === 'terminada' || p_sala !== S.sala || a.grupo !== S.grupo) return ko('sala');
       let pt = participante(a);
-      if (!pt) { pt = { alumno: a.id, apodo: APODOS[S.participantes.length % APODOS.length], puntos: 0, aciertos: 0 }; S.participantes.push(pt); }
+      if (!pt) { pt = { alumno: a.id, apodo: apodoNuevo(), puntos: 0, aciertos: 0 }; S.participantes.push(pt); }
       pt.visto = S.ahora();
       return { ok: true, sesion: S.sesion, apodo: pt.apodo, titulo: S.titulo, total: S.preguntas.length };
     },

@@ -9,12 +9,17 @@
                 entregan. Por el camino COMPRUEBA con el servidor de verdad: que no llega ninguna solución, que la nota no se ve antes de
                 publicarla y que desde fuera no se puede leer ninguna tabla. Guarda lo que esperaba en un archivo de estado.
      comprobar  (después de publicar las notas en el panel) pide el resultado de cada alumno y lo compara con lo esperado.
+     directo    hasta 25 alumnos de prueba entran en una SALA que abres tú en directo.html?entorno=pruebas, contestan a la vez con distintos
+                comportamientos (rápidos, lentos, doble toque, se les cae la red, recargan…) y se COMPRUEBA con el servidor de verdad: que no llega
+                ninguna solución antes de tiempo, que responder no dice si acertó, que los puntos y el marcador cuadran, que los apodos no se repiten.
+                Mide las peticiones por segundo y las esperas.
 
    Uso:
      node scripts/simular-clase.mjs base      --url https://TU-PROYECTO-DE-PRUEBAS.supabase.co --key sb_publishable_…
      node scripts/simular-clase.mjs jugar     --url https://TU-PROYECTO-DE-PRUEBAS.supabase.co --key sb_publishable_… --juego ID --banco docs/ensayo/banco-ensayo.json
      node scripts/simular-clase.mjs comprobar --url … --key … [--estado ensayo-estado.local.json]
-   Opciones: --alumnos 1..5 (5) · --penalizacion 0..1 (0, la del examen) · --estado archivo (ensayo-estado.local.json)
+     node scripts/simular-clase.mjs directo   --url … --key … --sala 123456 [--alumnos 25] [--maximo 30]
+   Opciones: --alumnos 1..5 (5; en «directo» hasta 25: hacen falta los de supabase/10_alumnos_carga.sql) · --penalizacion 0..1 (0, la del examen) · --estado archivo (ensayo-estado.local.json)
 
    GUARDAS: se niega a funcionar con la URL de producción (la de js/config.js) y con cualquier dirección que no sea localhost o *.supabase.co.
    Solo usa la clave «publishable» (la pública): ni contraseñas ni la clave secret. */
@@ -29,7 +34,7 @@ const op = {};
 for (let i = 0; i < resto.length; i += 2) op[resto[i].replace(/^--/, '')] = resto[i + 1];
 const SALIR = (msg, codigo = 1) => { console.error('\n✗ ' + msg); process.exit(codigo); };
 
-if (!['base', 'jugar', 'comprobar'].includes(fase) || !op.url || !op.key) SALIR('Uso: node scripts/simular-clase.mjs base|jugar|comprobar --url <URL del proyecto de PRUEBAS> --key <clave publishable> [--juego ID --banco archivo.json]', 2);
+if (!['base', 'jugar', 'comprobar', 'directo'].includes(fase) || !op.url || !op.key) SALIR('Uso: node scripts/simular-clase.mjs base|jugar|comprobar|directo --url <URL del proyecto de PRUEBAS> --key <clave publishable> [--juego ID --banco archivo.json]', 2);
 
 /* ---------- guardas ---------- */
 const url = op.url.replace(/\/+$/, '');
@@ -137,16 +142,196 @@ function respuesta(it, p, bien) {
   return bien ? p.aceptadas[0].toUpperCase() + ' ' : 'zzz';
 }
 
+/* ---------- directo ---------- */
+async function directo() {
+  if (!/^[0-9]{6}$/.test(op.sala || '')) SALIR('Falta --sala <el código de 6 cifras de la sala que has abierto en directo.html?entorno=pruebas>.', 2);
+  const n = Math.max(1, Math.min(25, Number(op.alumnos || 25)));
+  const sondeo = Math.max(50, Number(op.sondeo || 1500)), sondeoPreg = Math.round(sondeo * 2 / 3);     // como el móvil de verdad: 1,5 s (1 s en una pregunta)
+  const fin = Date.now() + Number(op.maximo || 30) * 60000;
+  const codigoDe = k => k < 5 ? CODIGOS[k] : 'LOAD' + String(k + 1).padStart(2, '0');
+  const llamadas = [];                                                        // {t, fn, ms, ok}
+  const medir = async (fn, args) => {
+    const t0 = performance.now(), t = Date.now();
+    try { const r = await rpc(fn, args); llamadas.push({ t, fn, ms: performance.now() - t0, ok: true }); return r; }
+    catch (e) { llamadas.push({ t, fn, ms: performance.now() - t0, ok: false, error: e && (e.tipo || e.message) }); throw e; }
+  };
+  const vistos = new Map();                                                    // problema → veces (para no repetir el mismo 25 veces)
+  const falla = m => vistos.set(m, (vistos.get(m) || 0) + 1);
+  console.log('\n● Directo: ' + n + ' alumnos de prueba entran en la sala ' + op.sala + ' de ' + host);
+
+  const PROHIBIDAS = ['trampa', 'reparto', 'aceptadas', 'valor', 'tolerancia', 'run_with', 'salida'];
+  const BLANCA = ['clave', 'tipo', 'enun', 'code', 'act', 'categoria', 'pista', 'unidad', 'ops'];
+  const recorre = (o, ruta, cb) => { if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) { cb(k, ruta); recorre(v, ruta + '.' + k, cb); } };
+
+  const alumnos = Array.from({ length: n }, (_, k) => ({
+    k, nombre: 'alumno ' + String(k + 1).padStart(2, '0'), cod: codigoDe(k), sesion: null, apodo: null, puntos: 0, aciertos: 0, suma: 0, resultadosVistos: new Set(),
+    enviadasOk: new Set(), tarde: 0, final: null, tareas: [], estados: 0,
+    // comportamientos: qué hace cada uno (para que no sean 25 clones)
+    lento: k === 0, doble: k % 5 === 1, sinRed: k % 9 === 2, distraido: k % 7 === 3 ? 1 : -1, recarga: k % 10 === 4
+  }));
+  const log = (a, m) => console.log('  [' + a.nombre + '] ' + m);
+
+  // 1) entrar en la sala
+  await Promise.all(alumnos.map(async a => {
+    await pausa(a.k * 60);
+    let r;
+    try { r = await medir('directo_unirse', { p_codigo: a.cod, p_sala: op.sala }); } catch (e) { falla('no ha podido entrar en la sala: ' + (e && e.message)); return; }
+    if (!r.ok) { falla(r.motivo === 'codigo' ? a.nombre + ' (' + a.cod + '): el servidor no conoce ese código (¿ejecutaste supabase/10_alumnos_carga.sql?)'
+                    : r.motivo === 'sala' ? 'la sala ' + op.sala + ' no existe, ya terminó o no es del grupo PRUEBA' : 'entrar falló: ' + r.motivo); return; }
+    a.sesion = r.sesion; a.apodo = r.apodo;
+  }));
+  const dentro = alumnos.filter(a => a.sesion);
+  if (dentro.length < n) {                                                       // si alguien no puede entrar, no tiene sentido empezar la partida: se para ya y se explica
+    for (const [m, c] of vistos) fallos.push(m + (c > 1 ? ' (×' + c + ')' : ''));
+    fallos.push('solo ' + dentro.length + ' de ' + n + ' alumnos han podido entrar en la sala: no se empieza la partida');
+    return resumen();
+  }
+  ok(dentro.length + ' de ' + n + ' alumnos dentro de la sala');
+  exige(new Set(dentro.map(a => a.apodo)).size === dentro.length, 'todos los apodos son distintos (' + dentro.slice(0, 4).map(a => a.apodo).join(', ') + '…)');
+  exige(dentro.every(a => !/PRUEBA|\d{2}/.test(a.apodo)), 'ningún apodo lleva el número de alumno');
+  const dobles = dentro.filter(a => a.recarga);
+  console.log('\n  ▶ AHORA, en directo.html: pulsa «Empezar» y ve pasando las preguntas (Cerrar la pregunta / Siguiente) hasta el final.\n    Este script juega solo y avisará cuando termine.\n');
+
+  let tInicio = null, tFin = null;
+  // 2) jugar: cada alumno hace lo que haría su móvil (sondear el estado y contestar)
+  await Promise.all(dentro.map(async a => {
+    let total = 0;
+    while (!a.final && Date.now() < fin) {
+      if (a.sinRedHasta && Date.now() < a.sinRedHasta) { await pausa(200); continue; }
+      let e;
+      try { e = await medir('directo_estado', { p_codigo: a.cod, p_sesion: a.sesion }); } catch (err) { await pausa(1000); continue; }       // un fallo suelto de red: se reintenta como el móvil
+      a.estados++;
+      if (!e.ok) { if (e.motivo === 'espera') { await pausa(4000); continue; } falla(a.nombre + ': directo_estado respondió ' + e.motivo); break; }
+      total = e.total;
+      if (e.estado !== 'espera' && tInicio === null) tInicio = Date.now();
+      // — lo que el servidor NO debe mandar nunca —
+      recorre(e, '', (k, ruta) => {
+        if (PROHIBIDAS.includes(k)) falla('el servidor manda «' + k + '» al móvil (' + ruta + ')');
+        if ((k === 'sol' || k === 'correcta') && !ruta.startsWith('.resultado')) falla('el servidor manda «' + k + '» fuera del resultado (' + ruta + ') en estado ' + e.estado);
+      });
+      if (e.estado === 'pregunta' || e.estado === 'espera') {
+        if ('resultado' in e) falla('el servidor manda «resultado» con la pregunta abierta');
+      }
+      if (e.pregunta) {
+        const extra = Object.keys(e.pregunta).filter(x => !BLANCA.includes(x));
+        if (extra.length) falla('la pregunta lleva campos que no son de la lista blanca: ' + extra.join(', '));
+      }
+      // — coherencia —
+      if (e.apodo !== a.apodo) falla(a.nombre + ': el apodo cambió (' + a.apodo + ' → ' + e.apodo + ')');
+      if (e.posicion < 1 || e.posicion > e.participantes) falla(a.nombre + ': posición ' + e.posicion + ' de ' + e.participantes + ' no tiene sentido');
+      if (e.puntos < a.puntos || e.aciertos < a.aciertos) falla(a.nombre + ': los puntos o aciertos han BAJADO');
+      a.puntos = e.puntos; a.aciertos = e.aciertos;
+      if (e.marcador) {
+        if (e.marcador.length > 5) falla('el marcador trae más de 5 filas');
+        if (e.marcador.some((x, i, v) => i && v[i - 1].puntos < x.puntos)) falla('el marcador no está ordenado por puntos');
+        const yo = e.marcador.filter(x => x.yo);
+        if (yo.length > 1 || yo.some(x => x.apodo !== a.apodo || x.puntos !== e.puntos)) falla(a.nombre + ': su fila del marcador no es la suya');
+      }
+      // — jugar —
+      if (e.estado === 'pregunta' && !a.enviadasOk.has(e.actual) && !(a.planeadas || (a.planeadas = new Set())).has(e.actual)) {
+        a.planeadas.add(e.actual);
+        if (a.sinRed && !a.yaSinRed) { a.yaSinRed = true; a.sinRedHasta = Date.now() + 4000; log(a, 'se le cae la red 4 s'); }
+        if (e.actual !== a.distraido) a.tareas.push(contestar(a, e));
+      }
+      if (e.estado === 'resultado' && !a.resultadosVistos.has(e.actual)) {
+        a.resultadosVistos.add(e.actual);
+        const x = e.resultado;
+        a.suma += x.puntos;
+        if (!x.respondio && x.puntos !== 0) falla(a.nombre + ': no contestó y tiene ' + x.puntos + ' puntos');
+        if (x.respondio && x.ok && !(x.puntos >= 500 && x.puntos <= 1000)) falla(a.nombre + ': acertó y le dan ' + x.puntos + ' puntos (debe estar entre 500 y 1000)');
+        if (x.respondio && !x.ok && x.puntos !== 0) falla(a.nombre + ': falló y le dan ' + x.puntos + ' puntos');
+        if (a.enviadasOk.has(e.actual) && !x.respondio) falla(a.nombre + ': el servidor confirmó su respuesta a la pregunta ' + (e.actual + 1) + ' pero luego dice que no contestó');
+        if (!a.enviadasOk.has(e.actual) && x.respondio) falla(a.nombre + ': el servidor tiene una respuesta suya a la pregunta ' + (e.actual + 1) + ' que no llegó a mandar');
+        if (a.recarga && !a.yaRecargo) {                      // recarga la página: vuelve a entrar con su código y debe conservar apodo y puntos
+          a.yaRecargo = true;
+          const r = await medir('directo_unirse', { p_codigo: a.cod, p_sala: op.sala });
+          if (!r.ok || r.apodo !== a.apodo) falla(a.nombre + ': al recargar y volver a entrar cambió de apodo (' + a.apodo + ' → ' + r.apodo + ')'); else log(a, 'recarga y conserva su apodo y sus ' + a.puntos + ' puntos');
+        }
+      }
+      if (e.estado === 'terminada') { a.final = e; break; }
+      await pausa(e.estado === 'pregunta' ? sondeoPreg : sondeo);
+    }
+    await Promise.all(a.tareas);
+    a.total = total;
+  }));
+  tFin = Date.now();
+
+  // 3) comprobaciones de la clase entera
+  const finales = dentro.filter(a => a.final);
+  exige(finales.length === dentro.length, finales.length + ' de ' + dentro.length + ' alumnos llegaron al final de la partida' + (finales.length < dentro.length ? ' (¿se acabó el tiempo máximo de ' + (op.maximo || 30) + ' min? ¿terminaste la sala?)' : ''));
+  for (const a of finales) {
+    if (a.final.puntos < a.suma) falla(a.nombre + ': tiene menos puntos al final (' + a.final.puntos + ') que la suma de lo que vio pregunta a pregunta (' + a.suma + ')');
+    if (a.resultadosVistos.size === a.final.total && a.final.puntos !== a.suma) falla(a.nombre + ': vio todos los resultados y los puntos no cuadran (' + a.final.puntos + ' ≠ ' + a.suma + ')');
+  }
+  if (finales.length && finales[0].final.participantes === finales.length) {
+    for (const a of finales) {
+      const mejores = finales.filter(b => b.final.puntos > a.final.puntos).length + 1;
+      if (a.final.posicion !== mejores) falla(a.nombre + ': su posición final es ' + a.final.posicion + ' y por sus puntos le toca ' + mejores);
+    }
+    const esperado = finales.map(a => a.final.puntos).sort((x, y) => y - x).slice(0, 5);
+    const visto = (finales[0].final.marcador || []).map(x => x.puntos);
+    if (JSON.stringify(esperado) !== JSON.stringify(visto)) falla('el podio final (' + visto.join(', ') + ') no coincide con los puntos de los alumnos (' + esperado.join(', ') + ')');
+  }
+  const conRespuestas = dentro.reduce((s, a) => s + a.enviadasOk.size, 0);
+  ok(conRespuestas + ' respuestas aceptadas en total; ' + dentro.reduce((s, a) => s + a.tarde, 0) + ' llegaron tarde (la pregunta ya estaba cerrada)');
+  if (!vistos.size) ok('ninguna solución llegó al móvil antes de tiempo, responder no dijo si acertó, y los puntos, posiciones y marcadores cuadran');
+
+  // 4) tráfico
+  informe(llamadas.filter(l => tInicio !== null && l.t >= tInicio), tInicio, tFin, dentro.length);
+  await seguridad();
+  for (const [m, c] of vistos) fallos.push(m + (c > 1 ? ' (×' + c + ')' : ''));
+  resumen();
+
+  async function contestar(a, e) {
+    const p = e.pregunta, n1 = e.actual;
+    const dada = p.tipo === 'verdadero_falso' ? Math.random() < 0.5 : Math.floor(Math.random() * (p.ops || []).length);
+    const margen = e.tiempo_s * 1000;
+    await pausa(a.lento ? margen * 0.85 : 400 + Math.random() * Math.min(margen * 0.6, 9000));
+    while (a.sinRedHasta && Date.now() < a.sinRedHasta) await pausa(200);
+    const mandar = () => medir('directo_responder', { p_codigo: a.cod, p_sesion: a.sesion, p_pregunta: n1, p_dada: dada });
+    let r;
+    try { r = await mandar(); } catch (err) { await pausa(800); try { r = await mandar(); } catch (e2) { falla(a.nombre + ': no pudo mandar su respuesta (' + (e2 && e2.message) + ')'); return; } }
+    if (r.ok) {
+      if (Object.keys(r).join() !== 'ok') falla('responder devolvió más de lo debido (dice si acertó): ' + JSON.stringify(r));
+      a.enviadasOk.add(n1);
+      if (a.doble) {
+        const r2 = await mandar().catch(() => null);
+        if (!r2 || r2.ok !== false || r2.motivo !== 'ya_respondida') falla(a.nombre + ': contestar dos veces la misma pregunta no fue rechazado (' + JSON.stringify(r2) + ')');
+      }
+    } else if (r.motivo === 'cerrada' || r.motivo === 'otra_pregunta') a.tarde++;
+    else falla(a.nombre + ': responder rechazó la respuesta (' + r.motivo + ')');
+  }
+}
+
+function informe(ll, t0, t1, alumnos) {
+  console.log('\n● Tráfico durante la partida');
+  if (!ll.length || !t0) { console.log('  (no hubo partida)'); return; }
+  const seg = Math.max(1, Math.round((t1 - t0) / 1000));
+  const porSeg = new Map(); for (const l of ll) { const s = Math.floor(l.t / 1000); porSeg.set(s, (porSeg.get(s) || 0) + 1); }
+  const pico = Math.max(...porSeg.values());
+  const pct = (v, p) => { const o = [...v].sort((a, b) => a - b); return o[Math.min(o.length - 1, Math.floor(o.length * p))]; };
+  console.log('  ' + ll.length + ' peticiones en ' + seg + ' s · media ' + (ll.length / seg).toFixed(1) + '/s · PICO ' + pico + ' en un solo segundo · ' + alumnos + ' alumnos');
+  for (const fn of [...new Set(ll.map(l => l.fn))]) {
+    const v = ll.filter(l => l.fn === fn).map(l => l.ms);
+    console.log('  ' + fn.padEnd(18) + String(v.length).padStart(6) + ' peticiones · espera típica ' + Math.round(pct(v, 0.5)) + ' ms · 95 % por debajo de ' + Math.round(pct(v, 0.95)) + ' ms · máxima ' + Math.round(Math.max(...v)) + ' ms');
+  }
+  const malas = ll.filter(l => !l.ok);
+  exige(malas.length === 0, 'ninguna petición falló' + (malas.length ? ' (' + malas.length + ' fallaron: ' + [...new Set(malas.map(l => l.error))].join(', ') + ')' : ''));
+  const p95 = pct(ll.map(l => l.ms), 0.95);
+  exige(p95 < 3000, 'el 95 % de las peticiones tardan menos de 3 s (salió ' + Math.round(p95) + ' ms)');
+  console.log('  (Supabase gratuito no pone un límite fijo de peticiones por segundo a la API REST; el límite de 200 conexiones simultáneas es de Realtime, que aquí no se usa.)');
+}
+
 /* ---------- seguridad desde fuera, con la clave pública ---------- */
 async function seguridad() {
   console.log('\n● Desde fuera (con la clave pública) no se puede leer ni tocar nada');
   const cab = { apikey: op.key, 'Content-Type': 'application/json' };
-  for (const t of ['alumnos', 'intentos', 'grupos', 'profesores', 'accesos_fallidos', 'latidos', 'bancos', 'items', 'juegos', 'asignaciones', 'partidas', 'respuestas', 'eventos']) {
+  for (const t of ['alumnos', 'intentos', 'grupos', 'profesores', 'accesos_fallidos', 'latidos', 'bancos', 'items', 'juegos', 'asignaciones', 'partidas', 'respuestas', 'eventos', 'directo_sesiones', 'directo_participantes', 'directo_respuestas']) {
     const r = await fetch(url + '/rest/v1/' + t + '?select=*', { headers: cab });
     const cuerpo = await r.json().catch(() => null);
     exige(!(r.status === 200 && Array.isArray(cuerpo) && cuerpo.length > 0), 'tabla «' + t + '»: la web pública no puede leerla (HTTP ' + r.status + ')');
   }
-  for (const fn of ['profe_subir_banco', 'profe_resultados', 'profe_publicar_notas', 'profe_borrar_partida', 'profe_estadisticas_examen', '_corregir_item', '_item_alumno']) {
+  for (const fn of ['profe_subir_banco', 'profe_resultados', 'profe_publicar_notas', 'profe_borrar_partida', 'profe_estadisticas_examen', '_corregir_item', '_item_alumno', 'profe_directo_crear', 'profe_directo_estado', 'profe_directo_avanzar', 'profe_directo_terminar', 'profe_directo_activas', 'profe_directo_borrar', '_directo_pregunta', '_directo_resultado']) {
     const r = await fetch(url + '/rest/v1/rpc/' + fn, { method: 'POST', headers: cab, body: '{}' });
     exige(r.status >= 400 && r.status !== 500, '«' + fn + '»: la web pública no puede llamarla (HTTP ' + r.status + ')');
   }
@@ -180,5 +365,5 @@ function resumen() {
   console.log('\n✓ Todo correcto.\n');
 }
 
-try { await (fase === 'base' ? base() : fase === 'jugar' ? jugar() : comprobar()); }
+try { await (fase === 'base' ? base() : fase === 'jugar' ? jugar() : fase === 'directo' ? directo() : comprobar()); }
 catch (e) { SALIR('Ha fallado algo inesperado: ' + (e && e.message ? e.message : e) + (e && e.status ? ' (HTTP ' + e.status + ')' : '')); }
