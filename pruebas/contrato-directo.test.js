@@ -52,9 +52,17 @@ const real = {
 // El mismo guion contra el SQL real y contra el falso: 3 preguntas del banco indicado
 async function guion(banco, ids, contestarBien) {
   await c.query('truncate directo_respuestas, directo_participantes, directo_sesiones cascade');
-  const sala = await real.profe('profe_directo_crear', JSON.stringify({ grupo: 'TDA2', bancos: [banco], preguntas: 3, tiempo_s: 30 }));
+  const datos = { grupo: 'TDA2', bancos: [banco], preguntas: 3, tiempo_s: 30 };
+  const sala = await real.profe('profe_directo_crear', JSON.stringify(datos));
   const falso = await crearServidorDirecto({ preguntas: ids, tiempoS: 30, sala: sala.sala });
   const F = (fn, a) => falso.llamar(fn, a);
+  const PF = (fn, a) => falso.profe(fn, a), PR = (fn, ...a) => real.profe(fn, ...a);
+  ambos('profe crear', sala, PF('profe_directo_crear', { p_datos: datos }));
+  ambos('profe activas', await PR('profe_directo_activas'), PF('profe_directo_activas', {}));
+  ambos('profe estado (espera, vacía)', await PR('profe_directo_estado', sala.sesion), PF('profe_directo_estado', { p_sesion: falso.sesion }));
+  ambos('profe estado: sala que no existe', await PR('profe_directo_estado', '00000000-0000-4000-8000-000000000000'), PF('profe_directo_estado', { p_sesion: '00000000-0000-4000-8000-000000000000' }));
+  ambos('profe avanzar: sala que no existe', await PR('profe_directo_avanzar', '00000000-0000-4000-8000-000000000000', 'espera'), PF('profe_directo_avanzar', { p_sesion: '00000000-0000-4000-8000-000000000000', p_desde: 'espera' }));
+  ambos('profe avanzar: estado equivocado', await PR('profe_directo_avanzar', sala.sesion, 'resultado'), PF('profe_directo_avanzar', { p_sesion: falso.sesion, p_desde: 'resultado' }));
   const A = 'AAA222', B = 'BBB333', X = 'CCC444';
   const dadaBuena = banco === 'gmc' ? 1 : true, dadaMala = banco === 'gmc' ? 0 : false;
 
@@ -64,6 +72,7 @@ async function guion(banco, ids, contestarBien) {
   ambos('unirse código malo', await real.unirse('ZZZ999', sala.sala), F('directo_unirse', { p_codigo: 'ZZZ999', p_sala: sala.sala }));
   ambos('unirse sala mala', await real.unirse(A, '999999'), F('directo_unirse', { p_codigo: A, p_sala: '999999' }));
   ambos('unirse otro grupo', await real.unirse(X, sala.sala), F('directo_unirse', { p_codigo: X, p_sala: sala.sala }));
+  ambos('profe estado (espera, con jugadores)', await PR('profe_directo_estado', sala.sesion), PF('profe_directo_estado', { p_sesion: falso.sesion }));
   // 2) estados
   ambos('estado en espera', await real.estado(A, sala.sesion), F('directo_estado', { p_codigo: A, p_sesion: falso.sesion }));
   ambos('estado: no participa', await real.estado(B, sala.sesion), F('directo_estado', { p_codigo: B, p_sesion: falso.sesion }));
@@ -79,9 +88,11 @@ async function guion(banco, ids, contestarBien) {
   ambos('responder no participa', await real.responder(B, sala.sesion, 0, dadaMala), F('directo_responder', { p_codigo: B, p_sesion: falso.sesion, p_pregunta: 0, p_dada: dadaMala }));
   ambos('responder dato raro', await real.responder(A, sala.sesion, 0, 'x'), F('directo_responder', { p_codigo: A, p_sesion: falso.sesion, p_pregunta: 0, p_dada: 'x' }));
   ambos('estado en pregunta (contestada)', await real.estado(A, sala.sesion), F('directo_estado', { p_codigo: A, p_sesion: falso.sesion }));
+  ambos('profe estado (pregunta, con una respuesta)', await PR('profe_directo_estado', sala.sesion), PF('profe_directo_estado', { p_sesion: falso.sesion }));
   // 4) resultado: uno que acertó y otro que entra tarde y no contesta
   ambos('unirse tarde', await real.unirse(B, sala.sala), F('directo_unirse', { p_codigo: B, p_sala: sala.sala }));
   ambos('cerrar ya', await real.profe('profe_directo_avanzar', sala.sesion, 'pregunta'), falso.avanzar('pregunta'));
+  ambos('profe estado (resultado)', await PR('profe_directo_estado', sala.sesion), PF('profe_directo_estado', { p_sesion: falso.sesion }));
   ambos('estado en resultado (acertó)', await real.estado(A, sala.sesion), F('directo_estado', { p_codigo: A, p_sesion: falso.sesion }));
   ambos('estado en resultado (no contestó)', await real.estado(B, sala.sesion), F('directo_estado', { p_codigo: B, p_sesion: falso.sesion }));
   ambos('responder con la pregunta cerrada', await real.responder(B, sala.sesion, 0, dadaBuena), F('directo_responder', { p_codigo: B, p_sesion: falso.sesion, p_pregunta: 0, p_dada: dadaBuena }));
@@ -95,6 +106,12 @@ async function guion(banco, ids, contestarBien) {
   await real.profe('profe_directo_avanzar', sala.sesion, 'pregunta'); falso.avanzar('pregunta');
   await real.profe('profe_directo_avanzar', sala.sesion, 'resultado'); falso.avanzar('resultado');
   ambos('estado terminada', await real.estado(A, sala.sesion), F('directo_estado', { p_codigo: A, p_sesion: falso.sesion }));
+  ambos('profe estado (terminada)', await PR('profe_directo_estado', sala.sesion), PF('profe_directo_estado', { p_sesion: falso.sesion }));
+  ambos('profe activas (ya terminada)', await PR('profe_directo_activas'), PF('profe_directo_activas', {}));
+  ambos('profe avanzar: ya terminada', await PR('profe_directo_avanzar', sala.sesion, 'terminada'), PF('profe_directo_avanzar', { p_sesion: falso.sesion, p_desde: 'terminada' }));
+  ambos('profe terminar', await PR('profe_directo_terminar', sala.sesion), PF('profe_directo_terminar', { p_sesion: falso.sesion }));
+  ambos('profe borrar', await PR('profe_directo_borrar', sala.sesion), PF('profe_directo_borrar', { p_sesion: falso.sesion }));
+  ambos('profe borrar (ya no existe)', await PR('profe_directo_borrar', sala.sesion), PF('profe_directo_borrar', { p_sesion: falso.sesion }));
   ambos('responder con la sala terminada', await real.responder(A, sala.sesion, 2, dadaBuena), F('directo_responder', { p_codigo: A, p_sesion: falso.sesion, p_pregunta: 2, p_dada: dadaBuena }));
   ambos('unirse a una sala terminada', await real.unirse(A, sala.sala), F('directo_unirse', { p_codigo: A, p_sala: sala.sala }));
 }

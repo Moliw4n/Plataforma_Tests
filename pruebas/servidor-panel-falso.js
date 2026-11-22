@@ -111,6 +111,13 @@ async function crearServidorPanel(datos = {}) {
       }
       case 'profe_cerrar_caducadas': return { status: 200, body: { ok: true, cerradas: 0 } };
     }
+    // Directo: lo atiende el servidor falso del directo si el test lo ha enchufado (servidor.panel.directo = servidor.directo)
+    if (fn.startsWith('profe_directo_') && S.sinDirecto) return error(404, 'Could not find the function public.' + fn + ' in the schema cache', { code: 'PGRST202' });     // aún no se ejecutó el SQL 09
+    if (fn.startsWith('profe_directo_') && S.directo) {
+      const r = S.directo.profe(fn, args);
+      if (r === null) return error(404, 'función desconocida: ' + fn);
+      return r.error ? error(400, r.error) : { status: 200, body: r };
+    }
     return error(404, 'función desconocida: ' + fn);
   };
   return S;
@@ -143,10 +150,10 @@ function datosExamen() {
     juegos: [{ id: 'ex1', modo: 'examen', titulo: 'Examen U1 · Python', bancos: ['u1'], reglas: { preguntas: 20, tiempo_min: 30, penalizacion: 0, equilibrar: 'tema' } }],
     asignaciones: [{ id: 1, juego: 'ex1', grupo: 'TDA2', desde: null, hasta: null, intentos: 1, mostrar_soluciones: false, notas_publicadas: false }],
     items: [
-      { banco: 'u1', id: 'q1', datos: { tipo: 'opcion_multiple', enun: 'Primera', ops: ['uno', 'dos', 'tres'], ok: 0, sol: 'Porque uno.' } },
-      { banco: 'u1', id: 'q2', datos: { tipo: 'verdadero_falso', enun: 'Segunda', ok: true, sol: 'Es verdadera.' } },
-      { banco: 'u1', id: 'q3', datos: { tipo: 'respuesta_corta', enun: 'Tercera', aceptadas: ['bucle for', 'for'], sol: 'Se llama for.' } },
-      { banco: 'u1', id: 'q4', datos: { tipo: 'numerica', enun: 'Cuarta', valor: 3.5, tolerancia: 0.1, unidad: 'm', sol: 'Medio.' } }
+      { banco: 'u1', id: 'q1', tipo: 'opcion_multiple', datos: { tipo: 'opcion_multiple', enun: 'Primera', ops: ['uno', 'dos', 'tres'], ok: 0, sol: 'Porque uno.' } },
+      { banco: 'u1', id: 'q2', tipo: 'verdadero_falso', datos: { tipo: 'verdadero_falso', enun: 'Segunda', ok: true, sol: 'Es verdadera.' } },
+      { banco: 'u1', id: 'q3', tipo: 'respuesta_corta', datos: { tipo: 'respuesta_corta', enun: 'Tercera', aceptadas: ['bucle for', 'for'], sol: 'Se llama for.' } },
+      { banco: 'u1', id: 'q4', tipo: 'numerica', datos: { tipo: 'numerica', enun: 'Cuarta', valor: 3.5, tolerancia: 0.1, unidad: 'm', sol: 'Medio.' } }
     ],
     eventos: [
       { partida: 'aaaaaaaa-0000-4000-8000-000000000001', tipo: 'salida', momento: '2026-11-25T09:10:00.123456+00:00', detalle: null },

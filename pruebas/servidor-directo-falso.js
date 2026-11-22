@@ -13,13 +13,15 @@ async function crearServidorDirecto(opciones = {}) {
     banco, red: true, desfase: 0, latencia: 0, llamadas: [],
     sesion: '11111111-1111-4111-8111-111111111111', sala: opciones.sala || '123456', grupo: 'TDA2', titulo: opciones.titulo || 'Directo de prueba',
     tiempoS: opciones.tiempoS || 20,
-    preguntas: ids.map(id => ({ banco: 'grande', id, clave: 'grande/' + id })),
+    preguntas: ids.map(id => ({ banco: 'grande', id, clave: 'grande/' + id })), todas: null,
     estado: 'espera', actual: -1, abierta: null, limite: null,
+    creada: opciones.creada !== false,          // false: aún no existe; la crea el profesor con profe_directo_crear (como en la pantalla del profesor)
     participantes: [], respuestas: [],          // respuestas: {alumno, pregunta, dada, ok, ms, puntos}
     alumnos: { ABC123: { id: 'TDA2-07', grupo: 'TDA2' }, AAA222: { id: 'TDA2-01', grupo: 'TDA2' }, BBB333: { id: 'TDA2-02', grupo: 'TDA2' }, CCC444: { id: 'TDA1-01', grupo: 'TDA1' }, ...(opciones.alumnos || {}) },
     ahora() { return Date.now() + this.desfase; },
     iso(ms) { return new Date(ms).toISOString(); }
   };
+  S.todas = S.preguntas.slice();                // todas las preguntas disponibles (crear una sala con menos preguntas coge las primeras)
   const fuente = clave => banco.preguntas.find(p => p.id === clave.split('/')[1]);
   const al = codigo => S.alumnos[String(codigo).toUpperCase().replace(/[^A-Z0-9]/g, '')] || null;
   const ko = motivo => ({ ok: false, motivo });
@@ -51,7 +53,7 @@ async function crearServidorDirecto(opciones = {}) {
   };
   S.terminar = () => { S.estado = 'terminada'; };
   // Alumnos de relleno con puntos (para probar el marcador)
-  S.sembrar = (puntos) => puntos.forEach((p, k) => S.participantes.push({ alumno: 'RELLENO-' + k, apodo: APODOS[(S.participantes.length) % APODOS.length] + ' ' + (k + 2), puntos: p, aciertos: 0 }));
+  S.sembrar = (puntos) => puntos.forEach((p, k) => S.participantes.push({ alumno: 'RELLENO-' + k, apodo: APODOS[(S.participantes.length) % APODOS.length] + ' ' + (k + 2), puntos: p, aciertos: 0, visto: Infinity }));
   S.puntosDe = alumno => (S.participantes.find(p => p.alumno === alumno) || {}).puntos;
 
   // ---------- lo que hace el ALUMNO (las 3 funciones del SQL) ----------
@@ -62,6 +64,7 @@ async function crearServidorDirecto(opciones = {}) {
       if (S.estado === 'terminada' || p_sala !== S.sala || a.grupo !== S.grupo) return ko('sala');
       let pt = participante(a);
       if (!pt) { pt = { alumno: a.id, apodo: APODOS[S.participantes.length % APODOS.length], puntos: 0, aciertos: 0 }; S.participantes.push(pt); }
+      pt.visto = S.ahora();
       return { ok: true, sesion: S.sesion, apodo: pt.apodo, titulo: S.titulo, total: S.preguntas.length };
     },
     directo_estado({ p_codigo, p_sesion }) {
@@ -69,6 +72,7 @@ async function crearServidorDirecto(opciones = {}) {
       alDia();
       if (p_sesion !== S.sesion || a.grupo !== S.grupo) return ko('no_encontrada');
       const pt = participante(a); if (!pt) return ko('no_participas');
+      pt.visto = S.ahora();
       const pos = 1 + S.participantes.filter(p => p.puntos > pt.puntos).length;
       const r = S.actual >= 0 ? respDe(a.id, S.actual) : null;
       const d = S.actual >= 0 ? fuente(S.preguntas[S.actual].clave) : null;
@@ -104,6 +108,46 @@ async function crearServidorDirecto(opciones = {}) {
       return { ok: true };
     }
   };
+
+  // ---------- las funciones del PROFESOR (las 6 profe_directo_* del SQL) ----------
+  const repartoDe = (d, q) => {
+    const veces = v => S.respuestas.filter(r => r.pregunta === q && r.dada === v).length;
+    return d.tipo === 'opcion_multiple' ? d.ops.map((t, i) => ({ texto: t, veces: veces(i), correcta: i === d.ok }))
+                                        : [{ texto: 'Verdadero', veces: veces(true), correcta: d.ok === true }, { texto: 'Falso', veces: veces(false), correcta: d.ok === false }];
+  };
+  const P = {
+    profe_directo_crear({ p_datos }) {
+      if (S.errorCrear) return { error: S.errorCrear };
+      S.creadaCon = p_datos;
+      S.estado = 'espera'; S.actual = -1; S.abierta = null; S.limite = null; S.participantes = []; S.respuestas = []; S.creada = true;
+      if (p_datos.tiempo_s) S.tiempoS = p_datos.tiempo_s;
+      if (p_datos.titulo) S.titulo = p_datos.titulo;
+      if (p_datos.grupo) S.grupo = p_datos.grupo;
+      if (p_datos.preguntas && p_datos.preguntas < S.todas.length) S.preguntas = S.todas.slice(0, p_datos.preguntas);
+      return { ok: true, sesion: S.sesion, sala: S.sala, total: S.preguntas.length, tiempo_s: S.tiempoS };
+    },
+    profe_directo_estado({ p_sesion }) {
+      if (!S.creada || p_sesion !== S.sesion) return ko('no_encontrada');
+      alDia();
+      const q = S.actual, cerrada = S.estado === 'resultado' || S.estado === 'terminada', d = q >= 0 ? fuente(S.preguntas[q].clave) : null;
+      return sinNulos({
+        ok: true, sesion: S.sesion, sala: S.sala, titulo: S.titulo, grupo: S.grupo, estado: S.estado, actual: q, total: S.preguntas.length, tiempo_s: S.tiempoS, ahora: S.iso(S.ahora()),
+        restante_ms: S.estado === 'pregunta' ? Math.max(0, S.limite - S.ahora()) : null,
+        participantes: ordenar().map(p => ({ alumno: p.alumno, apodo: p.apodo, puntos: p.puntos, aciertos: p.aciertos, conectado: S.ahora() - (p.visto || 0) < 8000,
+                                             respondio: q >= 0 && !!respDe(p.alumno, q) })),
+        respondidas: q >= 0 ? S.respuestas.filter(r => r.pregunta === q).length : null,
+        pregunta: q >= 0 && S.estado !== 'terminada' ? itemAlumno(S.preguntas[q].clave) : null,
+        resultado: q >= 0 && cerrada ? { correcta: d.ok, sol: d.sol, trampa: d.trampa, reparto: repartoDe(d, q) } : null
+      });
+    },
+    profe_directo_avanzar({ p_sesion, p_desde }) { return !S.creada || p_sesion !== S.sesion ? ko('no_encontrada') : S.avanzar(p_desde); },
+    profe_directo_terminar({ p_sesion }) { if (!S.creada || p_sesion !== S.sesion) return { ok: false }; S.estado = 'terminada'; return { ok: true }; },
+    profe_directo_activas() {
+      return { ok: true, salas: S.creada && S.estado !== 'terminada' ? [{ sesion: S.sesion, sala: S.sala, titulo: S.titulo, grupo: S.grupo, estado: S.estado, creada: S.iso(S.ahora()), participantes: S.participantes.length }] : [] };
+    },
+    profe_directo_borrar({ p_sesion }) { if (!S.creada || p_sesion !== S.sesion) return { ok: false }; S.creada = false; return { ok: true }; }
+  };
+  S.profe = (fn, args) => { if (!P[fn]) return null; const r = P[fn](args || {}); S.llamadas.push({ fn, args, r }); return r; };
   S.llamar = (fn, args) => { if (!F[fn]) return null; const r = F[fn](args || {}); S.llamadas.push({ fn, args, r }); return r; };
   return S;
 }
