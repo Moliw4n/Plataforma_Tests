@@ -12,6 +12,11 @@
 --   profe_directo_terminar(sesion)       → cierra la sala
 --   profe_directo_activas()              → las salas abiertas (para volver a ellas tras recargar)
 --   profe_directo_borrar(sesion)         → borra una sala y todo lo suyo
+-- Paso 2: funciones del ALUMNO (siempre con su código):
+--   directo_unirse(codigo, sala)                       → entra en la sala (solo su grupo); el servidor le da un apodo («Zorro Azul»)
+--   directo_estado(codigo, sesion)                     → lo que ve su móvil: espera, pregunta (sin solución), resultado propio o podio
+--   directo_responder(codigo, sesion, pregunta, dada)  → contesta UNA vez; no dice si acertó (eso sale al cerrar); puntos por rapidez
+-- Puntos: acertar da de 1000 (al instante) a 500 (justo al acabar el tiempo); fallar o no contestar, 0. El tiempo lo mide el SERVIDOR.
 -- SEGURIDAD: las tablas nuevas están cerradas (RLS): la web pública no lee ni escribe nada. El profesor solo LEE; escribe con estas funciones.
 -- =====================================================================
 
@@ -76,11 +81,12 @@ end $$;
 
 -- ---------- Piezas internas ----------------------------------------------
 
--- Si la pregunta en curso ya pasó de tiempo, la sala pasa sola a «resultado» (se llama al principio de cada función)
+-- Si la pregunta en curso ya pasó de tiempo (más 1 s de cortesía por la latencia del móvil), la sala pasa sola a «resultado»
+-- (se llama al principio de cada función)
 create or replace function public._directo_al_dia(p_sesion uuid) returns void
 language sql security definer set search_path = public as $$
   update public.directo_sesiones set estado = 'resultado'
-   where id = p_sesion and estado = 'pregunta' and now() >= limite;
+   where id = p_sesion and estado = 'pregunta' and now() >= limite + interval '1 second';
 $$;
 
 -- La pregunta número `p_n` de una sala, tal como la ve el alumno (SIN solución). Las opciones salen en el orden fijo de la sala.
@@ -203,7 +209,7 @@ begin
     'actual', s.actual, 'total', total, 'tiempo_s', s.tiempo_s, 'ahora', now(),
     'restante_ms', case when s.estado = 'pregunta' then greatest(0, round(extract(epoch from s.limite - now()) * 1000))::int end,
     'participantes', coalesce((
-      select jsonb_agg(jsonb_build_object('alumno', p.alumno, 'apodo', p.apodo, 'puntos', p.puntos, 'aciertos', p.aciertos,
+      select jsonb_agg(jsonb_build_object('alumno', p.alumno, 'apodo', p.apodo, 'puntos', p.puntos, 'aciertos', p.aciertos, 'conectado', p.visto > now() - interval '8 seconds',
                                           'respondio', s.actual >= 0 and exists (select 1 from public.directo_respuestas r where r.sesion = s.id and r.alumno = p.alumno and r.pregunta = s.actual))
                        order by p.puntos desc, p.apodo)
         from public.directo_participantes p where p.sesion = s.id), '[]'::jsonb),
@@ -271,11 +277,139 @@ begin
   return jsonb_build_object('ok', n > 0);
 end $$;
 
+-- ---------- Funciones del ALUMNO --------------------------------------------
+
+-- Apodos: adjetivo + animal, ambos masculinos. Solo se usan en pantalla; nada que ver con el alumno real.
+create or replace function public._directo_apodo(p_sesion uuid) returns text
+language plpgsql volatile security definer set search_path = public as $$
+declare adj text[] := array['Azul', 'Rojo', 'Verde', 'Dorado', 'Plateado', 'Veloz', 'Astuto', 'Bravo', 'Sabio', 'Ágil', 'Feliz', 'Sereno', 'Valiente', 'Curioso', 'Listo', 'Fuerte', 'Noble', 'Fiero', 'Rápido', 'Cósmico'];
+        ani text[] := array['Zorro', 'Lobo', 'Oso', 'Halcón', 'Tigre', 'León', 'Búho', 'Delfín', 'Lince', 'Cuervo', 'Panda', 'Tiburón', 'Dragón', 'Pulpo', 'Gato', 'Conejo', 'Ciervo', 'Jabalí', 'Lagarto', 'Camaleón', 'Mapache', 'Cóndor', 'Puma', 'Koala', 'Pingüino', 'Erizo', 'Castor', 'Bisonte'];
+        a text; k int := 0;
+begin
+  loop
+    a := ani[1 + floor(random() * array_length(ani, 1))::int] || ' ' || adj[1 + floor(random() * array_length(adj, 1))::int];
+    k := k + 1;
+    if k > 40 then a := a || ' ' || (1 + floor(random() * 99))::int; end if;                 -- sala casi llena de apodos: se añade un número
+    exit when not exists (select 1 from public.directo_participantes where sesion = p_sesion and apodo = a);
+  end loop;
+  return a;
+end $$;
+
+-- Entrar en una sala con su código de alumno y el código de sala. Solo el grupo de la sala. Se puede entrar con la sala ya empezada y volver a entrar
+-- (recargar) sin perder el apodo ni los puntos.
+create or replace function public.directo_unirse(p_codigo text, p_sala text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare a public.alumnos; s public.directo_sesiones; pt public.directo_participantes; k int := 0;
+begin
+  begin a := public._quien(p_codigo); exception when others then return jsonb_build_object('ok', false, 'motivo', 'espera'); end;
+  if a.id is null then return jsonb_build_object('ok', false, 'motivo', 'codigo'); end if;
+  select * into s from public.directo_sesiones where sala = p_sala and estado <> 'terminada';
+  -- una sala de otro grupo se trata como si no existiera (no se enseña que está abierta)
+  if s.id is null or s.grupo <> a.grupo then return jsonb_build_object('ok', false, 'motivo', 'sala'); end if;
+
+  perform pg_advisory_xact_lock(hashtextextended(s.id::text || ':' || a.id, 0));
+  select * into pt from public.directo_participantes where sesion = s.id and alumno = a.id;
+  if pt.alumno is null then
+    loop
+      begin
+        insert into public.directo_participantes(sesion, alumno, apodo) values (s.id, a.id, public._directo_apodo(s.id)) returning * into pt;
+        exit;
+      exception when unique_violation then                                                    -- el mismo apodo a la vez para dos alumnos: otro intento
+        k := k + 1;
+        if k > 20 then raise; end if;
+      end;
+    end loop;
+  else
+    update public.directo_participantes set visto = now() where sesion = s.id and alumno = a.id;
+  end if;
+  return jsonb_build_object('ok', true, 'sesion', s.id, 'apodo', pt.apodo, 'titulo', s.titulo, 'total', jsonb_array_length(s.preguntas));
+end $$;
+
+-- Lo que ve el móvil del alumno. Sin soluciones hasta que la pregunta se cierra; entonces, solo SU resultado y el marcador.
+create or replace function public.directo_estado(p_codigo text, p_sesion uuid) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare a public.alumnos; s public.directo_sesiones; pt public.directo_participantes; r public.directo_respuestas; res jsonb; pos int; npart int; top jsonb;
+begin
+  begin a := public._quien(p_codigo); exception when others then return jsonb_build_object('ok', false, 'motivo', 'espera'); end;
+  if a.id is null then return jsonb_build_object('ok', false, 'motivo', 'codigo'); end if;
+  perform public._directo_al_dia(p_sesion);
+  select * into s from public.directo_sesiones where id = p_sesion;
+  if s.id is null or s.grupo <> a.grupo then return jsonb_build_object('ok', false, 'motivo', 'no_encontrada'); end if;
+  select * into pt from public.directo_participantes where sesion = s.id and alumno = a.id;
+  if pt.alumno is null then return jsonb_build_object('ok', false, 'motivo', 'no_participas'); end if;
+  update public.directo_participantes set visto = now() where sesion = s.id and alumno = a.id;
+
+  select count(*) + 1 into pos from public.directo_participantes where sesion = s.id and puntos > pt.puntos;
+  select count(*) into npart from public.directo_participantes where sesion = s.id;
+  if s.actual >= 0 then select * into r from public.directo_respuestas where sesion = s.id and alumno = a.id and pregunta = s.actual; end if;
+
+  if s.estado in ('resultado', 'terminada') then
+    select coalesce(jsonb_agg(jsonb_build_object('apodo', t.apodo, 'puntos', t.puntos, 'yo', t.apodo = pt.apodo) order by t.puntos desc, t.apodo), '[]'::jsonb) into top
+      from (select apodo, puntos from public.directo_participantes where sesion = s.id order by puntos desc, apodo limit 5) t;
+    res := case when s.actual >= 0 then public._directo_resultado(s.id, s.actual) end;
+  end if;
+
+  return jsonb_strip_nulls(jsonb_build_object(
+    'ok', true, 'sesion', s.id, 'titulo', s.titulo, 'estado', s.estado, 'actual', s.actual, 'total', jsonb_array_length(s.preguntas), 'tiempo_s', s.tiempo_s,
+    'apodo', pt.apodo, 'puntos', pt.puntos, 'aciertos', pt.aciertos, 'posicion', pos, 'participantes', npart, 'ahora', now(),
+    'restante_ms', case when s.estado = 'pregunta' then greatest(0, round(extract(epoch from s.limite - now()) * 1000))::int end,
+    'pregunta', case when s.estado = 'pregunta' then public._directo_pregunta(s.id, s.actual) end,
+    'respondio', case when s.actual >= 0 and s.estado <> 'terminada' then r.alumno is not null end,
+    'mi_dada', case when s.estado = 'pregunta' then r.dada end,
+    'resultado', case when s.estado = 'resultado' and s.actual >= 0
+                      then jsonb_build_object('correcta', res -> 'correcta', 'sol', res -> 'sol', 'respondio', r.alumno is not null, 'ok', coalesce(r.ok, false),
+                                              'puntos', coalesce(r.puntos, 0), 'dada', r.dada) end,
+    'marcador', top));
+end $$;
+
+-- Contesta la pregunta en curso. UNA vez (la primera cuenta). No dice si acertó. p_dada: opción múltiple = índice de la opción (0..n-1,
+-- en el orden en que se ven, que es fijo); verdadero/falso = true|false.
+create or replace function public.directo_responder(p_codigo text, p_sesion uuid, p_pregunta int, p_dada jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare a public.alumnos; s public.directo_sesiones; e jsonb; datos jsonb; ms int; ok boolean; pts int; filas int;
+begin
+  begin a := public._quien(p_codigo); exception when others then return jsonb_build_object('ok', false, 'motivo', 'espera'); end;
+  if a.id is null then return jsonb_build_object('ok', false, 'motivo', 'codigo'); end if;
+  perform public._directo_al_dia(p_sesion);
+  select * into s from public.directo_sesiones where id = p_sesion;
+  if s.id is null or s.grupo <> a.grupo then return jsonb_build_object('ok', false, 'motivo', 'no_encontrada'); end if;
+  if not exists (select 1 from public.directo_participantes where sesion = s.id and alumno = a.id) then return jsonb_build_object('ok', false, 'motivo', 'no_participas'); end if;
+  if p_pregunta is distinct from s.actual then return jsonb_build_object('ok', false, 'motivo', 'otra_pregunta'); end if;
+  if s.estado <> 'pregunta' then return jsonb_build_object('ok', false, 'motivo', 'cerrada'); end if;
+
+  e := s.preguntas -> s.actual;
+  select i.datos into datos from public.items i where i.banco = e ->> 'banco' and i.id = e ->> 'id';
+  if datos ->> 'tipo' = 'opcion_multiple' then
+    if jsonb_typeof(p_dada) is distinct from 'number' or (p_dada #>> '{}')::numeric <> trunc((p_dada #>> '{}')::numeric)
+       or (p_dada #>> '{}')::numeric < 0 or (p_dada #>> '{}')::numeric >= jsonb_array_length(datos -> 'ops') then return jsonb_build_object('ok', false, 'motivo', 'dato'); end if;
+  elsif jsonb_typeof(p_dada) is distinct from 'boolean' then
+    return jsonb_build_object('ok', false, 'motivo', 'dato');
+  end if;
+
+  ms := least(greatest(round(extract(epoch from now() - s.abierta) * 1000), 0), s.tiempo_s * 1000)::int;
+  ok := public._corregir_item(datos, p_dada);
+  pts := case when ok then round(1000 * (1 - ms::numeric / (s.tiempo_s * 1000) / 2))::int else 0 end;
+
+  insert into public.directo_respuestas(sesion, alumno, pregunta, dada, ok, ms, puntos) values (s.id, a.id, s.actual, p_dada, ok, ms, pts)
+  on conflict (sesion, alumno, pregunta) do nothing;
+  get diagnostics filas = row_count;
+  if filas = 0 then return jsonb_build_object('ok', false, 'motivo', 'ya_respondida'); end if;
+  update public.directo_participantes set puntos = puntos + pts, aciertos = aciertos + case when ok then 1 else 0 end where sesion = s.id and alumno = a.id;
+  return jsonb_build_object('ok', true);
+end $$;
+
 -- ---------- Permisos -----------------------------------------------------
 
 revoke all on function public._directo_al_dia(uuid)            from public, anon, authenticated;
 revoke all on function public._directo_pregunta(uuid, int)     from public, anon, authenticated;
 revoke all on function public._directo_resultado(uuid, int)    from public, anon, authenticated;
+revoke all on function public._directo_apodo(uuid)            from public, anon, authenticated;
+revoke all on function public.directo_unirse(text, text)       from public;
+revoke all on function public.directo_estado(text, uuid)       from public;
+revoke all on function public.directo_responder(text, uuid, int, jsonb) from public;
+grant execute on function public.directo_unirse(text, text)               to anon, authenticated;
+grant execute on function public.directo_estado(text, uuid)               to anon, authenticated;
+grant execute on function public.directo_responder(text, uuid, int, jsonb) to anon, authenticated;
 revoke all on function public.profe_directo_crear(jsonb)       from public, anon;
 revoke all on function public.profe_directo_estado(uuid)       from public, anon;
 revoke all on function public.profe_directo_avanzar(uuid, text) from public, anon;
@@ -289,8 +423,10 @@ grant execute on function public.profe_directo_terminar(uuid)      to authentica
 grant execute on function public.profe_directo_activas()           to authenticated;
 grant execute on function public.profe_directo_borrar(uuid)        to authenticated;
 
--- Comprobación: debe salir 3 (las tablas nuevas) y 6 (las funciones profe_directo_* nuevas)
+-- Comprobación: debe salir 3 (las tablas nuevas), 6 (funciones del profesor) y 3 (funciones del alumno)
 select
   (select count(*) from information_schema.tables where table_schema = 'public' and table_name in ('directo_sesiones', 'directo_participantes', 'directo_respuestas')) as tablas_nuevas,
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public' and p.proname in ('profe_directo_crear', 'profe_directo_estado', 'profe_directo_avanzar', 'profe_directo_terminar', 'profe_directo_activas', 'profe_directo_borrar')) as funciones_profe_directo;
+    where n.nspname = 'public' and p.proname in ('profe_directo_crear', 'profe_directo_estado', 'profe_directo_avanzar', 'profe_directo_terminar', 'profe_directo_activas', 'profe_directo_borrar')) as funciones_profe_directo,
+  (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname in ('directo_unirse', 'directo_estado', 'directo_responder')) as funciones_alumno_directo;

@@ -27,13 +27,27 @@ const rpc = async (fn, ...args) => (await profe('select public.' + fn + '(' + ar
 const crear = (extra = {}) => rpc('profe_directo_crear', JSON.stringify({ grupo: 'TDA2', bancos: ['dir'], preguntas: 4, tiempo_s: 20, ...extra }));
 const estado = id => rpc('profe_directo_estado', id);
 const avanzar = (id, desde) => rpc('profe_directo_avanzar', id, desde);
+const A = 'AAA222', B = 'BBB333', C = 'CCC444', D = 'DDD555', OTRO_GRUPO = 'EEE666';
+const unirse = async (cod, sala) => (await anon('select public.directo_unirse($1, $2) as r', [cod, sala])).rows[0].r;
+const miEstado = async (cod, sesion) => (await anon('select public.directo_estado($1, $2::uuid) as r', [cod, sesion])).rows[0].r;
+const contestar = async (cod, sesion, q, dada) => (await anon('select public.directo_responder($1, $2::uuid, $3::int, $4::jsonb) as r', [cod, sesion, q, JSON.stringify(dada)])).rows[0].r;
+const fuente = clave => BANCO.preguntas.find(p => p.id === clave.split('/')[1]);
+const buena = clave => fuente(clave).ok;                                           // opción múltiple: índice (el orden de la sala es el original); verdadero/falso: boolean
+const mala = clave => { const f = fuente(clave); return f.tipo === 'opcion_multiple' ? (f.ok + 1) % 4 : !f.ok; };
+// Una sala con los 4 alumnos del grupo dentro y la primera pregunta abierta
+async function salaEnMarcha(extra = {}, quienes = [A, B, C, D]) {
+  const r = await crear({ preguntas: 3, ...extra });
+  for (const cod of quienes) assert.equal((await unirse(cod, r.sala)).ok, true);
+  await avanzar(r.sesion, 'espera');
+  return r;
+}
 const n = async (sql, p) => Number((await c.query(sql, p)).rows[0].n);
 
 test.beforeEach(async () => {
   await c.query('truncate directo_respuestas, directo_participantes, directo_sesiones, items, bancos, alumnos, grupos, profesores, accesos_fallidos cascade');
   await c.query('insert into profesores(email) values ($1)', [PROFE]);
   await c.query("insert into grupos(id, nombre) values ('TDA2', 'TDA II'), ('TDA1', 'TDA I')");
-  await c.query("insert into alumnos(id, grupo, codigo_hash) values ('TDA2-01', 'TDA2', public._hash_codigo('AAA222')), ('TDA2-02', 'TDA2', public._hash_codigo('BBB333'))");
+  await c.query("insert into alumnos(id, grupo, codigo_hash) values ('TDA2-01', 'TDA2', public._hash_codigo('AAA222')), ('TDA2-02', 'TDA2', public._hash_codigo('BBB333')), ('TDA2-03', 'TDA2', public._hash_codigo('CCC444')), ('TDA2-04', 'TDA2', public._hash_codigo('DDD555')), ('TDA1-01', 'TDA1', public._hash_codigo('EEE666'))");
   await profe('select public.profe_subir_banco($1::jsonb)', [JSON.stringify(BANCO)]);
   await profe('select public.profe_subir_banco($1::jsonb)', [JSON.stringify(BANCO_VACIO)]);
 });
@@ -152,14 +166,14 @@ test.describe('estado y avanzar', () => {
   test('si se acaba el tiempo la sala pasa sola a «resultado»; pulsar «Siguiente» en ese instante no se salta el resultado', async () => {
     const { sesion } = await crear({ preguntas: 3 });
     await avanzar(sesion, 'espera');
-    await c.query("update directo_sesiones set limite = now() - interval '1 second'");
+    await c.query("update directo_sesiones set limite = now() - interval '3 seconds'");
     const e = await estado(sesion);
     assert.equal(e.estado, 'resultado'); assert.equal(e.actual, 0); assert.ok(e.resultado);
     // la pantalla del profesor aún creía que estaba en «pregunta»: no avanza dos veces, avisa
     assert.deepEqual(await avanzar(sesion, 'pregunta'), { ok: false, motivo: 'estado_cambiado', estado: 'resultado' });
     assert.equal((await estado(sesion)).actual, 0);
     // y también si nadie llama a estado: avanzar lo detecta por sí mismo
-    await c.query("update directo_sesiones set estado = 'pregunta', limite = now() - interval '1 second'");
+    await c.query("update directo_sesiones set estado = 'pregunta', limite = now() - interval '3 seconds'");
     assert.deepEqual(await avanzar(sesion, 'pregunta'), { ok: false, motivo: 'estado_cambiado', estado: 'resultado' });
   });
   test('«avanzar» con un estado equivocado no hace nada', async () => {
@@ -224,5 +238,220 @@ test.describe('terminar, listar y borrar', () => {
     await c.query("insert into directo_participantes(sesion, alumno, apodo) values ($1, 'TDA2-01', 'X')", [sesion]);
     await c.query("delete from alumnos where id = 'TDA2-01'");
     assert.equal(await n('select count(*) n from directo_participantes'), 0);
+  });
+});
+
+test.describe('alumno: permisos', () => {
+  test('la web pública puede llamar a las 3 funciones del alumno, pero no a la interna de apodos', async () => {
+    const r = await crear();
+    assert.equal((await unirse(A, r.sala)).ok, true);
+    assert.equal((await miEstado(A, r.sesion)).ok, true);
+    assert.equal((await contestar(A, r.sesion, 0, true)).ok, false);                // la sala aún no ha empezado: no es un error de permisos
+    await assert.rejects(anon('select public._directo_apodo(gen_random_uuid())'), /permission denied/);
+    for (const t of ['directo_sesiones', 'directo_participantes', 'directo_respuestas']) await assert.rejects(anon('select * from public.' + t), /permission denied/, t);
+  });
+});
+
+test.describe('alumno: unirse', () => {
+  test('entra con su código y el de la sala, recibe un apodo «Animal Adjetivo» que no tiene nada de él, y al volver a entrar conserva apodo y puntos', async () => {
+    const r = await crear();
+    const j = await unirse(A, r.sala);
+    assert.equal(j.ok, true); assert.equal(j.sesion, r.sesion); assert.match(j.apodo, /^\S+ \S+$/); assert.equal(j.total, 4); assert.equal(j.titulo, 'Directo');
+    assert.ok(!j.apodo.includes('TDA2') && !j.apodo.includes('01'));
+    await c.query("update directo_participantes set puntos = 700 where alumno = 'TDA2-01'");
+    const otra = await unirse(A, r.sala);
+    assert.equal(otra.apodo, j.apodo); assert.equal(await n('select count(*) n from directo_participantes'), 1);
+    assert.equal(await n("select puntos n from directo_participantes where alumno = 'TDA2-01'"), 700);
+  });
+  test('30 alumnos en la misma sala: 30 apodos distintos', async () => {
+    const r = await crear();
+    for (let k = 0; k < 30; k++) {
+      const id = 'TDA2-' + String(50 + k), cod = 'Q' + String(10000 + k);
+      await c.query("insert into alumnos(id, grupo, codigo_hash) values ($1, 'TDA2', public._hash_codigo($2))", [id, cod]);
+      assert.equal((await unirse(cod, r.sala)).ok, true);
+    }
+    assert.equal(await n('select count(distinct apodo) n from directo_participantes'), 30);
+  });
+  test('código de alumno que no existe → codigo; sala que no existe, terminada o de otro grupo → sala (sin enseñar que existe)', async () => {
+    const r = await crear();
+    assert.deepEqual(await unirse('ZZZ999', r.sala), { ok: false, motivo: 'codigo' });
+    assert.deepEqual(await unirse(A, '999999'), { ok: false, motivo: 'sala' });
+    assert.deepEqual(await unirse(OTRO_GRUPO, r.sala), { ok: false, motivo: 'sala' });
+    assert.deepEqual(await unirse(A, 'abc'), { ok: false, motivo: 'sala' });
+    await rpc('profe_directo_terminar', r.sesion);
+    assert.deepEqual(await unirse(A, r.sala), { ok: false, motivo: 'sala' });
+    assert.equal(await n('select count(*) n from directo_participantes'), 0);
+  });
+  test('se puede entrar con la partida ya empezada', async () => {
+    const r = await crear({ preguntas: 2 });
+    await unirse(A, r.sala); await avanzar(r.sesion, 'espera');
+    const tarde = await unirse(B, r.sala);
+    assert.equal(tarde.ok, true);
+    assert.equal((await miEstado(B, r.sesion)).estado, 'pregunta');
+  });
+  test('demasiados códigos fallidos seguidos → espera', async () => {
+    const r = await crear();
+    for (let k = 0; k < 41; k++) await unirse('MAL' + k, r.sala);
+    assert.deepEqual(await unirse(A, r.sala), { ok: false, motivo: 'espera' });
+  });
+});
+
+test.describe('alumno: lo que ve su móvil', () => {
+  test('quien no ha entrado en la sala no ve nada; tampoco el de otro grupo ni un código falso', async () => {
+    const r = await crear();
+    await unirse(A, r.sala);
+    assert.deepEqual(await miEstado(B, r.sesion), { ok: false, motivo: 'no_participas' });
+    assert.deepEqual(await miEstado(OTRO_GRUPO, r.sesion), { ok: false, motivo: 'no_encontrada' });
+    assert.deepEqual(await miEstado('ZZZ999', r.sesion), { ok: false, motivo: 'codigo' });
+    assert.deepEqual(await miEstado(A, '00000000-0000-4000-8000-000000000000'), { ok: false, motivo: 'no_encontrada' });
+  });
+  test('espera → pregunta → resultado → … → final: cada fase enseña lo que toca y NUNCA la solución antes de cerrar ni lo que contestaron otros', async () => {
+    const r = await crear({ preguntas: 2 });
+    await unirse(A, r.sala); await unirse(B, r.sala);
+    let e = await miEstado(A, r.sesion);
+    assert.equal(e.estado, 'espera'); assert.equal(e.participantes, 2); assert.equal(e.posicion, 1); assert.ok(e.apodo);
+    assert.ok(!('pregunta' in e) && !('resultado' in e) && !('marcador' in e) && !('restante_ms' in e));
+
+    await avanzar(r.sesion, 'espera');
+    e = await miEstado(A, r.sesion);
+    assert.equal(e.estado, 'pregunta'); assert.equal(e.respondio, false); assert.ok(e.restante_ms > 18000);
+    assert.ok(e.pregunta.enun && e.pregunta.clave);
+    assert.deepEqual(Object.keys(e.pregunta).filter(k => !['clave', 'tipo', 'enun', 'code', 'act', 'categoria', 'pista', 'unidad', 'ops'].includes(k)), []);
+    const clave0 = e.pregunta.clave;
+    assert.equal((await contestar(A, r.sesion, 0, buena(clave0))).ok, true);
+    await contestar(B, r.sesion, 0, mala(clave0));
+    e = await miEstado(A, r.sesion);
+    assert.equal(e.respondio, true); assert.deepEqual(e.mi_dada, buena(clave0));
+    for (const prohibido of ['SOLUCION-', 'TRAMPA-', '"correcta"', '"reparto"', '"sol"', '"trampa"', 'Zorro Azul']) assert.ok(!JSON.stringify(e).includes(prohibido), 'se cuela ' + prohibido);
+
+    await avanzar(r.sesion, 'pregunta');
+    e = await miEstado(A, r.sesion);
+    assert.equal(e.estado, 'resultado'); assert.ok(!('pregunta' in e) && !('restante_ms' in e));
+    assert.equal(e.resultado.ok, true); assert.ok(e.resultado.puntos >= 990 && e.resultado.puntos <= 1000); assert.equal(e.resultado.respondio, true);
+    assert.deepEqual(e.resultado.correcta, buena(clave0)); assert.match(e.resultado.sol, /^SOLUCION-/);
+    assert.ok(!('reparto' in e.resultado) && !('trampa' in e.resultado), 'el móvil no recibe el reparto de los demás');
+    assert.equal(e.posicion, 1); assert.equal(e.puntos, e.resultado.puntos);
+    assert.deepEqual(e.marcador.map(x => [x.yo, x.puntos > 0]), [[true, true], [false, false]]);
+    const eb = await miEstado(B, r.sesion);
+    assert.equal(eb.resultado.ok, false); assert.equal(eb.resultado.puntos, 0); assert.equal(eb.posicion, 2);
+
+    await avanzar(r.sesion, 'resultado');
+    await avanzar(r.sesion, 'pregunta'); await avanzar(r.sesion, 'resultado');
+    e = await miEstado(A, r.sesion);
+    assert.equal(e.estado, 'terminada'); assert.ok(!('pregunta' in e) && !('resultado' in e)); assert.equal(e.marcador.length, 2); assert.equal(e.aciertos, 1);
+  });
+  test('quien no contesta recibe «respondio: false», 0 puntos y su sitio en el marcador', async () => {
+    const r = await salaEnMarcha({}, [A, B]);
+    await avanzar(r.sesion, 'pregunta');
+    const e = await miEstado(A, r.sesion);
+    assert.equal(e.resultado.respondio, false); assert.equal(e.resultado.puntos, 0); assert.equal(e.resultado.ok, false);
+  });
+  test('el marcador enseña solo los 5 primeros y la posición propia, con empates en el mismo puesto', async () => {
+    const r = await crear({ preguntas: 1 });
+    for (const cod of [A, B, C, D]) await unirse(cod, r.sala);
+    for (let k = 0; k < 4; k++) {
+      const id = 'TDA2-9' + k; await c.query("insert into alumnos(id, grupo, codigo_hash) values ($1, 'TDA2', public._hash_codigo($2))", [id, 'R9' + k]); await unirse('R9' + k, r.sala);
+    }
+    await c.query("update directo_participantes set puntos = case alumno when 'TDA2-01' then 900 when 'TDA2-02' then 900 when 'TDA2-03' then 500 when 'TDA2-04' then 100 else 50 end where sesion = $1", [r.sesion]);
+    await avanzar(r.sesion, 'espera'); await avanzar(r.sesion, 'pregunta');
+    const a = await miEstado(A, r.sesion), b = await miEstado(B, r.sesion), c3 = await miEstado(C, r.sesion), d = await miEstado(D, r.sesion);
+    assert.equal(a.marcador.length, 5); assert.deepEqual(a.marcador.map(x => x.puntos), [900, 900, 500, 100, 50]);
+    assert.deepEqual([a.posicion, b.posicion, c3.posicion, d.posicion], [1, 1, 3, 4]);
+    assert.equal(a.participantes, 8);
+    assert.deepEqual(d.marcador.filter(x => x.yo).map(x => x.puntos), [100]);
+  });
+});
+
+test.describe('alumno: responder y puntos', () => {
+  const puntosDe = alum => n("select puntos n from directo_participantes where alumno = $1", [alum]);
+  test('acertar da de 1000 a 500 según el tiempo (medido por el servidor); fallar da 0; la respuesta no dice si acertó', async () => {
+    const r = await salaEnMarcha({ tiempo_s: 20 });
+    const cl = (await miEstado(A, r.sesion)).pregunta.clave;
+    assert.deepEqual(await contestar(A, r.sesion, 0, buena(cl)), { ok: true });                  // ni «acertó» ni nada más
+    assert.ok(await puntosDe('TDA2-01') >= 990, 'al instante ≈ 1000');
+    await c.query("update directo_sesiones set abierta = now() - interval '10 seconds', limite = now() + interval '10 seconds'");
+    assert.deepEqual(await contestar(B, r.sesion, 0, buena(cl)), { ok: true });
+    const mitad = await puntosDe('TDA2-02'); assert.ok(mitad >= 748 && mitad <= 752, 'a mitad de tiempo ≈ 750, salió ' + mitad);
+    await c.query("update directo_sesiones set abierta = now() - interval '25 seconds', limite = now() + interval '0.5 second'");
+    await contestar(C, r.sesion, 0, buena(cl));
+    assert.equal(await puntosDe('TDA2-03'), 500);                                                  // al límite (o pasado de ms): el mínimo por acertar
+    assert.deepEqual(await contestar(D, r.sesion, 0, mala(cl)), { ok: true });
+    assert.equal(await puntosDe('TDA2-04'), 0);
+    assert.equal(await n("select aciertos n from directo_participantes where alumno = 'TDA2-04'"), 0);
+    assert.equal(await n("select aciertos n from directo_participantes where alumno = 'TDA2-01'"), 1);
+  });
+  test('solo cuenta la primera respuesta: contestar otra vez no cambia nada', async () => {
+    const r = await salaEnMarcha({}, [A]);
+    const cl = (await miEstado(A, r.sesion)).pregunta.clave;
+    await contestar(A, r.sesion, 0, mala(cl));
+    assert.deepEqual(await contestar(A, r.sesion, 0, buena(cl)), { ok: false, motivo: 'ya_respondida' });
+    assert.equal(await puntosDe('TDA2-01'), 0);
+    assert.equal(await n('select count(*) n from directo_respuestas'), 1);
+    assert.equal((await c.query('select ok from directo_respuestas')).rows[0].ok, false);
+  });
+  test('el tiempo lo manda el servidor: el «ms» que diga el móvil no existe, y se guarda lo que midió él', async () => {
+    const r = await salaEnMarcha({}, [A]);
+    const cl = (await miEstado(A, r.sesion)).pregunta.clave;
+    await c.query("update directo_sesiones set abierta = now() - interval '4 seconds', limite = now() + interval '16 seconds'");
+    await contestar(A, r.sesion, 0, buena(cl));
+    const ms = await n('select ms n from directo_respuestas'); assert.ok(ms >= 4000 && ms < 4600, 'ms ' + ms);
+  });
+  test('fuera de tiempo no cuenta: después del límite (con 1 s de cortesía) → cerrada; justo en la cortesía todavía vale', async () => {
+    const r = await salaEnMarcha({}, [A, B]);
+    const cl = (await miEstado(A, r.sesion)).pregunta.clave;
+    await c.query("update directo_sesiones set limite = now() - interval '0.4 second'");
+    assert.deepEqual(await contestar(A, r.sesion, 0, buena(cl)), { ok: true }, 'dentro de la cortesía de 1 s');
+    await c.query("update directo_sesiones set limite = now() - interval '3 seconds'");
+    assert.deepEqual(await contestar(B, r.sesion, 0, buena(cl)), { ok: false, motivo: 'cerrada' });
+    assert.equal(await n('select count(*) n from directo_respuestas'), 1);
+  });
+  test('si el profesor cierra la pregunta ya, nadie más puede contestar (ni siquiera en el segundo de cortesía)', async () => {
+    const r = await salaEnMarcha({}, [A, B]);
+    const cl = (await miEstado(A, r.sesion)).pregunta.clave;
+    await contestar(A, r.sesion, 0, buena(cl));
+    await avanzar(r.sesion, 'pregunta');
+    assert.deepEqual(await contestar(B, r.sesion, 0, buena(cl)), { ok: false, motivo: 'cerrada' });
+  });
+  test('otra pregunta, sala sin empezar, datos raros, no participas, otro grupo, código falso', async () => {
+    const r = await crear({ preguntas: 3 });
+    await unirse(A, r.sala);
+    assert.deepEqual(await contestar(A, r.sesion, 0, true), { ok: false, motivo: 'otra_pregunta' });      // aún no hay pregunta (actual = -1)
+    await avanzar(r.sesion, 'espera');
+    const cl = (await miEstado(A, r.sesion)).pregunta.clave, esMC = fuente(cl).tipo === 'opcion_multiple';
+    assert.deepEqual(await contestar(A, r.sesion, 1, true), { ok: false, motivo: 'otra_pregunta' });
+    assert.deepEqual(await contestar(A, r.sesion, -1, true), { ok: false, motivo: 'otra_pregunta' });
+    for (const raro of esMC ? [4, -1, 1.5, 'a', true, null, [1]] : [1, 0, 'true', null, [true]])
+      assert.deepEqual(await contestar(A, r.sesion, 0, raro), { ok: false, motivo: 'dato' }, JSON.stringify(raro));
+    assert.deepEqual(await contestar(B, r.sesion, 0, buena(cl)), { ok: false, motivo: 'no_participas' });
+    assert.deepEqual(await contestar(OTRO_GRUPO, r.sesion, 0, buena(cl)), { ok: false, motivo: 'no_encontrada' });
+    assert.deepEqual(await contestar('ZZZ999', r.sesion, 0, buena(cl)), { ok: false, motivo: 'codigo' });
+    assert.deepEqual(await contestar(A, '00000000-0000-4000-8000-000000000000', 0, buena(cl)), { ok: false, motivo: 'no_encontrada' });
+    assert.equal(await n('select count(*) n from directo_respuestas'), 0);
+  });
+  test('los puntos del participante son siempre la suma de sus respuestas, en una partida entera con 4 alumnos', async () => {
+    const r = await salaEnMarcha({ preguntas: 3 });
+    for (let q = 0; q < 3; q++) {
+      const cl = (await miEstado(A, r.sesion)).pregunta.clave;
+      await contestar(A, r.sesion, q, buena(cl)); await contestar(B, r.sesion, q, q === 1 ? mala(cl) : buena(cl));
+      if (q === 0) await contestar(C, r.sesion, q, mala(cl));                                         // D no contesta nunca
+      await avanzar(r.sesion, 'pregunta'); await avanzar(r.sesion, 'resultado');
+    }
+    assert.equal((await estado(r.sesion)).estado, 'terminada');
+    const filas = (await c.query(`select p.alumno, p.puntos, p.aciertos, coalesce(sum(x.puntos), 0)::int s, count(*) filter (where x.ok)::int a
+                                    from directo_participantes p left join directo_respuestas x on x.sesion = p.sesion and x.alumno = p.alumno group by p.alumno, p.puntos, p.aciertos order by p.alumno`)).rows;
+    for (const f of filas) { assert.equal(f.puntos, f.s, f.alumno); assert.equal(f.aciertos, f.a, f.alumno); }
+    assert.deepEqual(filas.map(f => f.aciertos), [3, 2, 0, 0]);
+    assert.ok(filas[0].puntos > filas[1].puntos && filas[1].puntos > 0 && filas[3].puntos === 0);
+    const fin = await miEstado(A, r.sesion); assert.equal(fin.posicion, 1); assert.equal(fin.marcador[0].yo, true);
+  });
+  test('el profesor ve quién está conectado y quién ya contestó', async () => {
+    const r = await salaEnMarcha({}, [A, B]);
+    const cl = (await miEstado(A, r.sesion)).pregunta.clave;
+    await contestar(A, r.sesion, 0, buena(cl));
+    await c.query("update directo_participantes set visto = now() - interval '30 seconds' where alumno = 'TDA2-02'");
+    const e = await estado(r.sesion);
+    assert.deepEqual(e.participantes.map(p => [p.alumno, p.respondio, p.conectado]).sort(), [['TDA2-01', true, true], ['TDA2-02', false, false]]);
+    await miEstado(B, r.sesion);                                                                   // el móvil pregunta por el estado: «latido» de conexión
+    assert.equal((await estado(r.sesion)).participantes.find(p => p.alumno === 'TDA2-02').conectado, true);
   });
 });
