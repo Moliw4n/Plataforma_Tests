@@ -37,10 +37,23 @@ test.describe('entrar y salir', () => {
   });
   test('«Salir» vuelve al acceso y olvida la sesión; recargar la página no entra solo', async ({ page, servidor }) => {
     await abrir(page, servidor);
+    await expect(page.locator('.inicio-cab h1')).toBeVisible();
     await page.click('#bSalir');
     await expect(page.locator('#msgLogin')).toContainText('Has salido');
     await page.reload();
     await expect(page.locator('#fLogin')).toBeVisible();
+  });
+  test('pulsar «Salir» mientras todavía carga no deja el panel roto (no se pinta nada encima del acceso)', async ({ page, servidor }) => {
+    const errores = []; page.on('pageerror', e => errores.push(e.message));
+    const S = await abrir(page, servidor, {}, { entrar: false });
+    S.latencia = 700;                                    // la carga tarda: da tiempo a pulsar «Salir» en medio
+    await iniciarSesion(page);
+    await page.click('#bSalir');
+    await expect(page.locator('#msgLogin')).toContainText('Has salido');
+    await page.waitForTimeout(2500);                     // …y se espera a que terminen las peticiones que estaban en marcha
+    await expect(page.locator('#fLogin')).toBeVisible();
+    await expect(page.locator('.inicio-cab')).toHaveCount(0);
+    expect(errores).toEqual([]);
   });
   test('la sesión se recuerda al recargar (hasta pulsar «Salir»)', async ({ page, servidor }) => {
     await abrir(page, servidor);

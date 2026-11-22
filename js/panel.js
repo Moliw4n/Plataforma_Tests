@@ -34,6 +34,7 @@ import { crearExamenes } from './panel-examenes.js';
   /* ---------- estado ---------- */
   let ses = null;                 // {token, refresh, email, exp}
   let grupos = [], alumnos = [], intentos = [];
+  let carga = 0;                  // número de la carga en curso (se invalida al cerrar la sesión)
   let EX = null;                  // el módulo de exámenes (null si en esta base aún no están instalados los SQL 06-08)
   const tests = {};               // id -> test JSON
   let nombres = guarda.get('pt_nombres', {});   // 'TDA2-07' -> 'Nombre'
@@ -107,10 +108,11 @@ import { crearExamenes } from './panel-examenes.js';
     };
     $('#iEmail').focus();
   }
-  function cerrarSesion(msg) { ses = null; sesionTab.del(); pantallaLogin(msg); }
+  function cerrarSesion(msg) { ses = null; carga++; sesionTab.del(); pantallaLogin(msg); }
 
   /* ---------- carga ---------- */
   async function arrancar() {
+    const mia = ++carga;       // si se pulsa «Salir» (o se vuelve a entrar) mientras carga, esta carga queda anulada y no pinta nada encima
     $('#usuario').hidden = false;
     $('#usuario').innerHTML = esc(ses.email) + ' <button class="btn" id="bSalir">Salir</button>';
     $('#bSalir').onclick = () => cerrarSesion('Has salido.');
@@ -122,9 +124,11 @@ import { crearExamenes } from './panel-examenes.js';
         api('intentos?select=id,alumno,test_id,version,empezado,terminado,segundos,total,aciertos,nota,respuestas&order=terminado.desc&limit=5000')
       ]);
     } catch (e) {
+      if (mia !== carga) return;
       if (String(e) !== 'Error: 401') app.innerHTML = '<div class="vacio">No se han podido cargar los datos (' + esc(e.message) + ').</div>';
       return;
     }
+    if (mia !== carga) return;
     if (!grupos.length) {
       app.innerHTML = '<div class="vacio">Has entrado, pero tu correo no está dado de alta como profesor.<br><br>' +
         'En Supabase → SQL Editor ejecuta:<br><code>insert into public.profesores(email) values (\'' + esc(ses.email) + '\');</code><br><br>y recarga esta página.</div>';
@@ -137,10 +141,12 @@ import { crearExamenes } from './panel-examenes.js';
     await Promise.all(ids.map(async id => {
       try { const r = await fetch('tests/' + encodeURIComponent(id) + '.json', { cache: 'no-cache' }); if (r.ok) tests[id] = aFormato2(await r.json()); } catch (e) {}
     }));
+    if (mia !== carga) return;
     if (!grupos.some(g => g.id === f.grupo)) f.grupo = grupos[0].id;
     if (!ids.includes(f.test)) f.test = testDelGrupo(ids);
     try { EX = crearExamenes(P); if (!await EX.cargar()) EX = null; }   // sin las tablas de exámenes, el panel funciona exactamente como antes
     catch (e) { return; }                                                // 401: ya se ha pedido entrar otra vez
+    if (mia !== carga) return;
     if (EX === null && (f.vista === 'gestion' || f.vista === 'examen')) f.vista = 'inicio';
     pintar();
   }
@@ -182,6 +188,7 @@ import { crearExamenes } from './panel-examenes.js';
 
   /* ---------- pintar ---------- */
   function pintar() {
+    if (!ses) return;          // sin sesión no se pinta nada (el acceso ya está en pantalla)
     guarda.set('pt_filtros', f);
     if (f.vista === 'inicio') return pintarInicio();
     if (EX && f.vista === 'gestion') return EX.pintarGestion();

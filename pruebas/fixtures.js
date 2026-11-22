@@ -31,7 +31,8 @@ const test = base.test.extend({
         const req = ruta.request(), cab = req.headers();
         const res = m0 ? s.panel.rpc(m0[1], req.postDataJSON() || {}, cab)
                        : s.panel.atender({ metodo: req.method(), url, cuerpo: req.postDataJSON() || {}, cabeceras: cab });
-        return ruta.fulfill({ status: res.status, contentType: 'application/json', body: res.body === null ? '' : JSON.stringify(res.body) });
+        const responder = () => ruta.fulfill({ status: res.status, contentType: 'application/json', body: res.body === null ? '' : JSON.stringify(res.body) });
+        return s.panel.latencia ? setTimeout(responder, s.panel.latencia) : responder();
       }
       const m = url.pathname.match(/^\/rest\/v1\/rpc\/(\w+)$/);
       if (!m) { s.inesperadas.push(url.href); return ruta.fulfill({ status: 404, body: '{}' }); }
