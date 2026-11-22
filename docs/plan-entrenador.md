@@ -170,7 +170,7 @@ rosco, y **cada juego alimenta la nota por criterios**.
 | Fase | Qué | Para qué |
 |---|---|---|
 | **0. Reorganización** · *hecha y publicada en `main` el 20 nov 2026* | Núcleo en módulos, contrato de modos, `jugar.html`, práctica como primer modo, pruebas Playwright, latido anti-pausa, proyecto de pruebas | Que todo lo demás sea barato. El alumno no nota nada. |
-| **1. Contenido en el servidor + examen** | Bancos e ítems en Supabase, tipos de pregunta nuevos, `partidas`/`respuestas`, modo examen (20 al azar equilibradas, un intento, tiempo, registro de salidas de pestaña, nota oculta hasta publicarla) | Exámenes sin soluciones a la vista. |
+| **1. Contenido en el servidor + examen** · *hecha y publicada en `main` el 22 nov 2026* | Bancos e ítems en Supabase, tipos de pregunta nuevos, `partidas`/`respuestas`, modo examen (20 al azar equilibradas, un intento, tiempo, registro de salidas de pestaña, nota oculta hasta publicarla) | Exámenes sin soluciones a la vista. |
 | **2. Directo** | Modo Kahoot: sala con código, proyector, móviles, marcador con apodos, podio | El primer juego en clase. |
 | **3. Rosco** | Pasapalabra con letras, tiempo y «pasapalabra»; respuesta corta con normalización | Primer juego individual con otro tipo de pregunta. |
 | **4. Escape room** | Salas con candados: cada candado se abre con un código que sale de resolver retos; pistas con penalización; por equipos | El más ambicioso: valida que el contrato de modos aguanta. |
@@ -184,8 +184,16 @@ alumnos siguen funcionando.
 Hecho (publicado en `main`, 20 nov 2026): núcleo en módulos (`js/nucleo/`), contrato de modos (`nucleo/modos.js`) con la
 práctica como primer modo (`js/modos/practica/`), `jugar.html` con `test.html` como alias, entornos
 en `config.js`, pruebas Playwright + SQL + latido, `04_latido.sql`, `05_datos_prueba.sql` y GitHub
-Actions. **Quedan fuera, para la fase 1:** `formato: 2` y el conversor, `jugar.html?j=<juego>`,
-y dar de alta de verdad el proyecto de pruebas en `config.js` (necesita su URL y clave).
+Actions. Lo que quedaba fuera (`formato: 2`, `jugar.html?j=<juego>` y el proyecto de pruebas en `config.js`) se hizo en la fase 1.
+
+### Estado de la fase 1
+Hecho (publicado en `main` el 22 nov 2026; SQL 06, 07 y 08 instalados en producción): `formato: 2` y el conversor (`npm run formato`), cuatro tipos de
+pregunta jugables (`opcion_multiple`, `verdadero_falso`, `numerica`, `respuesta_corta`), bancos con soluciones solo en Supabase (subidos desde el panel),
+`jugar.html?j=<juego>` con el modo examen (preguntas al azar equilibradas por tema, tiempo y corrección en el servidor, respuestas por posición, reanudar al recargar,
+cola de reintentos sin internet, salidas de pestaña anotadas, nota oculta hasta publicarla) y la gestión de exámenes en el panel (subir bancos, crear, asignar con fechas
+opcionales, resultados con cronología de incidencias, estadísticas por pregunta, publicar notas, anular intento, exportar a Excel). Ensayada con móviles reales contra el
+proyecto de pruebas (`docs/ensayo-examen.md`, 15 escenarios). **Pendiente / ideas**: sumar al tiempo fuera el que pasa entre una salida y una recarga, un examen real
+subido desde el panel, y la fase 2 (directo).
 
 ## 9. Riesgos y cómo se cubren
 

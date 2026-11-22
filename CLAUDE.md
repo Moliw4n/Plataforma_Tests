@@ -60,7 +60,10 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
   con unos 3.800 caracteres y los vectores compartidos. Las pruebas de SQL usan bases UTF8 y simulan los privilegios por defecto de Supabase.
   Para el proyecto de PRUEBAS hay un paquete único generado, `supabase/paquete_pruebas.sql` (`npm run empaquetar-sql`; una prueba comprueba
   que está al día; lleva una guarda que aborta si la base tiene alumnos reales).
-  El usuario los ejecuta a mano en el SQL Editor de Supabase: **dale siempre el SQL listo y dile qué debe salir**.
+  `supabase/verificar_fase1.sql` (solo lee): una fila con 5 comprobaciones, todas `true`, para tras instalar 06-08.
+  **Producción tiene 06, 07 y 08 instalados desde el 22 nov 2026** (se ejecutaron por separado, nunca el paquete). Si cambias un SQL ya instalado
+  (p. ej. `terminar_partida`: entregar en el último segundo o después queda «caducada»), hay que volver a ejecutar ese archivo en producción Y en pruebas.
+  El usuario los ejecuta a mano en el SQL Editor de Supabase: **dale siempre el SQL listo y dile qué debe salir** (cada archivo termina con su comprobación).
 - Pruebas (`pruebas/`): `npm test` (Playwright a 1280 y 390 px, Supabase simulado: nunca toca el real;
   la simulación es automática; el examen se prueba con `pruebas/servidor-examen-falso.js`), `npm run test:sql` (Postgres local embebido,
   incluye `contrato-examen.test.js`: el servidor falso y el SQL real deben responder con la MISMA FORMA; si cambias una función de 07, cambia también el falso), `npm run test:latido`,
@@ -70,6 +73,13 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
   funciones `profe_*`; `contrato-panel.test.js` comprueba que tiene la misma forma que el SQL real).
   GitHub Actions las lanza en cada subida (`.github/workflows/pruebas.yml`); `latido.yml` llama a
   `latido()` cada 3 días (solo corre desde `main`).
+- **Lenguaje**: para el alumno y el profesor el nombre es **«intento»** (y «examen»), nunca «partida» ni «jugar»: «partida» es solo el nombre interno de tablas y funciones.
+- **Examen (fase 1, publicada en `main` el 22 nov 2026)**: ensayado con móviles reales contra el proyecto de pruebas (los 15 escenarios de `docs/ensayo-examen.md`).
+  Portada con las reglas y «Has hecho 1 de 2. Te queda 1.»; «Ver mi resultado» (nota y revisión si el profesor las publica) aunque no queden intentos;
+  botón «Entregar» en la barra (atajo a «Revisar y entregar»); el tiempo agotado se entrega solo y queda «Se acabó el tiempo».
+  Panel: por alumno, mapa de preguntas (al pulsar una: lo que contestó, la correcta y el porqué, leído de `items`), «Anular intento»
+  y **cronología** de incidencias con hora (salidas, vueltas, recargas, cortes). Si el alumno cierra la pestaña y vuelve con una recarga, el tiempo
+  fuera entre la salida y la recarga no se suma (la cronología sí lo deja ver).
 - Modo profe en móvil: cabecera ajustada a 390 y 360 px (CHULETA solo icono en ≤ 430 px); la cubre `pruebas/alumno.spec.js`.
 
 ## Reglas que no se negocian
