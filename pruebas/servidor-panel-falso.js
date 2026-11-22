@@ -14,14 +14,14 @@ async function crearServidorPanel(datos = {}) {
     email: EMAIL, clave: CLAVE, token: 'tok-1', refresh: 'ref-1', n: 1, refrescoFalla: false, noEsProfesor: false, red: true,
     grupos: datos.grupos || [{ id: 'TDA2', nombre: 'TDA II' }, { id: 'TDA1', nombre: 'TDA I' }],
     alumnos: datos.alumnos || [{ id: 'TDA2-01', grupo: 'TDA2', activo: true }, { id: 'TDA2-02', grupo: 'TDA2', activo: true }, { id: 'TDA2-03', grupo: 'TDA2', activo: true }, { id: 'TDA1-01', grupo: 'TDA1', activo: true }],
-    intentos: datos.intentos || [], bancos: datos.bancos || [], juegos: datos.juegos || [], asignaciones: datos.asignaciones || [],
+    intentos: datos.intentos || [], bancos: datos.bancos || [], juegos: datos.juegos || [], asignaciones: datos.asignaciones || [], eventos: datos.eventos || [],
     resultados: datos.resultados || {}, estadisticas: datos.estadisticas || {},      // por id de asignación: lo que devolverían profe_resultados / profe_estadisticas_examen
     peticiones: [], llamadas: [],
     sesionCaducada() { this.token = 'tok-caducado-' + (++this.n); },
     nuevoToken() { this.token = 'tok-' + (++this.n); return this.token; }
   };
   const limpia = (fila, campos) => (campos ? Object.fromEntries(campos.map(c => [c, fila[c]])) : fila);
-  const TABLAS = { grupos: S.grupos, alumnos: S.alumnos, intentos: S.intentos, bancos: S.bancos, juegos: S.juegos, asignaciones: S.asignaciones };
+  const TABLAS = { grupos: S.grupos, alumnos: S.alumnos, intentos: S.intentos, bancos: S.bancos, juegos: S.juegos, asignaciones: S.asignaciones, eventos: S.eventos };
 
   S.atender = ({ metodo, url, cuerpo, cabeceras }) => {
     S.peticiones.push({ metodo, ruta: url.pathname + url.search });
@@ -142,6 +142,13 @@ function datosExamen() {
     bancos: [{ id: 'u1', titulo: 'Banco U1 · Python', materia: 'TDA II', unidad: 'U1', version: 1 }],
     juegos: [{ id: 'ex1', modo: 'examen', titulo: 'Examen U1 · Python', bancos: ['u1'], reglas: { preguntas: 20, tiempo_min: 30, penalizacion: 0, equilibrar: 'tema' } }],
     asignaciones: [{ id: 1, juego: 'ex1', grupo: 'TDA2', desde: null, hasta: null, intentos: 1, mostrar_soluciones: false, notas_publicadas: false }],
+    eventos: [
+      { partida: 'aaaaaaaa-0000-4000-8000-000000000001', tipo: 'salida', momento: '2026-11-25T09:10:00.123456+00:00', detalle: null },
+      { partida: 'aaaaaaaa-0000-4000-8000-000000000001', tipo: 'vuelta', momento: '2026-11-25T09:10:12.500000+00:00', detalle: { segundos: 12 } },
+      { partida: 'aaaaaaaa-0000-4000-8000-000000000001', tipo: 'salida', momento: '2026-11-25T09:12:00+00:00', detalle: null },
+      { partida: 'aaaaaaaa-0000-4000-8000-000000000001', tipo: 'vuelta', momento: '2026-11-25T09:12:30+00:00', detalle: { segundos: 30 } },
+      { partida: 'aaaaaaaa-0000-4000-8000-000000000002', tipo: 'recarga', momento: '2026-11-25T09:05:00+00:00', detalle: null }
+    ],
     resultados: { 1: { partidas: [
       P('aaaaaaaa-0000-4000-8000-000000000001', 'TDA2-01', 'entregada', 7.5, 3, 1500, ev(2, 42), respuestas('ok', 'ok', 'mal', 'ok')),
       P('aaaaaaaa-0000-4000-8000-000000000002', 'TDA2-02', 'en_curso', null, null, null, ev(0, 0, 1), respuestas('ok', 'blanco', 'blanco', 'blanco'))

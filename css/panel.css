@@ -189,6 +189,13 @@ section.gestion h2{font-family:Orbitron,sans-serif;font-size:15px;letter-spacing
 .reparto .barrita{flex:1;height:8px;background:var(--borde);border-radius:4px;overflow:hidden;display:block}
 .reparto .barrita i{display:block;height:100%;background:var(--morado)}
 .reparto .ok .barrita i{background:var(--verde)}
+/* cronología de incidencias de una partida */
+.cronologia details{margin:6px 0 10px;color:var(--mut)}
+.cronologia summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--cian)}
+.linea-eventos{list-style:none;margin:8px 0 0;padding:0 0 0 4px;display:flex;flex-direction:column;gap:3px;font-size:14px;border-left:2px solid var(--borde)}
+.linea-eventos li{padding-left:10px}
+.linea-eventos time{font-family:'Cascadia Mono',Consolas,Menlo,monospace;color:var(--tinta);margin-right:6px}
+.linea-eventos .ev-salida{color:var(--ambar)}.linea-eventos .ev-sin_red{color:var(--rojo)}.linea-eventos .ev-recarga{color:var(--morado)}
 /* tablas de la gestión de exámenes: siempre visibles (también en móvil, con scroll si no caben) */
 .tabla-ex{overflow-x:auto;border:1px solid var(--borde);border-radius:var(--r)}
 .tabla-ex table.datos{min-width:480px}

@@ -213,6 +213,26 @@ test.describe('resultados de un examen', () => {
     await expect(page.locator('.ver-p')).toContainText('Falló');
     await sinDesborde(page);
   });
+  test('la cronología enseña cada incidencia con su hora, en orden, y los segundos fuera', async ({ page, servidor }) => {
+    await abrir(page, servidor); await aResultados(page);
+    await visible(page, '[data-id="TDA2-01"]').click();
+    await expect(page.locator('.cronologia summary')).toContainText('Ver cronología (4 incidencias)');
+    await page.locator('.cronologia summary').click();
+    const lineas = page.locator('.linea-eventos li');
+    await expect(lineas).toHaveCount(4);
+    await expect(lineas.nth(0)).toContainText('Salió de la pestaña');
+    await expect(lineas.nth(1)).toContainText('Volvió (12 s fuera)');
+    await expect(lineas.nth(3)).toContainText('Volvió (30 s fuera)');
+    expect(await lineas.nth(0).locator('time').textContent()).toMatch(/^\d{1,2}:\d\d:\d\d/);       // la hora, con segundos
+    await sinDesborde(page);
+  });
+  test('un alumno sin incidencias no enseña cronología; con una sola, la muestra', async ({ page, servidor }) => {
+    await abrir(page, servidor); await aResultados(page);
+    await visible(page, '[data-id="TDA2-02"]').click();
+    await expect(page.locator('.cronologia summary')).toContainText('1 incidencias');
+    await page.locator('.cronologia summary').click();
+    await expect(page.locator('.linea-eventos li')).toHaveText(/Recargó o reabrió la página/);
+  });
   test('un alumno con partida en curso y preguntas en blanco', async ({ page, servidor }) => {
     await abrir(page, servidor); await aResultados(page);
     await visible(page, '[data-id="TDA2-02"]').click();

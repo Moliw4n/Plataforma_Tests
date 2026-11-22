@@ -279,6 +279,7 @@ export function crearExamenes(P) {
           '<div class="eventos-ex ' + (ev.salidas ? 'alerta' : '') + '">' + (ev.salidas || ev.recargas || ev.sin_red
             ? (ev.salidas ? '⚠ Salió de la pestaña ' + ev.salidas + (ev.salidas === 1 ? ' vez' : ' veces') + ' (' + ev.segundos_fuera + ' s fuera). ' : '') + (ev.recargas ? 'Recargó la página ' + ev.recargas + '. ' : '') + (ev.sin_red ? 'Perdió la conexión ' + ev.sin_red + '.' : '')
             : 'Sin salidas de pestaña ni incidencias.') + '</div>' +
+          '<div class="cronologia" data-crono="' + esc(p.partida) + '"></div>' +
           '<div class="mapa">' + p.respuestas.map((r, k) => '<button class="' + (!r.respondida ? 'blanco' : r.ok ? 'ok' : 'mal') + '" title="' + esc(enun[r.id] || r.id) + '">' + (k + 1) + '</button>').join('') + '</div>' +
           '<p class="leyenda-mapa">Verde = bien · rojo = mal · gris = en blanco. Pulsa para leer la pregunta.</p><div class="ver-p" hidden></div></div>';
       }).join('');
@@ -290,6 +291,22 @@ export function crearExamenes(P) {
       ver.innerHTML = '<b>' + esc(enun[r.id] || r.id) + '</b><div class="dato-p">' + (r.respondida ? (r.ok ? 'Acertó' : 'Falló') + (r.ms ? ' · tardó ' + P.fmtSeg(r.ms / 1000) : '') : 'La dejó en blanco') + '</div>';
     });
     cuerpoEl.querySelectorAll('[data-anular]').forEach(b => b.onclick = () => anular(b.dataset.anular, x));
+    cuerpoEl.querySelectorAll('[data-crono]').forEach(el => cargarCronologia(el));
+  }
+
+  /* Cronología de incidencias de una partida (salidas, vueltas, recargas, cortes de red), con la hora de cada una. Se lee de la tabla eventos: el profesor tiene permiso. */
+  const CRONO = { salida: 'Salió de la pestaña', vuelta: 'Volvió', recarga: 'Recargó o reabrió la página', sin_red: 'Recuperó la conexión', otro: 'Otra incidencia' };
+  async function cargarCronologia(el) {
+    let filas;
+    try { filas = await P.api('eventos?partida=eq.' + encodeURIComponent(el.dataset.crono) + '&select=tipo,momento,detalle&order=momento.asc&limit=500'); }
+    catch (e) { return; }                                   // sin cronología no pasa nada: los totales ya están arriba
+    if (!filas || !filas.length) return;
+    el.innerHTML = '<details><summary>Ver cronología (' + filas.length + ' incidencias)</summary><ol class="linea-eventos">' + filas.map(f => {
+      const seg = f.detalle && Number.isFinite(+f.detalle.segundos) ? +f.detalle.segundos : null;
+      const hora = fecha(f.momento).toLocaleTimeString('es-ES');
+      const texto = (CRONO[f.tipo] || f.tipo) + (seg != null ? (f.tipo === 'vuelta' ? ' (' + seg + ' s fuera)' : f.tipo === 'sin_red' ? ' (' + seg + ' s sin conexión)' : '') : '');
+      return '<li class="ev-' + esc(f.tipo) + '"><time>' + esc(hora) + '</time> ' + esc(texto) + '</li>';
+    }).join('') + '</ol></details>';
   }
   async function anular(partida, x) {
     const p = x.ps.find(z => z.partida === partida);
