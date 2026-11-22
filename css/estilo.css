@@ -266,3 +266,23 @@ a.btn{color:var(--tinta)}
 .reglas-examen .intentos-ex{color:var(--cian);font-weight:800}
 .avisos-examen{max-width:860px;margin:10px auto 0;padding:0 16px;display:flex;flex-direction:column;gap:8px}
 .avisos-examen:empty{display:none}
+
+/* ---------- Modo DIRECTO (alumno) ---------- */
+.directo-cab{display:flex;align-items:center;gap:10px;max-width:980px;margin:0 auto 10px;flex-wrap:wrap}
+.apodo-chip{font-family:Orbitron,sans-serif;font-weight:800;font-size:13px;letter-spacing:.06em;color:var(--cian);border:1px solid var(--cian);border-radius:99px;padding:5px 12px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.puntos-chip{font-weight:700;color:var(--mut);font-size:14px}
+.puntos-chip b{color:var(--tinta);font-family:Orbitron,sans-serif}
+.barra-tiempo{flex:1;min-width:80px;height:8px;border-radius:99px;background:var(--borde);overflow:hidden}
+.barra-tiempo i{display:block;height:100%;width:100%;background:var(--naranja);border-radius:99px;transition:width .25s linear}
+.apodo-grande{font-family:Orbitron,sans-serif;font-weight:800;font-size:clamp(28px,8vw,56px);color:var(--cian);line-height:1.1;overflow-wrap:anywhere}
+.directo-res h1.res-ok{color:var(--verde)}.directo-res h1.res-mal{color:var(--rojo)}.directo-res h1.res-nada{color:var(--ambar)}
+.directo-res h1{font-size:clamp(30px,7vw,52px)}
+.mas-puntos{font-family:Orbitron,sans-serif;font-weight:800;font-size:clamp(22px,5vw,34px);color:var(--verde);margin:0}
+.posicion{font-size:clamp(17px,3.5vw,22px);font-weight:700;margin:0}
+.posicion b{color:var(--naranja);font-family:Orbitron,sans-serif}
+.marcador{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-width:520px;width:100%}
+.marcador li{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--borde);border-radius:12px;padding:9px 14px;font-weight:700}
+.marcador li.yo{border-color:var(--cian);background:rgba(56,198,224,.12)}
+.marcador .n{font-family:Orbitron,sans-serif;color:var(--mut);min-width:20px}
+.marcador .ap{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.marcador .pt{font-family:Orbitron,sans-serif;color:var(--naranja)}

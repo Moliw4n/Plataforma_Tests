@@ -1,0 +1,254 @@
+/* Modo DIRECTO (tipo Kahoot) — el alumno, desde el móvil. El profesor proyecta la pregunta y manda el ritmo; aquí solo se contesta.
+   Todo lo decide el SERVIDOR (supabase/09_directo.sql): las preguntas (sin solución), el tiempo, la corrección y los puntos.
+   Funciones: directo_unirse (entra en la sala y recibe un apodo), directo_estado (lo que toca ver ahora), directo_responder (contesta UNA vez).
+   El móvil pregunta por el estado cada poco (sondeo): así no depende de nada más que de las funciones seguras de siempre.
+   Pensado para fallar bien: si se cae internet el aviso lo dice y sigue intentándolo; la respuesta pendiente se reenvía sola mientras dure la pregunta;
+   si recarga, entra otra vez con su código y vuelve a la misma pantalla, con su apodo y sus puntos. */
+import { esc } from '../../nucleo/util.js';
+import { renderizador } from '../../nucleo/preguntas/index.js';
+import { chipPorDefecto } from '../../nucleo/preguntas/comun.js';
+
+const $ = s => document.querySelector(s);
+// Ajustes SOLO para las pruebas (window.KIRON_AJUSTES); en producción valen los de siempre
+const AJUSTES = window.KIRON_AJUSTES || {};
+const SONDEO_MS = AJUSTES.sondeoMs || 1500;                 // cada cuánto pregunta qué pasa en la sala
+const SONDEO_PREGUNTA_MS = AJUSTES.sondeoPreguntaMs || 1000; // durante una pregunta, algo más a menudo (para ver pronto que se cierra)
+const REINTENTO_RESP_MS = AJUSTES.reintentoRespMs || 1000;   // cada cuánto se reintenta una respuesta que no llegó
+const LET = 'ABCDEF';
+
+let ctx, E;
+let sesion = null, apodo = '', titulo = '', total = 0;
+let activo = false, sondeoId = null, relojId = null, token = 0;   // token: invalida sondeos viejos si se sale o se vuelve a entrar
+let clave = '';                    // «estado:pregunta»: qué pantalla se está enseñando, para no repintar lo mismo en cada sondeo
+let limiteLocal = 0, tiempoS = 20; // instante (Date.now()) en que se cierra la pregunta, corregido con el reloj del servidor
+let preguntas = {};                // número de pregunta → la pregunta que se vio (para enseñar «la correcta» sin pedirla otra vez)
+let enviadas = {};                 // número de pregunta → 'enviando' | 'ok' | 'pendiente'
+let ultimo = null;                 // último estado recibido
+let sinRed = false;
+
+const llamar = (fn, args, opciones) => ctx.api.rpc(fn, { p_codigo: ctx.alumno.codigo, ...args }, opciones);
+const pad = n => String(n).padStart(2, '0');
+const esperar = ms => new Promise(r => setTimeout(r, ms));
+const puntosTxt = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const ordinal = n => n + '.º';
+
+/* ---------- pantallas sueltas ---------- */
+function mensaje(texto, { reintentar = null, salir = true, sup = 'DIRECTO' } = {}) {
+  parar();
+  $('#bot').hidden = true; $('#reloj').hidden = true; $('#contador').textContent = '';
+  E.innerHTML = '<div class="portada"><div class="sup">' + esc(sup) + '</div><p class="enun">' + esc(texto) + '</p><div class="acciones">' +
+    (reintentar ? '<button class="btn pri" id="bReintentarDirecto">Reintentar</button>' : '') +
+    (salir ? '<button class="btn" id="bSalirDirecto">No soy yo</button>' : '') + '</div></div>';
+  if (reintentar) $('#bReintentarDirecto').onclick = reintentar;
+  if (salir) $('#bSalirDirecto').onclick = () => ctx.salir();
+}
+function avisoRed(hay) {
+  if (hay === sinRed) return;
+  sinRed = hay;
+  let el = $('#avisoRedDirecto');
+  if (hay) {
+    if (!el) { el = document.createElement('div'); el.id = 'avisoRedDirecto'; el.className = 'aviso-examen rojo'; el.setAttribute('role', 'alert'); E.parentNode.insertBefore(el, E); }
+    el.textContent = 'Sin conexión. Sigo intentándolo… no cierres la página.';
+  } else if (el) el.remove();
+}
+
+/* ---------- entrar en la sala ---------- */
+async function unirse() {
+  E.innerHTML = '<div class="cargando">Entrando en la sala…</div>';
+  let r;
+  try { r = await llamar('directo_unirse', { p_sala: ctx.sala }, { reintentos: 1 }); }
+  catch (e) { return mensaje('No hay conexión con el servidor. Comprueba internet y vuelve a probar.', { reintentar: unirse }); }
+  if (!r.ok) {
+    if (r.motivo === 'espera') return mensaje('Demasiados intentos seguidos. Espera un minuto y vuelve a probar.', { reintentar: unirse });
+    if (r.motivo === 'sala') return mensaje('Esa sala no existe, ya ha terminado o no es para tu grupo. Revisa el enlace con tu profesor.');
+    return mensaje('No he podido comprobar tu código. Vuelve a entrar.');
+  }
+  sesion = r.sesion; apodo = r.apodo; titulo = r.titulo; total = r.total;
+  activo = true; clave = ''; preguntas = {}; enviadas = {};
+  document.addEventListener('visibilitychange', alCambiarVisibilidad);
+  window.addEventListener('online', sondearYa);
+  sondear(++token);
+}
+function parar() {
+  activo = false; token++; clearTimeout(sondeoId); clearInterval(relojId);
+  document.removeEventListener('visibilitychange', alCambiarVisibilidad);
+  window.removeEventListener('online', sondearYa);
+  const av = $('#avisoRedDirecto'); if (av) av.remove(); sinRed = false;
+}
+function alCambiarVisibilidad() { if (!document.hidden) sondearYa(); }
+function sondearYa() { if (activo) { clearTimeout(sondeoId); sondear(++token); } }
+
+/* ---------- sondeo: ¿qué toca ver ahora? ---------- */
+async function sondear(mio) {
+  if (!activo || mio !== token) return;
+  let r = null;
+  try { r = await llamar('directo_estado', { p_sesion: sesion }); avisoRed(false); }
+  catch (e) { avisoRed(true); }
+  if (!activo || mio !== token) return;
+  let siguiente = SONDEO_MS;
+  if (r) {
+    if (!r.ok) {
+      if (r.motivo === 'no_participas') { activo = false; return unirse(); }        // la sala sigue, pero no estaba dentro: se vuelve a entrar sola
+      if (r.motivo === 'espera') siguiente = 4000;
+      else return mensaje(r.motivo === 'codigo' ? 'No he podido comprobar tu código. Vuelve a entrar.' : 'La sala ya no existe. Pídele a tu profesor que abra una nueva.');
+    } else {
+      ultimo = r;
+      pintar(r);
+      if (r.estado === 'terminada') return;                                         // ya no hay nada que preguntar
+      siguiente = r.estado === 'pregunta' ? SONDEO_PREGUNTA_MS : SONDEO_MS;
+    }
+  } else siguiente = 2000;
+  sondeoId = setTimeout(() => sondear(mio), siguiente);
+}
+
+function pintar(r) {
+  tiempoS = r.tiempo_s;
+  if (r.estado === 'pregunta') limiteLocal = Date.now() + r.restante_ms;            // se corrige con el reloj del servidor en cada sondeo
+  const k = r.estado + ':' + r.actual;
+  if (r.estado === 'espera') return pintarEspera(r, k);
+  if (r.estado === 'pregunta') return pintarPregunta(r, k);
+  if (r.estado === 'resultado') return pintarResultado(r, k);
+  return pintarFinal(r, k);
+}
+
+function cabecera(r, extra = '') {
+  return '<div class="directo-cab"><span class="apodo-chip" title="Tu apodo en esta sala">' + esc(r.apodo) + '</span>' +
+    '<span class="puntos-chip"><b>' + puntosTxt(r.puntos) + '</b> pts</span>' + extra + '</div>';
+}
+
+/* ---------- espera ---------- */
+function pintarEspera(r, k) {
+  if (clave !== k) {
+    clave = k; clearInterval(relojId);
+    $('#bot').hidden = true; $('#reloj').hidden = true; $('#contador').textContent = '';
+    E.innerHTML = '<div class="portada final directo-espera"><div class="sup">DIRECTO · ' + esc(titulo) + '</div>' +
+      '<h1>¡Estás dentro!</h1><p class="enun">Tu apodo en esta partida es</p><div class="apodo-grande" id="apodoGrande">' + esc(r.apodo) + '</div>' +
+      '<p class="aviso-examen" role="status"><span id="nPart"></span> Esperando a que tu profesor empiece…</p>' +
+      '<div class="acciones"><button class="btn" id="bSalirDirecto">No soy yo</button></div></div>';
+    $('#bSalirDirecto').onclick = () => ctx.salir();
+  }
+  $('#nPart').textContent = r.participantes + (r.participantes === 1 ? ' jugador. ' : ' jugadores. ');
+}
+
+/* ---------- pregunta ---------- */
+function pintarPregunta(r, k) {
+  const n = r.actual;
+  preguntas[n] = r.pregunta;
+  if (clave === k) {                                    // la misma pregunta: solo cosas que cambian por dentro
+    if (r.respondio && enviadas[n] === undefined) { enviadas[n] = 'ok'; pantallaEnviada(n); }
+    return;
+  }
+  clave = k; clearInterval(relojId);
+  $('#bot').hidden = true; $('#reloj').hidden = false; $('#contador').textContent = (n + 1) + '/' + r.total;
+  if (r.respondio) { enviadas[n] = enviadas[n] || 'ok'; return pantallaEnviada(n); }   // recargó después de contestar
+  E.innerHTML = cabecera(r, '<span class="barra-tiempo" aria-hidden="true"><i id="barraTiempo"></i></span>') + '<div id="dirPregunta"></div>';
+  renderizador(r.pregunta.tipo).pintar(r.pregunta, $('#dirPregunta'), {
+    examen: true, respuesta: null, chipTipo: chipPorDefecto, hayChuleta: false, alVerChuleta() {},
+    alResponder: v => responder(n, v)
+  });
+  iniciarReloj();
+  window.scrollTo({ top: 0 });
+}
+function iniciarReloj() {
+  const tic = () => {
+    const ms = Math.max(0, limiteLocal - Date.now()), s = Math.ceil(ms / 1000);
+    const el = $('#reloj'); if (el) { el.textContent = pad(Math.floor(s / 60)) + ':' + pad(s % 60); el.className = 'reloj' + (s <= 5 ? ' muy-poco' : s <= 10 ? ' poco' : ''); }
+    const b = $('#barraTiempo'); if (b) b.style.width = Math.min(100, ms / (tiempoS * 10)) + '%';
+  };
+  tic(); relojId = setInterval(tic, 200);
+}
+
+async function responder(n, valor) {
+  if (enviadas[n] !== undefined) return;
+  enviadas[n] = 'enviando';
+  pantallaEnviada(n);
+  // Se reintenta mientras dure la pregunta (y un poco más): si se cae internet, la respuesta espera y sale sola
+  while (activo && enviadas[n] !== 'ok') {
+    let r;
+    try { r = await llamar('directo_responder', { p_sesion: sesion, p_pregunta: n, p_dada: valor }); avisoRed(false); }
+    catch (e) {
+      avisoRed(true); enviadas[n] = 'pendiente'; textoEnvio(n);
+      if (Date.now() > limiteLocal + 4000) return;                                  // ya no se puede: no se sigue intentando
+      await esperar(REINTENTO_RESP_MS); continue;
+    }
+    if (r.ok || r.motivo === 'ya_respondida') { enviadas[n] = 'ok'; textoEnvio(n); break; }
+    if (r.motivo === 'espera') { await esperar(REINTENTO_RESP_MS * 2); continue; }
+    if (r.motivo === 'cerrada' || r.motivo === 'otra_pregunta') { enviadas[n] = 'tarde'; textoEnvio(n); break; }
+    console.error('directo_responder rechazado:', r.motivo); enviadas[n] = 'tarde'; textoEnvio(n); break;
+  }
+}
+const TEXTO_ENVIO = { enviando: 'Enviando…', ok: '✓ Respuesta enviada', pendiente: 'Sin conexión: tu respuesta se enviará en cuanto vuelva internet.', tarde: 'Llegó tarde: la pregunta ya se había cerrado.' };
+function textoEnvio(n) { const el = $('#estadoEnvio'); if (el && clave === 'pregunta:' + n) { el.textContent = TEXTO_ENVIO[enviadas[n]] || ''; el.className = 'aviso-examen' + (enviadas[n] === 'pendiente' || enviadas[n] === 'tarde' ? ' rojo' : ''); } }
+function pantallaEnviada(n) {
+  clearInterval(relojId);
+  E.innerHTML = cabecera(ultimo || { apodo, puntos: 0 }) +
+    '<div class="portada final directo-espera"><div class="sup">PREGUNTA ' + (n + 1) + ' DE ' + total + '</div><h1>¡Contestada!</h1>' +
+    '<p class="aviso-examen" id="estadoEnvio" role="status"></p><p class="enun">Espera a que se cierre la pregunta para ver si has acertado.</p></div>';
+  textoEnvio(n);
+  $('#reloj').hidden = false; limiteLocal = Math.max(limiteLocal, Date.now());
+  iniciarReloj();
+}
+
+/* ---------- resultado de la pregunta ---------- */
+function textoCorrecta(r) {
+  const c = r.resultado.correcta, p = preguntas[r.actual];
+  if (typeof c === 'boolean') return c ? 'Verdadero' : 'Falso';
+  const letra = LET[c] || '?';
+  return p && p.ops && p.ops[c] !== undefined ? letra + ' · ' + p.ops[c] : 'la opción ' + letra;
+}
+function pintarResultado(r, k) {
+  if (clave === k) return;
+  clave = k; clearInterval(relojId);
+  $('#bot').hidden = true; $('#reloj').hidden = true; $('#contador').textContent = (r.actual + 1) + '/' + r.total;
+  const x = r.resultado, cual = !x.respondio ? 'nada' : x.ok ? 'ok' : 'mal';
+  const titulo1 = { ok: '✓ ¡Correcto!', mal: '✗ Fallaste', nada: '⏱ No contestaste' }[cual];
+  E.innerHTML = cabecera(r) +
+    '<div class="portada final directo-res"><div class="sup">PREGUNTA ' + (r.actual + 1) + ' DE ' + r.total + '</div>' +
+    '<h1 class="res-' + cual + '">' + titulo1 + '</h1>' +
+    (x.ok ? '<p class="mas-puntos">+' + puntosTxt(x.puntos) + ' puntos</p>' : '') +
+    '<div class="caja porque"><b>LA CORRECTA</b>' + esc(textoCorrecta(r)) + (x.sol ? '<br><small>' + esc(x.sol) + '</small>' : '') + '</div>' +
+    '<p class="posicion">Vas <b>' + ordinal(r.posicion) + '</b> de ' + r.participantes + ' · ' + puntosTxt(r.puntos) + ' puntos</p>' +
+    marcadorHtml(r.marcador) +
+    '<p class="aviso-examen" role="status">Esperando la siguiente pregunta…</p></div>';
+  window.scrollTo({ top: 0 });
+}
+function marcadorHtml(m) {
+  return '<ol class="marcador">' + (m || []).map((p, i) => '<li class="' + (p.yo ? 'yo' : '') + '"><span class="n">' + (i + 1) + '</span><span class="ap">' + esc(p.apodo) + (p.yo ? ' (tú)' : '') +
+    '</span><span class="pt">' + puntosTxt(p.puntos) + '</span></li>').join('') + '</ol>';
+}
+
+/* ---------- final ---------- */
+function pintarFinal(r, k) {
+  if (clave === k) return;
+  clave = k; clearInterval(relojId); activo = false; clearTimeout(sondeoId);
+  document.removeEventListener('visibilitychange', alCambiarVisibilidad); window.removeEventListener('online', sondearYa);
+  $('#bot').hidden = true; $('#reloj').hidden = true; $('#contador').textContent = '';
+  E.innerHTML = '<div class="portada final directo-res"><div class="sup">DIRECTO · ' + esc(titulo) + '</div><h1>¡Se acabó!</h1>' +
+    '<p class="posicion">Has quedado <b>' + ordinal(r.posicion) + '</b> de ' + r.participantes + ' con <b>' + puntosTxt(r.puntos) + '</b> puntos</p>' +
+    '<p class="enun">Acertaste ' + r.aciertos + ' de ' + r.total + ' preguntas.</p>' +
+    '<div class="subtit">EL PODIO</div>' + marcadorHtml(r.marcador) +
+    '<div class="acciones"><button class="btn pri" id="bSalirDirecto">Terminar y salir</button></div></div>';
+  $('#bSalirDirecto').onclick = () => ctx.salir();
+  window.scrollTo({ top: 0 });
+}
+
+/* ---------- el contrato de los modos ---------- */
+export default {
+  id: 'directo',
+  nombre: 'Directo',
+  necesita: { directo: true, servidor: true },
+  tiposPregunta: ['opcion_multiple', 'verdadero_falso'],
+
+  async iniciar(c) {
+    ctx = c; E = c.contenedor; sesion = null; apodo = ''; ultimo = null; sinRed = false;
+    $('#bot').hidden = true;
+    await unirse();
+  },
+
+  async terminar() {
+    const pts = ultimo ? ultimo.puntos : 0, alumno = ctx && ctx.alumno ? ctx.alumno.alumno : null;
+    parar();
+    $('#reloj').hidden = true; $('#bot').hidden = true;
+    return { partida: sesion, alumno, juego: null, nota: null, puntos: pts, segundos: 0, por_criterio: {}, respuestas: [] };
+  }
+};
