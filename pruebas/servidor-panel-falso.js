@@ -14,14 +14,14 @@ async function crearServidorPanel(datos = {}) {
     email: EMAIL, clave: CLAVE, token: 'tok-1', refresh: 'ref-1', n: 1, refrescoFalla: false, noEsProfesor: false, red: true,
     grupos: datos.grupos || [{ id: 'TDA2', nombre: 'TDA II' }, { id: 'TDA1', nombre: 'TDA I' }],
     alumnos: datos.alumnos || [{ id: 'TDA2-01', grupo: 'TDA2', activo: true }, { id: 'TDA2-02', grupo: 'TDA2', activo: true }, { id: 'TDA2-03', grupo: 'TDA2', activo: true }, { id: 'TDA1-01', grupo: 'TDA1', activo: true }],
-    intentos: datos.intentos || [], bancos: datos.bancos || [], juegos: datos.juegos || [], asignaciones: datos.asignaciones || [], eventos: datos.eventos || [],
+    intentos: datos.intentos || [], bancos: datos.bancos || [], juegos: datos.juegos || [], asignaciones: datos.asignaciones || [], eventos: datos.eventos || [], items: datos.items || [],
     resultados: datos.resultados || {}, estadisticas: datos.estadisticas || {},      // por id de asignación: lo que devolverían profe_resultados / profe_estadisticas_examen
     peticiones: [], llamadas: [],
     sesionCaducada() { this.token = 'tok-caducado-' + (++this.n); },
     nuevoToken() { this.token = 'tok-' + (++this.n); return this.token; }
   };
   const limpia = (fila, campos) => (campos ? Object.fromEntries(campos.map(c => [c, fila[c]])) : fila);
-  const TABLAS = { grupos: S.grupos, alumnos: S.alumnos, intentos: S.intentos, bancos: S.bancos, juegos: S.juegos, asignaciones: S.asignaciones, eventos: S.eventos };
+  const TABLAS = { grupos: S.grupos, alumnos: S.alumnos, intentos: S.intentos, bancos: S.bancos, juegos: S.juegos, asignaciones: S.asignaciones, eventos: S.eventos, items: S.items };
 
   S.atender = ({ metodo, url, cuerpo, cabeceras }) => {
     S.peticiones.push({ metodo, ruta: url.pathname + url.search });
@@ -131,7 +131,7 @@ function intentosDePrueba() {
 
 // Un examen ya hecho por parte del grupo TDA2: lo que devolverían profe_resultados y profe_estadisticas_examen (misma forma que el SQL real)
 function datosExamen() {
-  const respuestas = (...estados) => estados.map((e, k) => ({ id: 'u1/q' + (k + 1), respondida: e !== 'blanco', ok: e === 'ok', dada: e === 'blanco' ? null : k % 2, ms: e === 'blanco' ? null : 3000 + k * 1000 }));
+  const respuestas = (...estados) => estados.map((e, k) => ({ id: 'u1/q' + (k + 1), respondida: e !== 'blanco', ok: e === 'ok', dada: e === 'blanco' ? null : [0, true, 'bucle for', 3.5][k % 4], ms: e === 'blanco' ? null : 3000 + k * 1000 }));
   const ev = (salidas = 0, fuera = 0, recargas = 0, sin_red = 0) => ({ salidas, vueltas: salidas, recargas, sin_red, segundos_fuera: fuera });
   const P = (partida, alumno, estado, nota, acier, seg, eventos, resp, intento = 1) => ({ partida, alumno, juego: 'ex1', intento, estado, empezada: '2026-11-25T09:00:00+00:00',
     terminada: estado === 'en_curso' ? null : '2026-11-25T09:25:00+00:00', segundos: estado === 'en_curso' ? null : seg, total: estado === 'en_curso' ? null : 4, aciertos: estado === 'en_curso' ? null : acier,
@@ -142,6 +142,12 @@ function datosExamen() {
     bancos: [{ id: 'u1', titulo: 'Banco U1 · Python', materia: 'TDA II', unidad: 'U1', version: 1 }],
     juegos: [{ id: 'ex1', modo: 'examen', titulo: 'Examen U1 · Python', bancos: ['u1'], reglas: { preguntas: 20, tiempo_min: 30, penalizacion: 0, equilibrar: 'tema' } }],
     asignaciones: [{ id: 1, juego: 'ex1', grupo: 'TDA2', desde: null, hasta: null, intentos: 1, mostrar_soluciones: false, notas_publicadas: false }],
+    items: [
+      { banco: 'u1', id: 'q1', datos: { tipo: 'opcion_multiple', enun: 'Primera', ops: ['uno', 'dos', 'tres'], ok: 0, sol: 'Porque uno.' } },
+      { banco: 'u1', id: 'q2', datos: { tipo: 'verdadero_falso', enun: 'Segunda', ok: true, sol: 'Es verdadera.' } },
+      { banco: 'u1', id: 'q3', datos: { tipo: 'respuesta_corta', enun: 'Tercera', aceptadas: ['bucle for', 'for'], sol: 'Se llama for.' } },
+      { banco: 'u1', id: 'q4', datos: { tipo: 'numerica', enun: 'Cuarta', valor: 3.5, tolerancia: 0.1, unidad: 'm', sol: 'Medio.' } }
+    ],
     eventos: [
       { partida: 'aaaaaaaa-0000-4000-8000-000000000001', tipo: 'salida', momento: '2026-11-25T09:10:00.123456+00:00', detalle: null },
       { partida: 'aaaaaaaa-0000-4000-8000-000000000001', tipo: 'vuelta', momento: '2026-11-25T09:10:12.500000+00:00', detalle: { segundos: 12 } },

@@ -211,6 +211,14 @@ test.describe('resultados de un examen', () => {
     await expect(page.locator('.mapa button.ok')).toHaveCount(3); await expect(page.locator('.mapa button.mal')).toHaveCount(1);
     await page.locator('.mapa button').nth(2).click();
     await expect(page.locator('.ver-p')).toContainText('Falló');
+    await expect(page.locator('.ver-p')).toContainText('CONTESTÓ');
+    await expect(page.locator('.ver-p')).toContainText('bucle for');            // lo que puso el alumno (respuesta corta)
+    await expect(page.locator('.ver-p')).toContainText('CORRECTA');
+    await expect(page.locator('.ver-p')).toContainText('Se llama for.');
+    await page.locator('.mapa button').nth(0).click();                        // opción múltiple: dada = índice original → su texto
+    await expect(page.locator('.ver-p')).toContainText('uno');
+    await page.locator('.mapa button').nth(3).click();                        // numérica con unidad y tolerancia
+    await expect(page.locator('.ver-p')).toContainText('3,5 m (± 0,1)');
     await sinDesborde(page);
   });
   test('la cronología enseña cada incidencia con su hora, en orden, y los segundos fuera', async ({ page, servidor }) => {

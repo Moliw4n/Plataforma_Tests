@@ -121,7 +121,7 @@ async function crearServidorFalso(opciones = {}) {
     terminar_partida({ p_codigo, p_partida }) {
       const a = al(p_codigo); if (!a) return ko('codigo');
       const p = S.partidas.find(x => x.id === p_partida && x.alumno === a.id); if (!p) return ko('no_encontrada');
-      if (p.estado === 'en_curso') cerrar(p, S.ahora() > p.limite + 3000 ? 'caducada' : 'entregada');
+      if (p.estado === 'en_curso') cerrar(p, S.ahora() >= p.limite - 1000 ? 'caducada' : 'entregada');
       return { ok: true, estado: p.estado, publicada: S.asignacion.notas_publicadas };
     },
     mi_resultado({ p_codigo, p_partida }) {

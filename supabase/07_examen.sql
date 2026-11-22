@@ -294,7 +294,7 @@ begin
   select * into pa from public.partidas where id = p_partida and alumno = a.id;
   if pa.id is null then return jsonb_build_object('ok', false, 'motivo', 'no_encontrada'); end if;
   if pa.estado = 'en_curso' then
-    perform public._cerrar_partida(pa.id, case when now() > pa.limite + interval '3 seconds' then 'caducada' else 'entregada' end);
+    perform public._cerrar_partida(pa.id, case when now() >= pa.limite - interval '1 second' then 'caducada' else 'entregada' end);
     select * into pa from public.partidas where id = p_partida;
   end if;
   return jsonb_build_object('ok', true, 'estado', pa.estado,

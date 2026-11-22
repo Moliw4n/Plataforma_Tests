@@ -263,5 +263,6 @@ a.btn{color:var(--tinta)}
 .reglas-examen{display:flex;flex-direction:column;gap:8px;margin:6px 0 14px;padding:0;list-style:none;max-width:560px;text-align:left}
 .reglas-examen li{display:flex;gap:10px;align-items:flex-start;font-weight:600;color:var(--mut);line-height:1.35}
 .reglas-examen li::before{content:"›";color:var(--naranja);font-weight:800}
+.reglas-examen .intentos-ex{color:var(--cian);font-weight:800}
 .avisos-examen{max-width:860px;margin:10px auto 0;padding:0 16px;display:flex;flex-direction:column;gap:8px}
 .avisos-examen:empty{display:none}

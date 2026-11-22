@@ -104,7 +104,7 @@ Lo ideal: **un iPhone (Safari) y un Android (Chrome)**, y si puedes uno más. Ca
 | 12 | Volver a entrar tras entregar (`ensayo` tiene 2 intentos) | Te deja empezar el 2.º; con 1 intento diría «Ya has entregado». |
 | 13 | Examen **`ensayo-corto`** (1 minuto): empezar y esperar sin tocar | A los 60 s se entrega solo: «SE ACABÓ EL TIEMPO». El reloj se pone ámbar y rojo antes. |
 | 14 | Publicar las notas en el panel y mirar el móvil | «Comprobar si ya hay nota» → su nota y, con la revisión permitida, cada pregunta con su «por qué». |
-| 15 | En el panel: abrir un alumno | Mapa de preguntas, salidas de pestaña, recargas. «Anular partida» (pruébalo con una). |
+| 15 | En el panel: abrir un alumno | Mapa de preguntas, salidas de pestaña, recargas. «Anular intento» (pruébalo con una). |
 
 **Qué apuntar si algo falla:** modelo del móvil, navegador, en qué paso, y qué pasó en vez de lo esperado (una captura ayuda mucho). Si se queda a medias, el estado se ve en el panel.
 

@@ -28,7 +28,7 @@ export function crearExamenes(P) {
     if (/no_autorizado/.test(d)) return 'Tu sesión no tiene permiso de profesor.';
     if (/banco_en_uso/.test(d)) return 'Este banco ya lo usa algún examen (o ya hay exámenes hechos con él), así que no se puede cambiar ni borrar. Súbelo con otro id.';
     if (/juego_en_uso/.test(d)) return 'Ya hay alumnos que han hecho este examen: no se puede cambiar.';
-    if (/asignacion_con_partidas/.test(d)) return 'Esta asignación ya tiene partidas de alumnos: no se puede quitar.';
+    if (/asignacion_con_partidas/.test(d)) return 'Esta asignación ya tiene intentos de alumnos: no se puede quitar.';
     const m = d.match(/^(?:banco_no_valido|item_no_valido|juego_no_valido|reglas_no_validas|asignacion_no_valida): (.*)$/);
     if (m) return m[1];
     if (/demasiados|banco_demasiado_grande/.test(d)) return 'El banco es demasiado grande.';
@@ -260,7 +260,7 @@ export function crearExamenes(P) {
       '</tbody></table></div>';
     h += '<div class="lista-movil">' + fs.map(x => '<button class="al-card' + (x.ult ? '' : ' sin') + '" data-id="' + esc(x.id) + '"><span class="num">' + esc(x.num) + '</span><span class="al-nom">' + (esc(x.nombre) || 'Nº ' + esc(x.num)) +
       '<small>' + (x.estado === 'sin_empezar' ? 'sin empezar' : ESTADO[x.estado].toLowerCase()) + (x.salidas ? ' · salió ' + x.salidas + (x.salidas === 1 ? ' vez' : ' veces') : '') + '</small></span>' + (x.nota == null ? '' : P.fmtNota(x.nota)) + '</button>').join('') + '</div>';
-    h += '<p class="dato-p">Pulsa un alumno para ver su examen pregunta a pregunta, sus salidas de pestaña, o anular su partida.</p>';
+    h += '<p class="dato-p">Pulsa un alumno para ver su examen pregunta a pregunta, sus salidas de pestaña, o anular su intento.</p>';
     $('#vistaEx').innerHTML = h;
     $('#vistaEx').querySelectorAll('th').forEach(th => th.onclick = () => { const k = th.dataset.c; orden = { col: k, asc: orden.col === k ? !orden.asc : (k === 'num' || k === 'nombre') }; dibujarResultados(); });
     $('#vistaEx').querySelectorAll('tbody tr, .al-card').forEach(el => el.onclick = () => abrirDetalle(el.dataset.id));
@@ -275,7 +275,7 @@ export function crearExamenes(P) {
         return '<div class="intento" data-partida="' + esc(p.partida) + '"><div class="cab-i">' + (p.nota != null ? P.fmtNota(Number(p.nota)) : '<span class="estado-ex e-en_curso">En curso</span>') +
           '<span class="fecha">Intento ' + p.intento + ' · ' + esc(ESTADO[p.estado]) + ' · ' + esc(P.fmtFecha(p.terminada || p.empezada)) + '</span>' +
           '<span class="dato-p">' + (p.total != null ? p.aciertos + '/' + p.total + ' bien · ' : '') + (p.segundos != null ? P.fmtSeg(p.segundos) : 'sin terminar') + '</span>' +
-          '<button class="btn peligro" data-anular="' + esc(p.partida) + '">Anular partida</button></div>' +
+          '<button class="btn peligro" data-anular="' + esc(p.partida) + '">Anular intento</button></div>' +
           '<div class="eventos-ex ' + (ev.salidas ? 'alerta' : '') + '">' + (ev.salidas || ev.recargas || ev.sin_red
             ? (ev.salidas ? '⚠ Salió de la pestaña ' + ev.salidas + (ev.salidas === 1 ? ' vez' : ' veces') + ' (' + ev.segundos_fuera + ' s fuera). ' : '') + (ev.recargas ? 'Recargó la página ' + ev.recargas + '. ' : '') + (ev.sin_red ? 'Perdió la conexión ' + ev.sin_red + '.' : '')
             : 'Sin salidas de pestaña ni incidencias.') + '</div>' +
@@ -288,11 +288,37 @@ export function crearExamenes(P) {
       const caja = b.closest('.intento'), p = x.ps.find(z => z.partida === caja.dataset.partida), r = p.respuestas[[...caja.querySelectorAll('.mapa button')].indexOf(b)];
       caja.querySelectorAll('.mapa button').forEach(o => o.classList.toggle('on', o === b));
       const ver = caja.querySelector('.ver-p'); ver.hidden = false;
-      ver.innerHTML = '<b>' + esc(enun[r.id] || r.id) + '</b><div class="dato-p">' + (r.respondida ? (r.ok ? 'Acertó' : 'Falló') + (r.ms ? ' · tardó ' + P.fmtSeg(r.ms / 1000) : '') : 'La dejó en blanco') + '</div>';
+      const cab = '<b>' + esc(enun[r.id] || r.id) + '</b><div class="dato-p">' + (r.respondida ? (r.ok ? 'Acertó' : 'Falló') + (r.ms ? ' · tardó ' + P.fmtSeg(r.ms / 1000) : '') : 'La dejó en blanco') + '</div>';
+      ver.innerHTML = cab;
+      // Lo que puso el alumno, la respuesta correcta y el porqué: se leen del banco (el profesor tiene permiso)
+      datosPregunta(r.id).then(d => {
+        if (!d || !ver.isConnected || !b.classList.contains('on')) return;
+        ver.innerHTML = cab + '<div class="resp-ex"><div><span class="et">CONTESTÓ</span> ' + (r.respondida ? esc(loQuePuso(d, r.dada)) : '<i>nada</i>') + '</div>' +
+          '<div><span class="et">CORRECTA</span> ' + esc(laCorrecta(d)) + '</div>' + (d.sol ? '<div class="dato-p">' + esc(d.sol) + '</div>' : '') + '</div>';
+      });
     });
     cuerpoEl.querySelectorAll('[data-anular]').forEach(b => b.onclick = () => anular(b.dataset.anular, x));
     cuerpoEl.querySelectorAll('[data-crono]').forEach(el => cargarCronologia(el));
   }
+
+  /* La pregunta tal como está en el banco (con soluciones), para ver lo que contestó el alumno. Se guarda en memoria para no pedirla dos veces. */
+  const cachePreguntas = {};
+  async function datosPregunta(clave) {
+    if (clave in cachePreguntas) return cachePreguntas[clave];
+    const i = String(clave).indexOf('/');
+    if (i < 1) return null;
+    try {
+      const f = await P.api('items?banco=eq.' + encodeURIComponent(clave.slice(0, i)) + '&id=eq.' + encodeURIComponent(clave.slice(i + 1)) + '&select=datos');
+      return (cachePreguntas[clave] = f && f[0] ? f[0].datos : null);
+    } catch (e) { return null; }
+  }
+  // dada = lo guardado: para opción múltiple es el índice ORIGINAL de la opción (no la posición en la que se la barajó al alumno)
+  const loQuePuso = (d, dada) => d.tipo === 'opcion_multiple' ? String((d.ops || [])[dada] ?? dada)
+    : d.tipo === 'verdadero_falso' ? (dada === true ? 'Verdadero' : dada === false ? 'Falso' : String(dada)) : String(dada);
+  const laCorrecta = d => d.tipo === 'opcion_multiple' ? String((d.ops || [])[d.ok])
+    : d.tipo === 'verdadero_falso' ? (d.ok ? 'Verdadero' : 'Falso')
+    : d.tipo === 'numerica' ? String(d.valor).replace('.', ',') + (d.unidad ? ' ' + d.unidad : '') + (d.tolerancia ? ' (± ' + String(d.tolerancia).replace('.', ',') + ')' : '')
+    : (d.aceptadas || []).join('  ·  ');
 
   /* Cronología de incidencias de una partida (salidas, vueltas, recargas, cortes de red), con la hora de cada una. Se lee de la tabla eventos: el profesor tiene permiso. */
   const CRONO = { salida: 'Salió de la pestaña', vuelta: 'Volvió', recarga: 'Recargó o reabrió la página', sin_red: 'Recuperó la conexión', otro: 'Otra incidencia' };

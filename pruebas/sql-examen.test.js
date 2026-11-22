@@ -333,6 +333,14 @@ test.describe('responder', () => {
     const r = await empezar(A); await terminar(A, r.partida);
     assert.deepEqual(await responder(A, r.partida, r.items[0].clave, acierta(r.items[0])), { ok: false, motivo: 'entregada' });
   });
+  test('entregar justo al acabarse el tiempo queda como «caducada»; con margen, «entregada»', async () => {
+    const r = await empezar(A);
+    await c.query("update partidas set limite = now() + interval '30 seconds'");
+    assert.equal((await terminar(A, r.partida)).estado, 'entregada');
+    const r2 = await empezar(B);
+    await c.query("update partidas set limite = now() - interval '200 milliseconds' where id = $1", [r2.partida]);
+    assert.equal((await terminar(B, r2.partida)).estado, 'caducada');
+  });
   test('fuera de tiempo no cuenta (con 3 s de cortesía), y la partida se cierra sola', async () => {
     const r = await empezar(A);
     await c.query("update partidas set limite = now() - interval '1 second'");

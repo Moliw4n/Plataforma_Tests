@@ -94,6 +94,8 @@ table.datos tr.sin td{color:var(--mut)}
 .ver-p{background:#0a1022;border:1px solid var(--borde);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
 .ver-p .op-mini{display:flex;gap:10px;align-items:flex-start;padding:6px 8px;border-radius:8px;font-size:14px}
 .ver-p .op-mini code{white-space:pre-wrap}
+.resp-ex{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.resp-ex .et{display:inline-block;min-width:84px;font-family:Orbitron,sans-serif;font-size:11px;letter-spacing:.1em;color:var(--mut)}
 .ver-p .op-mini.ok{background:rgba(63,207,134,.15)}
 .ver-p .op-mini.elegida.mal{background:rgba(255,107,94,.15)}
 .ver-p .op-mini .m{margin-left:auto;font-weight:800}

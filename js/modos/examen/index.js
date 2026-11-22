@@ -62,6 +62,14 @@ async function portada(mensaje) {
   pintarPortada(j, mensaje);
 }
 
+// «Has hecho 1 de 2. Te queda 1.» / «Estás en el intento 2 de 2.»: cuántos lleva y cuántos le quedan
+function textoIntentos(j, nint) {
+  const hechos = j.hechos || 0;
+  if (j.en_curso) return ' Estás en el intento ' + Math.min(hechos + 1, nint) + ' de ' + nint + '.';
+  if (!hechos) return '';
+  const quedan = Math.max(0, nint - hechos);
+  return ' <b class="intentos-ex">Has hecho ' + hechos + ' de ' + nint + '. ' + (quedan === 0 ? 'No te quedan más.' : quedan === 1 ? 'Te queda 1.' : 'Te quedan ' + quedan + '.') + '</b>';
+}
 function pintarPortada(j, mensaje) {
   const info = j || ctx.juego;
   const n = info.preguntas, t = info.tiempo_min, nint = info.intentos;
@@ -82,7 +90,7 @@ function pintarPortada(j, mensaje) {
       '<h1>' + tituloBonito(info.titulo) + '</h1>' +
       '<ul class="reglas-examen">' +
         '<li>' + n + (n === 1 ? ' pregunta' : ' preguntas') + ' y ' + t + (t === 1 ? ' minuto' : ' minutos') + '. El reloj empieza al pulsar «Empezar» y no se para.</li>' +
-        '<li>' + (nint === 1 ? 'Solo tienes un intento.' : 'Tienes ' + nint + ' intentos.') + '</li>' +
+        '<li><span>' + (nint === 1 ? 'Solo tienes un intento.' : 'Tienes ' + nint + ' intentos.') + (j ? textoIntentos(j, nint) : '') + '</span></li>' +
         '<li>No verás si aciertas: tu nota la verás cuando tu profesor la publique.</li>' +
         '<li>Puedes volver atrás y cambiar tus respuestas hasta que entregues.</li>' +
         '<li>Si sales de esta pestaña o de la aplicación, queda anotado.</li>' +
@@ -90,9 +98,11 @@ function pintarPortada(j, mensaje) {
         '<li>Si recargas, escribes tu código y continúas donde estabas.</li>' +
       '</ul>' +
       (estado ? '<p class="aviso-examen" id="estadoExamen" role="status">' + esc(estado) + '</p>' : '') +
+      (ultima ? '<p class="aviso-examen" id="estadoNota" role="status" hidden></p><div id="detalleNota"></div>' : '') +
       (mensaje ? '<p class="aviso-examen rojo" role="alert">' + esc(mensaje) + '</p>' : '') +
       '<div class="acciones">' +
         (boton ? '<button class="btn pri" id="bEmpezar">' + boton + '</button>' : '') +
+        (ultima && ultima.id ? '<button class="btn' + (boton ? '' : ' pri') + '" id="bVerResultado">Ver mi resultado</button>' : '') +
         (!boton && j ? '<button class="btn" id="bActualizar">Volver a comprobar</button>' : '') +
         (!j ? '<button class="btn pri" id="bActualizar">Reintentar</button>' : '') +
         '<span class="quien">Entras como <b>nº ' + esc(ctx.alumno.alumno.split('-').pop()) + '</b> · <button class="enlace" id="bSalir">No soy yo</button></span>' +
@@ -100,6 +110,7 @@ function pintarPortada(j, mensaje) {
     '</div>';
   if (boton) { $('#bEmpezar').onclick = empezar; $('#bEmpezar').focus(); }
   const act = $('#bActualizar'); if (act) act.onclick = () => portada();
+  const ver = $('#bVerResultado'); if (ver) ver.onclick = () => comprobarNota(ultima.id, '#bVerResultado');
   $('#bSalir').onclick = () => ctx.salir();
 }
 
@@ -130,6 +141,9 @@ function arrancar(r) {
   $('#bot').hidden = false; $('#reloj').hidden = false;
   $('#bAnt').onclick = () => navegar(pos - 1);
   $('#bSig').onclick = () => (pos < items.length - 1 ? navegar(pos + 1) : revisar());
+  // Atajo para ir directo a «Revisar y entregar» desde cualquier pregunta (sin pasar por todas)
+  if (!$('#bFin')) { const b = document.createElement('button'); b.className = 'btn'; b.id = 'bFin'; b.textContent = 'Entregar'; b.title = 'Revisar y entregar'; $('#bot').insertBefore(b, $('#bSig')); }
+  $('#bFin').onclick = () => { if (activo) { guardarPendienteDeLaVista(); revisar(); } };
   document.addEventListener('visibilitychange', alCambiarVisibilidad);
   document.addEventListener('keydown', teclado);
   window.addEventListener('beforeunload', antesDeCerrar);
@@ -189,6 +203,7 @@ function actualizarBarra() {
   $('#bAnt').disabled = pos === 0;
   $('#bSig').disabled = false;
   $('#bSig').textContent = pos === items.length - 1 ? 'Revisar y entregar →' : 'Siguiente →';
+  $('#bFin').hidden = pos === items.length - 1;
   $('#pista').textContent = 'Contesta y sigue. Puedes volver atrás y cambiar lo que quieras hasta entregar.';
 }
 
@@ -355,11 +370,12 @@ function pantallaEntregado(porTiempo) {
   $('#bSalirFinal').onclick = () => ctx.salir();
   window.scrollTo({ top: 0 });
 }
-async function comprobarNota() {
-  const b = $('#bNota'), est = $('#estadoNota'), det = $('#detalleNota');
-  b.disabled = true; est.textContent = 'Comprobando…';
+// Enseña la nota (y la revisión si el profesor la permite) de un intento ya entregado: desde la pantalla de «entregado» o desde la portada
+async function comprobarNota(idIntento, idBoton) {
+  const b = $(typeof idBoton === 'string' ? idBoton : '#bNota'), est = $('#estadoNota'), det = $('#detalleNota');
+  est.hidden = false; b.disabled = true; est.textContent = 'Comprobando…';
   let r;
-  try { r = await llamar('mi_resultado', { p_partida: partida.partida }); }
+  try { r = await llamar('mi_resultado', { p_partida: typeof idIntento === 'string' ? idIntento : partida.partida }); }
   catch (e) { b.disabled = false; est.textContent = 'No hay conexión. Vuelve a probar.'; return; }
   b.disabled = false;
   if (!r.ok) { est.textContent = 'No he podido comprobarlo. Vuelve a probar.'; return; }

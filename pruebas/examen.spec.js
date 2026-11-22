@@ -245,6 +245,34 @@ test.describe('revisar, entregar y la nota', () => {
     await page.click('#bActualizar');
     await expect(page.locator('#estadoExamen')).toContainText('Tu nota: 0 sobre 10');
   });
+  test('la portada dice cuántos intentos lleva y cuántos le quedan', async ({ page, servidor }) => {
+    await abrir(page, servidor, { asignacion: { intentos: 3 } });
+    await expect(page.locator('.reglas-examen')).toContainText('Tienes 3 intentos.');
+    await expect(page.locator('.reglas-examen')).not.toContainText('Has hecho');
+    await page.click('#bEmpezar'); await expect(page.locator('.q.en-examen')).toBeVisible();
+    await page.reload(); await entrar(page);                                    // recargar a mitad: sigue en el intento 1
+    await expect(page.locator('.reglas-examen')).toContainText('Estás en el intento 1 de 3.');
+    await page.click('#bEmpezar'); await expect(page.locator('.q.en-examen')).toBeVisible();
+    await aRevisar(page); await page.click('#bEntregar'); await page.click('#bConfirmar');
+    await page.click('#bSalirFinal'); await entrar(page);
+    await expect(page.locator('.reglas-examen')).toContainText('Has hecho 1 de 3. Te quedan 2.');
+    await page.click('#bEmpezar'); await expect(page.locator('.q.en-examen')).toBeVisible(); await aRevisar(page); await page.click('#bEntregar'); await page.click('#bConfirmar');
+    await page.click('#bSalirFinal'); await entrar(page);
+    await expect(page.locator('.reglas-examen')).toContainText('Has hecho 2 de 3. Te queda 1.');
+  });
+  test('volver a entrar con todos los intentos gastados: «Ver mi resultado» enseña la nota y la revisión', async ({ page, servidor }) => {
+    const S = await empezar(page, servidor, { asignacion: { mostrar_soluciones: true } });
+    await opcion(page, 'B t1').click();
+    await aRevisar(page); await page.click('#bEntregar'); await page.click('#bConfirmar');
+    await page.click('#bSalirFinal');
+    await entrar(page);
+    await page.click('#bVerResultado');
+    await expect(page.locator('#estadoNota')).toContainText('Todavía no está publicada');
+    S.publicarNotas(true);
+    await page.click('#bVerResultado');
+    await expect(page.locator('#estadoNota')).toContainText('Tu nota: 2 sobre 10 · 1 de 5 bien');
+    await expect(page.locator('#detalleNota .caja')).toHaveCount(5);
+  });
 });
 
 test.describe('si algo falla', () => {
@@ -331,6 +359,17 @@ test.describe('si algo falla', () => {
     await expect(page.locator('.portada .sup')).toHaveText('SE ACABÓ EL TIEMPO');
     await expect(page.locator('#escena')).toContainText('Has contestado');
     expect(S.ultima().estado).toBe('caducada');
+  });
+  test('desde cualquier pregunta se puede ir directo a «Revisar y entregar» (atajo «Entregar»)', async ({ page, servidor }) => {
+    await empezar(page, servidor);
+    await expect(page.locator('#bFin')).toBeVisible();
+    await page.click('#bFin');
+    await expect(page.locator('.portada.final .sup')).toHaveText('ANTES DE ENTREGAR');
+    await page.click('.rejilla button >> nth=1');                 // vuelve a una pregunta
+    await expect(page.locator('#bFin')).toBeVisible();
+    await page.click('#bFin');
+    await page.click('#bEntregar'); await page.click('#bConfirmar');
+    await expect(page.locator('.portada.final h1')).toHaveText('✓ Entregado');
   });
   test('sin ningún error de JavaScript en toda la sesión', async ({ page, servidor }) => {
     const errores = []; page.on('pageerror', e => errores.push(e.message)); page.on('console', m => { if (m.type() === 'error') errores.push(m.text()); });
