@@ -81,7 +81,7 @@ function pintarPortada(j, mensaje) {
       '<div class="sup">EXAMEN</div>' +
       '<h1>' + tituloBonito(info.titulo) + '</h1>' +
       '<ul class="reglas-examen">' +
-        '<li>' + n + ' preguntas y ' + t + ' minutos. El reloj empieza al pulsar «Empezar» y no se para.</li>' +
+        '<li>' + n + (n === 1 ? ' pregunta' : ' preguntas') + ' y ' + t + (t === 1 ? ' minuto' : ' minutos') + '. El reloj empieza al pulsar «Empezar» y no se para.</li>' +
         '<li>' + (nint === 1 ? 'Solo tienes un intento.' : 'Tienes ' + nint + ' intentos.') + '</li>' +
         '<li>No verás si aciertas: tu nota la verás cuando tu profesor la publique.</li>' +
         '<li>Puedes volver atrás y cambiar tus respuestas hasta que entregues.</li>' +

@@ -42,6 +42,11 @@ test.describe('acceso y portada', () => {
     await expect(page).toHaveTitle(/Examen de prueba · Kiron/);
     await sinDesborde(page);
   });
+  test('el singular está bien dicho: «1 pregunta y 1 minuto»', async ({ page, servidor }) => {
+    servidor.examen = await crearServidorFalso({ ids: ['t1mc'], reglas: { preguntas: 1, tiempo_min: 1 } });
+    await page.goto('jugar.html?j=ex'); await entrar(page);
+    await expect(page.locator('.reglas-examen li').first()).toContainText('1 pregunta y 1 minuto.');
+  });
   test('un examen que no es de tu grupo: mensaje claro', async ({ page, servidor }) => {
     await abrir(page, servidor, { asignacion: { grupo: 'TDA1' } });
     await expect(page.locator('#escena')).toContainText('No tienes asignado este examen');
