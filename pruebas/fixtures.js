@@ -15,13 +15,25 @@ const cargarTest = id => JSON.parse(fs.readFileSync(path.join(__dirname, '..', '
 const test = base.test.extend({
   /* servidor: simula Supabase y registra lo que recibe.
      servidor.guardados → cuerpos de guardar_intento · servidor.llamadas → nombres de funciones llamadas
-     servidor.modoGuardar = 'ok' | 'error' → qué contesta guardar_intento */
+     servidor.modoGuardar = 'ok' | 'error' → qué contesta guardar_intento
+     servidor.panel = await crearServidorPanel() → atiende el login, las tablas y las funciones profe_* del panel del profesor
+     servidor.examen = await crearServidorFalso() → atiende mis_juegos, empezar_partida, responder, evento, terminar_partida y mi_resultado */
   servidor: [async ({ page }, use) => {
-    const s = { guardados: [], llamadas: [], inesperadas: [], modoGuardar: 'ok' };
+    const s = { guardados: [], llamadas: [], inesperadas: [], modoGuardar: 'ok', examen: null, panel: null };   // examen: servidor falso del examen (opcional)
     await page.route('**/*', ruta => {
       const url = new URL(ruta.request().url());
       if (url.hostname === 'localhost') return ruta.continue();
       if (url.origin !== SUPABASE) { s.inesperadas.push(url.href); return ruta.abort(); }
+      // PANEL del profesor: login (Auth) y tablas por REST los atiende el Supabase falso del panel (pruebas/servidor-panel-falso.js) si el test lo ha puesto en s.panel
+      const m0 = url.pathname.match(/^\/rest\/v1\/rpc\/(profe_\w+)$/);
+      if (s.panel && (url.pathname.startsWith('/auth/v1/') || url.pathname.startsWith('/rest/v1/'))) {
+        if (s.panel.red === false) return ruta.abort();
+        const req = ruta.request(), cab = req.headers();
+        const res = m0 ? s.panel.rpc(m0[1], req.postDataJSON() || {}, cab)
+                       : s.panel.atender({ metodo: req.method(), url, cuerpo: req.postDataJSON() || {}, cabeceras: cab });
+        const responder = () => ruta.fulfill({ status: res.status, contentType: 'application/json', body: res.body === null ? '' : JSON.stringify(res.body) });
+        return s.panel.latencia ? setTimeout(responder, s.panel.latencia) : responder();
+      }
       const m = url.pathname.match(/^\/rest\/v1\/rpc\/(\w+)$/);
       if (!m) { s.inesperadas.push(url.href); return ruta.fulfill({ status: 404, body: '{}' }); }
       const fn = m[1];
@@ -36,6 +48,12 @@ const test = base.test.extend({
       if (fn === 'guardar_intento') {
         s.guardados.push(args);
         return s.modoGuardar === 'error' ? json({ message: 'fallo simulado' }, 500) : json({ ok: true });
+      }
+      // Funciones del examen: las atiende el servidor falso (pruebas/servidor-examen-falso.js) si el test lo ha puesto en s.examen
+      if (s.examen && ['mis_juegos', 'empezar_partida', 'responder', 'evento', 'terminar_partida', 'mi_resultado'].includes(fn)) {
+        if (s.examen.red === false) return ruta.abort();                 // corte de internet simulado
+        const resp = s.examen.llamar(fn, args);
+        return s.examen.latencia ? setTimeout(() => json(resp), s.examen.latencia) : json(resp);
       }
       s.inesperadas.push(url.href);
       return json({}, 404);

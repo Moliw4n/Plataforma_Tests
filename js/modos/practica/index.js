@@ -2,10 +2,13 @@
    «por qué» y «la trampa», se puede repetir las veces que se quiera. Guarda cada intento. */
 import { esc, barajar, tituloBonito } from '../../nucleo/util.js';
 import { resultadoNormalizado } from '../../nucleo/modos.js';
-import { pintar as pintarPregunta } from '../../nucleo/preguntas/opcion_multiple.js';
+import { aFormato2 } from '../../nucleo/formato.js';
+import { renderizador, TIPOS_JUGABLES } from '../../nucleo/preguntas/index.js';
+import { categoriaDe } from '../../nucleo/preguntas/comun.js';
 
 const $ = s => document.querySelector(s);
-const NOMBRE_TIPO = { imprime: '¿Qué imprime?', error: 'Encuentra el error', hueco: 'Completa el hueco' };
+const NOMBRE_TIPO = { imprime: '¿Qué imprime?', error: 'Encuentra el error', hueco: 'Completa el hueco',
+  opcion_multiple: 'Elige la correcta', verdadero_falso: '¿Verdadero o falso?', numerica: 'Haz la cuenta', respuesta_corta: 'Respuesta corta' };
 
 /* ---------- estado (un solo modo activo a la vez) ---------- */
 let ctx = null, T = null, E = null, barra = null;
@@ -17,8 +20,8 @@ let intento = null;      // lo último que se envió a guardar (formato de guard
 let vista = null;        // lo que devuelve el renderizador de la pregunta que se ve
 let estadoGuardado = 'local';   // 'guardando' | 'ok' | 'error' | 'local' | 'profe'
 
-// Etiqueta de tipo: usa los tipos del test si los trae ({tipos:{id:{nombre,color}}})
-const chipTipo = t => { const d = T && T.tipos && T.tipos[t];
+// Etiqueta de categoría: usa las del test si las trae ({categorias:{id:{nombre,color}}})
+const chipTipo = t => { const d = T && T.categorias && T.categorias[t];
   return d ? '<span class="tipo" style="background:var(--' + d.color + ')">' + esc(d.nombre) + '</span>'
            : '<span class="tipo t-' + t + '">' + (NOMBRE_TIPO[t] || t) + '</span>'; };
 
@@ -26,7 +29,7 @@ const chipTipo = t => { const d = T && T.tipos && T.tipos[t];
 function portada() {
   $('#bot').hidden = true; barra.innerHTML = ''; $('#contador').textContent = '';
   const n = T.preguntas.length;
-  const tipos = [...new Set(T.preguntas.map(p => p.tipo))];
+  const tipos = [...new Set(T.preguntas.map(categoriaDe))];
   const alumno = ctx.alumno;
   E.innerHTML =
     '<div class="portada">' +
@@ -53,6 +56,7 @@ function salir() { lista = []; ctx.salir(); }
 /* ---------- intento ---------- */
 function empezar(preguntas) {
   lista = preguntas.map(p => {
+    if (p.tipo !== 'opcion_multiple') return { p };   // solo las de opciones se barajan
     const idx = p.ops.map((_, i) => i);
     const orden = p.fija_ultima ? barajar(idx.slice(0, -1)).concat(idx.length - 1) : barajar(idx);
     return { p, orden };
@@ -68,7 +72,7 @@ function empezar(preguntas) {
 function ir(i) {
   pos = i;
   const { p, orden } = lista[i];
-  vista = pintarPregunta(p, E, {
+  vista = renderizador(p.tipo).pintar(p, E, {
     orden, respuesta: resp[i], chipTipo,
     hayChuleta: !!T.chuleta,
     alResponder: responder,
@@ -79,11 +83,15 @@ function ir(i) {
   window.scrollTo({ top: 0 });
 }
 
-function responder(oi) {
+/* dada = lo que contestó el alumno: en opción múltiple el índice de la opción (guardado como `elegida`, como siempre);
+   en los demás tipos, true/false o el texto escrito (guardado como `dada`). */
+function responder(dada) {
   if (resp[pos]) return;
   const p = lista[pos].p;
-  resp[pos] = { id: p.id, elegida: oi, ok: oi === p.ok, ms: Date.now() - t0 };
-  vista.mostrarCorreccion({ elegida: oi, ok: oi === p.ok });
+  const c = renderizador(p.tipo).corregir(p, dada);
+  const multiple = p.tipo === 'opcion_multiple';
+  resp[pos] = multiple ? { id: p.id, elegida: dada, ok: c.ok, ms: Date.now() - t0 } : { id: p.id, dada, ok: c.ok, ms: Date.now() - t0 };
+  vista.mostrarCorreccion(multiple ? { elegida: dada, ok: c.ok } : { dada, ok: c.ok, correcta: c.correcta });
   actualizarBarra();
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   // llevar la vista a la explicación, sin que la tape la barra de abajo
@@ -108,7 +116,11 @@ function actualizarBarra() {
   const bSig = $('#bSig');
   bSig.disabled = !hecha;
   bSig.textContent = ultima ? 'Ver mi nota →' : 'Siguiente →';
-  $('#pista').textContent = hecha ? 'Lee la explicación y sigue (Intro)' : 'Pulsa una opción (o las teclas 1-4)';
+  const tipo = lista[pos].p.tipo;
+  $('#pista').textContent = hecha ? 'Lee la explicación y sigue (Intro)'
+    : tipo === 'verdadero_falso' ? 'Pulsa Verdadero o Falso (o las teclas V y F)'
+    : tipo === 'opcion_multiple' ? 'Pulsa una opción (o las teclas 1-4)'
+    : 'Escribe tu respuesta y pulsa Intro';
 }
 
 function siguiente() {
@@ -118,6 +130,9 @@ function siguiente() {
   resumen();
 }
 
+// Lo que se guarda de cada respuesta: {id, elegida, ok, ms} en opción múltiple; {id, dada, ok, ms} en el resto
+const respuestaGuardada = r => r.dada !== undefined ? { id: r.id, dada: r.dada, ok: r.ok, ms: r.ms } : { id: r.id, elegida: r.elegida, ok: r.ok, ms: r.ms };
+
 function terminarIntento() {
   const aciertos = resp.filter(r => r.ok).length;
   intento = {
@@ -125,7 +140,7 @@ function terminarIntento() {
     empezado: new Date(inicioIntento).toISOString(), terminado: new Date().toISOString(),
     segundos: Math.round((Date.now() - inicioIntento) / 1000),
     total: resp.length, aciertos, nota: Math.round(aciertos / resp.length * 100) / 10,
-    respuestas: resp.map(r => ({ id: r.id, elegida: r.elegida, ok: r.ok, ms: r.ms }))
+    respuestas: resp.map(r => respuestaGuardada(r))
   };
   guardarIntento(intento);
 }
@@ -164,7 +179,7 @@ function resumen() {
   const seg = Math.round((Date.now() - inicioIntento) / 1000);
   const C = 2 * Math.PI * 70;
   const porTipo = {};
-  lista.forEach(({ p }, i) => { const t = porTipo[p.tipo] || (porTipo[p.tipo] = { n: 0, ok: 0 }); t.n++; if (resp[i].ok) t.ok++; });
+  lista.forEach(({ p }, i) => { const t = porTipo[categoriaDe(p)] || (porTipo[categoriaDe(p)] = { n: 0, ok: 0 }); t.n++; if (resp[i].ok) t.ok++; });
   const falladas = lista.filter((_, i) => !resp[i].ok).map(x => x.p);
   E.innerHTML =
     '<div class="portada final">' +
@@ -203,8 +218,11 @@ function teclado(e) {
   if (chuleta && chuleta.abierta()) { if (e.key === 'Escape') chuleta.cerrar(); return; }
   if ((e.key === 'c' || e.key === 'C') && chuleta && chuleta.lista()) { chuleta.abrir(); return; }
   if (!lista.length || pos < 0 || $('#bot').hidden) return;
-  const n = '1234'.indexOf(e.key);
-  if (n >= 0 && !resp[pos] && lista[pos].orden[n] !== undefined) { responder(lista[pos].orden[n]); return; }
+  const tipo = lista[pos].p.tipo;
+  if (tipo === 'opcion_multiple') {
+    const n = '1234'.indexOf(e.key);
+    if (n >= 0 && !resp[pos] && lista[pos].orden[n] !== undefined) { responder(lista[pos].orden[n]); return; }
+  } else if (tipo === 'verdadero_falso' && !resp[pos] && /^[vVfF]$/.test(e.key)) { responder(/^[vV]$/.test(e.key)); return; }
   if ((e.key === 'Enter' || e.key === 'ArrowRight') && resp[pos]) { e.preventDefault(); siguiente(); }
   if (e.key === 'ArrowLeft' && pos > 0) ir(pos - 1);
 }
@@ -224,7 +242,7 @@ function resultado() {
     nota: total ? Math.round(aciertos / total * 100) / 10 : 0,
     segundos: inicioIntento ? Math.round((Date.now() - inicioIntento) / 1000) : 0,
     por_criterio,
-    respuestas: hechas.map(r => ({ id: r.id, elegida: r.elegida, ok: r.ok, ms: r.ms }))
+    respuestas: hechas.map(respuestaGuardada)
   });
 }
 
@@ -232,10 +250,10 @@ export default {
   id: 'practica',
   nombre: 'Práctica',
   necesita: { directo: false, servidor: true },
-  tiposPregunta: ['opcion_multiple'],
+  tiposPregunta: TIPOS_JUGABLES,
 
   async iniciar(c) {
-    ctx = c; T = c.contenido; E = c.contenedor; barra = $('#barra');
+    ctx = c; T = aFormato2(c.contenido); E = c.contenedor; barra = $('#barra');   // siempre formato 2 (si ya lo es, no cambia nada)
     lista = []; resp = []; pos = 0; intento = null; vista = null; estadoGuardado = 'local';
     c.temaActual = () => lista[pos] && lista[pos].p.tema;   // para que la chuleta abra en el tema de la pregunta
     $('#bAnt').onclick = () => { if (pos > 0) ir(pos - 1); };

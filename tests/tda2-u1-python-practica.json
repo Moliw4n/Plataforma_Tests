@@ -1,4 +1,5 @@
 {
+  "formato": 2,
   "id": "tda2-u1-python-practica",
   "titulo": "Práctica U1 · Python",
   "materia": "TDA II",
@@ -8,7 +9,8 @@
   "fuente": "TDA/TDA II/Bloque C - Programacion/U1_SIMULACRO_Python.html",
   "preguntas": [
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A1-A2 · print y variables",
       "enun": "¿Qué sale en la consola?",
       "code": "print(\"5\" + \"3\")\nprint(5 + 3)",
@@ -26,7 +28,8 @@
       "tema": "pantalla"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A1 · print con comas y +",
       "enun": "¿Qué sale en la consola?",
       "code": "print(\"Hola\", \"Mundo\")\nprint(\"Hola\" + \"Mundo\")",
@@ -44,7 +47,8 @@
       "tema": "pantalla"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A1 · f-strings",
       "enun": "¿Qué sale en la consola?",
       "code": "precio = 10 / 3\nprint(f\"Precio: {precio:.2f} euros\")",
@@ -62,7 +66,8 @@
       "tema": "pantalla"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A2 · operadores // y %",
       "enun": "¿Qué sale en la consola?",
       "code": "minutos = 135\nhoras = minutos // 60\nresto = minutos % 60\nprint(horas, \"h\", resto, \"min\")",
@@ -80,7 +85,8 @@
       "tema": "operadores"
     },
     {
-      "tipo": "error",
+      "tipo": "opcion_multiple",
+      "categoria": "error",
       "act": "A2 · input",
       "enun": "El usuario escribe 16. ¿Qué pasa al ejecutarlo?",
       "code": "edad = input(\"Edad: \")\nproxima = edad + 1\nprint(\"El ano que viene:\", proxima)",
@@ -99,7 +105,8 @@
       "tema": "variables"
     },
     {
-      "tipo": "error",
+      "tipo": "opcion_multiple",
+      "categoria": "error",
       "act": "A2 · nombres de variables",
       "enun": "¿Qué pasa al ejecutarlo?",
       "code": "nombre = \"Lucia\"\nprint(\"Hola\", Nombre)",
@@ -117,7 +124,8 @@
       "tema": "variables"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A2 · orden de las operaciones",
       "enun": "¿Qué sale en la consola?",
       "code": "print(2 + 3 * 4)\nprint(2 ** 3)",
@@ -135,7 +143,8 @@
       "tema": "operadores"
     },
     {
-      "tipo": "hueco",
+      "tipo": "opcion_multiple",
+      "categoria": "hueco",
       "act": "A2 · convertir el input",
       "enun": "El usuario escribe 16.5 y queremos que salga 33.0. ¿Qué va en el hueco?",
       "code": "precio = ________\ntotal = precio * 2\nprint(total)",
@@ -155,7 +164,8 @@
       "tema": "variables"
     },
     {
-      "tipo": "error",
+      "tipo": "opcion_multiple",
+      "categoria": "error",
       "act": "A2 · int() e input",
       "enun": "El usuario escribe dieciseis (con letras). ¿Qué pasa?",
       "code": "edad = int(input(\"Edad: \"))\nprint(\"Tienes\", edad, \"años\")",
@@ -174,7 +184,8 @@
       "tema": "variables"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A3 · if / elif / else",
       "enun": "¿Qué sale en la consola?",
       "code": "nota = 9.5\nif nota >= 5:\n    print(\"Aprobado\")\nelif nota >= 9:\n    print(\"Sobresaliente\")\nelse:\n    print(\"Suspenso\")",
@@ -192,7 +203,8 @@
       "tema": "decisiones"
     },
     {
-      "tipo": "hueco",
+      "tipo": "opcion_multiple",
+      "categoria": "hueco",
       "act": "A3 · and / or",
       "enun": "La entrada es gratis para menores de 12 años y para quienes tienen 65 o más. ¿Qué va en el hueco?",
       "code": "edad = int(input(\"Edad: \"))\nif ________:\n    print(\"Gratis\")\nelse:\n    print(\"Pagas 6 euros\")",
@@ -212,7 +224,8 @@
       "tema": "decisiones"
     },
     {
-      "tipo": "error",
+      "tipo": "opcion_multiple",
+      "categoria": "error",
       "act": "A3 · comparar",
       "enun": "Este programa no arranca. ¿Por qué?",
       "code": "edad = 18\nif edad = 18:\n    print(\"Ya puedes votar\")",
@@ -230,7 +243,8 @@
       "tema": "decisiones"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A3 · if / else",
       "enun": "¿Qué sale en la consola?",
       "code": "temperatura = 15\nif temperatura > 25:\n    print(\"Calor\")\nelse:\n    print(\"Fresco\")\nprint(\"Fin\")",
@@ -248,7 +262,8 @@
       "tema": "decisiones"
     },
     {
-      "tipo": "error",
+      "tipo": "opcion_multiple",
+      "categoria": "error",
       "act": "A3 · sangría",
       "enun": "¿Qué pasa al ejecutarlo?",
       "code": "edad = 20\nif edad >= 18:\nprint(\"Mayor de edad\")",
@@ -266,7 +281,8 @@
       "tema": "decisiones"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A3 · mayúsculas al comparar",
       "enun": "¿Qué sale en la consola?",
       "code": "respuesta = \"Si\"\nif respuesta == \"si\":\n    print(\"Vale\")\nelse:\n    print(\"No te entiendo\")",
@@ -284,7 +300,8 @@
       "tema": "decisiones"
     },
     {
-      "tipo": "hueco",
+      "tipo": "opcion_multiple",
+      "categoria": "hueco",
       "act": "A3 · elif",
       "enun": "Queremos que con un 7 salga «Notable». ¿Qué va en el hueco?",
       "code": "nota = 7\nif nota >= 9:\n    print(\"Sobresaliente\")\n________\n    print(\"Notable\")\nelse:\n    print(\"Otra nota\")",
@@ -303,7 +320,8 @@
       "tema": "decisiones"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A3 · not y and",
       "enun": "¿Qué sale en la consola?",
       "code": "lluvia = False\nfrio = True\nif not lluvia and frio:\n    print(\"Abrigo\")\nelse:\n    print(\"Paraguas\")",
@@ -321,7 +339,8 @@
       "tema": "decisiones"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A4 · for y range",
       "enun": "¿Qué sale en la consola? (cada número en una línea)",
       "code": "for i in range(1, 4):\n    print(i * 2)",
@@ -339,7 +358,8 @@
       "tema": "repetir"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A4 · acumulador",
       "enun": "¿Qué sale en la consola?",
       "code": "for n in range(1, 4):\n    suma = 0\n    suma = suma + n\nprint(suma)",
@@ -357,7 +377,8 @@
       "tema": "repetir"
     },
     {
-      "tipo": "hueco",
+      "tipo": "opcion_multiple",
+      "categoria": "hueco",
       "act": "A4 · while",
       "enun": "Queremos que escriba «Hola» 3 veces y pare. ¿Qué va en el hueco?",
       "code": "contador = 1\nwhile contador <= 3:\n    print(\"Hola\")\n    ________",
@@ -376,7 +397,8 @@
       "tema": "repetir"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A4 · range con salto",
       "enun": "¿Qué sale en la consola? (cada número en una línea)",
       "code": "for i in range(0, 10, 3):\n    print(i)",
@@ -394,7 +416,8 @@
       "tema": "repetir"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A4 · while",
       "enun": "¿Qué sale en la consola?",
       "code": "n = 10\nwhile n > 0:\n    n = n - 3\nprint(n)",
@@ -412,7 +435,8 @@
       "tema": "repetir"
     },
     {
-      "tipo": "hueco",
+      "tipo": "opcion_multiple",
+      "categoria": "hueco",
       "act": "A4 · acumulador",
       "enun": "Queremos sumar los números del 1 al 5 (debe salir 15). ¿Qué va en el hueco?",
       "code": "suma = 0\nfor i in range(1, 6):\n    ________\nprint(suma)",
@@ -431,7 +455,8 @@
       "tema": "repetir"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A4 · break",
       "enun": "¿Qué sale en la consola? (cada número en una línea)",
       "code": "for i in range(1, 10):\n    if i == 4:\n        break\n    print(i)",
@@ -449,7 +474,8 @@
       "tema": "repetir"
     },
     {
-      "tipo": "error",
+      "tipo": "opcion_multiple",
+      "categoria": "error",
       "act": "A4 · for",
       "enun": "Este programa no arranca. ¿Por qué?",
       "code": "for i in range(3)\n    print(i)",
@@ -467,7 +493,8 @@
       "tema": "repetir"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A5 · cadenas",
       "enun": "¿Qué sale en la consola?",
       "code": "palabra = \"Python\"\nprint(len(palabra), palabra[0], palabra[-1])",
@@ -485,7 +512,8 @@
       "tema": "cadenas"
     },
     {
-      "tipo": "error",
+      "tipo": "opcion_multiple",
+      "categoria": "error",
       "act": "A5 · listas",
       "enun": "¿Qué pasa al ejecutarlo?",
       "code": "dias = [\"lunes\", \"martes\", \"miercoles\"]\nprint(dias[3])",
@@ -503,7 +531,8 @@
       "tema": "listas"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A5 · append y remove",
       "enun": "¿Qué sale en la consola?",
       "code": "compra = [\"pan\", \"leche\"]\ncompra.append(\"huevos\")\ncompra.remove(\"pan\")\nprint(compra, len(compra))",
@@ -521,7 +550,8 @@
       "tema": "listas"
     },
     {
-      "tipo": "hueco",
+      "tipo": "opcion_multiple",
+      "categoria": "hueco",
       "act": "A5 · recorrer una lista",
       "enun": "Queremos contar cuántas notas están aprobadas (debe salir 3). ¿Qué va en el hueco?",
       "code": "notas = [7, 4, 9, 3, 6]\naprobados = 0\nfor nota in notas:\n    if nota >= 5:\n        ________\nprint(aprobados)",
@@ -540,7 +570,8 @@
       "tema": "listas"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A5 · len, sum, max",
       "enun": "¿Qué sale en la consola?",
       "code": "notas = [6, 8, 5]\nprint(sum(notas), max(notas), len(notas))",
@@ -558,7 +589,8 @@
       "tema": "listas"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A5 · métodos de cadena",
       "enun": "¿Qué sale en la consola?",
       "code": "t = \"  hola mundo  \"\nprint(t.strip().upper())\nprint(\"mundo\" in t)",
@@ -576,7 +608,8 @@
       "tema": "cadenas"
     },
     {
-      "tipo": "hueco",
+      "tipo": "opcion_multiple",
+      "categoria": "hueco",
       "act": "A5 · split",
       "enun": "Queremos saber cuántos colores hay (debe salir 3). ¿Qué va en el hueco?",
       "code": "texto = \"rojo, verde, azul\"\ncolores = ________\nprint(len(colores))",
@@ -595,7 +628,8 @@
       "tema": "cadenas"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A6 · print o return",
       "enun": "¿Qué sale en la consola?",
       "code": "def doble(n):\n    print(n * 2)\n\nresultado = doble(4)\nprint(resultado)",
@@ -613,7 +647,8 @@
       "tema": "funciones"
     },
     {
-      "tipo": "hueco",
+      "tipo": "opcion_multiple",
+      "categoria": "hueco",
       "act": "A6 · return",
       "enun": "Queremos que salga 15. ¿Qué va en el hueco?",
       "code": "def area_rectangulo(base, altura):\n    ________\n\nprint(area_rectangulo(3, 5))",
@@ -632,7 +667,8 @@
       "tema": "funciones"
     },
     {
-      "tipo": "error",
+      "tipo": "opcion_multiple",
+      "categoria": "error",
       "act": "A6 · parámetros",
       "enun": "¿Qué pasa al ejecutarlo?",
       "code": "def area(base, altura):\n    return base * altura\n\nprint(area(5))",
@@ -650,7 +686,8 @@
       "tema": "funciones"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A6 · definir y llamar",
       "enun": "¿Qué sale en la consola?",
       "code": "def saludar():\n    print(\"Hola\")\n\nprint(\"Empezamos\")\nsaludar()\nsaludar()",
@@ -668,7 +705,8 @@
       "tema": "funciones"
     },
     {
-      "tipo": "error",
+      "tipo": "opcion_multiple",
+      "categoria": "error",
       "act": "A6 · variables dentro de una función",
       "enun": "¿Qué pasa al ejecutarlo?",
       "code": "def calcular():\n    total = 5 * 4\n    return total\n\ncalcular()\nprint(total)",
@@ -686,7 +724,8 @@
       "tema": "funciones"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A6 · orden de los parámetros",
       "enun": "¿Qué sale en la consola?",
       "code": "def resta(a, b):\n    return a - b\n\nprint(resta(10, 4), resta(4, 10))",
@@ -704,7 +743,8 @@
       "tema": "funciones"
     },
     {
-      "tipo": "hueco",
+      "tipo": "opcion_multiple",
+      "categoria": "hueco",
       "act": "A6 · def",
       "enun": "Queremos que salga 7.5. ¿Qué va en el hueco?",
       "code": "________\n    return (a + b) / 2\n\nprint(media(6, 9))",
@@ -723,7 +763,8 @@
       "tema": "funciones"
     },
     {
-      "tipo": "imprime",
+      "tipo": "opcion_multiple",
+      "categoria": "imprime",
       "act": "A6 · return con if",
       "enun": "¿Qué sale en la consola?",
       "code": "def es_par(n):\n    if n % 2 == 0:\n        return \"par\"\n    return \"impar\"\n\nprint(es_par(8), es_par(5))",

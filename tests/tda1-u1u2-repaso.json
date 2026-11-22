@@ -1,11 +1,13 @@
 {
+  "formato": 2,
   "id": "tda1-u1u2-repaso",
   "titulo": "Repaso U1 y U2 · El ordenador y el sistema operativo",
   "materia": "TDA I",
   "unidad": "U1 · U2",
   "version": 1,
   "chuleta": "chuletas/tda1-u1u2.html",
-  "tipos": {
+  "fuente": "TDA/TDA I/Examen U1-U2 (30 preguntas) + 10 nuevas",
+  "categorias": {
     "concepto": {
       "nombre": "Concepto",
       "color": "cian"
@@ -19,11 +21,11 @@
       "color": "verde"
     }
   },
-  "fuente": "TDA/TDA I/Examen U1-U2 (30 preguntas) + 10 nuevas",
   "preguntas": [
     {
+      "tipo": "opcion_multiple",
+      "categoria": "concepto",
       "id": "q01",
-      "tipo": "concepto",
       "act": "U1 · Bits y ASCII",
       "tema": "binario",
       "enun": "Cuando escribes una letra en un documento, ¿qué guarda realmente el ordenador?",
@@ -39,8 +41,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "calculo",
       "id": "q02",
-      "tipo": "calculo",
       "act": "U1 · Hexadecimal",
       "tema": "binario",
       "enun": "¿Cuánto vale 2F, escrito en hexadecimal, en decimal?",
@@ -56,8 +59,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "caso",
       "id": "q03",
-      "tipo": "caso",
       "act": "U1 · Averías",
       "tema": "averias",
       "enun": "Un equipo no arranca. ¿Qué es lo primero que hay que comprobar?",
@@ -73,8 +77,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "calculo",
       "id": "q04",
-      "tipo": "calculo",
       "act": "U1 · Unidades",
       "tema": "medir",
       "enun": "Tienes fibra de 1.000 Mb/s y el navegador marca 118 MB/s al descargar. ¿Qué ocurre?",
@@ -90,8 +95,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "calculo",
       "id": "q05",
-      "tipo": "calculo",
       "act": "U1 · Binario",
       "tema": "binario",
       "enun": "¿Cómo se escribe el número decimal 200 en binario, con ocho bits?",
@@ -107,8 +113,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "concepto",
       "id": "q06",
-      "tipo": "concepto",
       "act": "U1 · Memorias",
       "tema": "componentes",
       "enun": "El procesador necesita un dato. ¿En qué orden lo busca?",
@@ -124,8 +131,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "concepto",
       "id": "q07",
-      "tipo": "concepto",
       "act": "U1 · Hercios",
       "tema": "medir",
       "enun": "Un procesador anuncia 3,5 GHz. ¿Qué significa ese dato?",
@@ -141,8 +149,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "concepto",
       "id": "q08",
-      "tipo": "concepto",
       "act": "U1 · Componentes",
       "tema": "componentes",
       "enun": "¿Cuál de estos componentes guarda los datos de forma que sobreviven al apagar el equipo?",
@@ -158,8 +167,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "caso",
       "id": "q09",
-      "tipo": "caso",
       "act": "U1 · Averías",
       "tema": "averias",
       "enun": "Un equipo no arranca. Cambias la RAM, el cable de vídeo y la fuente a la vez y funciona. ¿Qué has conseguido?",
@@ -175,8 +185,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "calculo",
       "id": "q10",
-      "tipo": "calculo",
       "act": "U1 · Binario",
       "tema": "binario",
       "enun": "¿Cuánto vale en decimal el byte 00101101?",
@@ -192,8 +203,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "concepto",
       "id": "q11",
-      "tipo": "concepto",
       "act": "U1 · RAM",
       "tema": "componentes",
       "enun": "¿Por qué un módulo de RAM DDR5 no entra en una placa que es DDR4?",
@@ -209,8 +221,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "caso",
       "id": "q12",
-      "tipo": "caso",
       "act": "U1 · Averías",
       "tema": "averias",
       "enun": "Un equipo se cuelga y se reinicia sin ningún patrón. ¿Qué dos componentes son los sospechosos habituales?",
@@ -226,8 +239,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "caso",
       "id": "q13",
-      "tipo": "caso",
       "act": "U1 · Memorias",
       "tema": "componentes",
       "enun": "Se va la luz mientras escribes un trabajo que no habías guardado. ¿Qué ha pasado con ese texto?",
@@ -243,8 +257,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "caso",
       "id": "q14",
-      "tipo": "caso",
       "act": "U1 · Codificación",
       "tema": "binario",
       "enun": "Un texto muestra «GijÃ³n» en lugar de «Gijón». ¿Qué ha pasado?",
@@ -260,8 +275,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "concepto",
       "id": "q15",
-      "tipo": "concepto",
       "act": "U1 · Almacenamiento",
       "tema": "componentes",
       "enun": "¿Por qué un SSD hace que un equipo parezca mucho más ágil que con un disco duro?",
@@ -277,8 +293,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "calculo",
       "id": "q16",
-      "tipo": "calculo",
       "act": "U1 · Binario",
       "tema": "binario",
       "enun": "¿Cuánto vale 00010110 en decimal?",
@@ -294,8 +311,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "calculo",
       "id": "q17",
-      "tipo": "calculo",
       "act": "U1 · Hexadecimal",
       "tema": "binario",
       "enun": "¿Cómo se escribe 200 en hexadecimal?",
@@ -311,8 +329,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "calculo",
       "id": "q18",
-      "tipo": "calculo",
       "act": "U1 · Hexadecimal",
       "tema": "binario",
       "enun": "Un color web es #4EA72E. ¿Cuánto verde lleva, de 0 a 255?",
@@ -328,8 +347,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "caso",
       "id": "q19",
-      "tipo": "caso",
       "act": "U1 · Conexiones",
       "tema": "averias",
       "enun": "Un equipo con tarjeta gráfica dedicada arranca, se oyen los ventiladores, pero la pantalla se queda negra. ¿Qué miras primero?",
@@ -345,8 +365,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "caso",
       "id": "q20",
-      "tipo": "caso",
       "act": "U1 · Averías",
       "tema": "averias",
       "enun": "Un disco duro empieza a hacer un chasquido rítmico. ¿Qué haces?",
@@ -362,8 +383,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "caso",
       "id": "q21",
-      "tipo": "caso",
       "act": "U1 · RAM",
       "tema": "componentes",
       "enun": "Un ordenador con poca RAM va a tirones al abrir muchas pestañas. ¿Por qué?",
@@ -379,8 +401,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "concepto",
       "id": "q22",
-      "tipo": "concepto",
       "act": "U1 · Hercios",
       "tema": "medir",
       "enun": "Un Pentium 4 de 2004 iba a 3,8 GHz. Un procesador actual va a 3 GHz. ¿Cuál es más rápido?",
@@ -396,8 +419,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "concepto",
       "id": "q23",
-      "tipo": "concepto",
       "act": "U2 · Extensiones",
       "tema": "archivos",
       "enun": "¿Por qué es peligroso que Windows oculte las extensiones de los archivos?",
@@ -413,8 +437,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "concepto",
       "id": "q24",
-      "tipo": "concepto",
       "act": "U2 · Rutas",
       "tema": "archivos",
       "enun": "¿Qué es la ruta de un archivo?",
@@ -430,8 +455,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "caso",
       "id": "q25",
-      "tipo": "caso",
       "act": "U2 · Dónde se configura",
       "tema": "configurar",
       "enun": "En Windows 11, ¿dónde se cambia la escala de la pantalla?",
@@ -447,8 +473,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "concepto",
       "id": "q26",
-      "tipo": "concepto",
       "act": "U2 · Navegador",
       "tema": "configurar",
       "enun": "¿Qué son las cookies de terceros?",
@@ -464,8 +491,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "caso",
       "id": "q27",
-      "tipo": "caso",
       "act": "U2 · Sistemas de archivos",
       "tema": "archivos",
       "enun": "Un pendrive de 32 GB vacío no deja copiar una película de 6 GB. ¿Por qué?",
@@ -481,8 +509,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "caso",
       "id": "q28",
-      "tipo": "caso",
       "act": "U2 · Configurar",
       "tema": "configurar",
       "enun": "Un ordenador de aula por el que pasan cientos de personas. ¿Qué configuración tiene sentido?",
@@ -498,8 +527,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "caso",
       "id": "q29",
-      "tipo": "caso",
       "act": "U2 · Navegador",
       "tema": "configurar",
       "enun": "Un alumno cierra el navegador del aula sin cerrar su sesión de Educastur. ¿Qué ajuste evita que entre el siguiente?",
@@ -515,8 +545,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "concepto",
       "id": "q30",
-      "tipo": "concepto",
       "act": "U2 · Cuentas",
       "tema": "configurar",
       "enun": "¿Por qué se recomienda usar a diario una cuenta normal y no la de administrador?",
@@ -532,8 +563,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "concepto",
       "id": "q31",
-      "tipo": "concepto",
       "act": "U2 · Familias",
       "tema": "so",
       "enun": "¿Cuál de estos sistemas operativos lleva por dentro el núcleo Linux?",
@@ -549,8 +581,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "caso",
       "id": "q32",
-      "tipo": "caso",
       "act": "U2 · Arranque",
       "tema": "so",
       "enun": "Quieres instalar un sistema operativo desde un pendrive. ¿Qué hay que cambiar en la UEFI?",
@@ -566,8 +599,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "concepto",
       "id": "q33",
-      "tipo": "concepto",
       "act": "U2 · Núcleo",
       "tema": "so",
       "enun": "¿Qué es el núcleo, o kernel, de un sistema operativo?",
@@ -583,8 +617,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "caso",
       "id": "q34",
-      "tipo": "caso",
       "act": "U2 · Extensiones",
       "tema": "archivos",
       "enun": "Le cambias la extensión a una foto, de .jpg a .docx. ¿Qué ocurre?",
@@ -600,8 +635,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "concepto",
       "id": "q35",
-      "tipo": "concepto",
       "act": "U2 · Memoria",
       "tema": "so",
       "enun": "Se cuelga una pestaña del navegador pero el resto del ordenador sigue funcionando. ¿Por qué?",
@@ -617,8 +653,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "caso",
       "id": "q36",
-      "tipo": "caso",
       "act": "U2 · Elegir sistema",
       "tema": "elegir",
       "enun": "Te dan un portátil de 2012 con 4 GB de RAM para navegar y escribir. ¿Qué sistema propones?",
@@ -634,8 +671,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "concepto",
       "id": "q37",
-      "tipo": "concepto",
       "act": "U2 · Libre y gratuito",
       "tema": "elegir",
       "enun": "¿Qué diferencia al software libre del que solo es gratuito?",
@@ -651,8 +689,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "caso",
       "id": "q38",
-      "tipo": "caso",
       "act": "U2 · Sistemas de archivos",
       "tema": "archivos",
       "enun": "Vas a usar un pendrive en ordenadores Windows, Mac y en la tele, y a veces con archivos de más de 4 GB. ¿En qué formato lo pones?",
@@ -668,8 +707,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "concepto",
       "id": "q39",
-      "tipo": "concepto",
       "act": "U2 · Familias",
       "tema": "so",
       "enun": "¿Cuál de estas afirmaciones es cierta?",
@@ -685,8 +725,9 @@
       "fija_ultima": true
     },
     {
+      "tipo": "opcion_multiple",
+      "categoria": "caso",
       "id": "q40",
-      "tipo": "caso",
       "act": "U2 · Cuentas",
       "tema": "configurar",
       "enun": "Un portátil lo usáis tres hermanos. ¿Qué conviene configurar?",

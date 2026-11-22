@@ -23,16 +23,51 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
     `codigo.js` (resaltado), `util.js`, `modos.js` (contrato de los modos), `preguntas/<tipo>.js`
     (un renderizador por tipo: `pintar(item, contenedor, opciones)`).
   - `js/modos/<modo>/index.js` — un modo por carpeta, con el contrato de `nucleo/modos.js`.
-    Hoy solo `practica`. Un test puede pedir otro con `"modo": "…"`; sin él, `practica`.
-  - `js/config.js` — entornos: producción por defecto; `?entorno=pruebas` solo desde localhost.
-  - `js/panel.js`, `css/estilo.css`, `css/panel.css`.
+    Hoy `practica` (tests de `tests/*.json`; un test puede pedir otro con `"modo": "…"`) y `examen`.
+  - **Examen**: se abre con `jugar.html?j=<id-del-juego>` (siempre con código; `&modo=profe` no vale). El contenido NO está en el repo:
+    lo manda el servidor sin soluciones (`empezar_partida`), corrige el servidor (`responder`) y la nota no se ve hasta que el profesor la publica.
+    Cada preg. se contesta por POSICIÓN; se puede cambiar hasta entregar; si se corta internet las respuestas esperan y se reenvían solas;
+    recargar reanuda; salir de la pestaña se anota (`evento`). Los renderizadores de `preguntas/` aceptan `examen: true` (sin corrección a la vista).
+  - `js/config.js` — entornos: producción por defecto; `?entorno=pruebas` solo desde localhost o una dirección de red local
+    (192.168.x.x, 10.x, 172.16-31.x, .local: los móviles del ensayo), con franja «PRUEBAS» visible, y se niega a usar la URL de producción como si fuera la de pruebas.
+  - `js/panel.js` (módulo ES) y `js/panel-examenes.js`: la parte de EXÁMENES del panel (subir bancos desde un archivo del
+    ordenador, crear un examen, asignarlo a un grupo, ver resultados y salidas de pestaña, publicar notas, estadísticas). Si en la
+    base aún no se han ejecutado los SQL 06-08, el panel funciona exactamente como antes. `css/estilo.css`, `css/panel.css`.
 - Contenido: `tests/index.json` (lista) y `tests/<id>.json`; chuletas en `chuletas/*.html`.
+  **Formato 2** (`js/nucleo/formato.js`): `tipo` = tipo de pregunta (`opcion_multiple`, …) y `categoria` = la
+  etiqueta de color de antes (`imprime`, `error`, `hueco`…); metadatos opcionales `dificultad` (1-3), `criterio`,
+  `etiquetas`. Los archivos de `tests/` están en **formato 2** (cambio de significado de `tipo` para Kronos: ver
+  `docs/formato-contenido.md`); la web y el panel normalizan siempre al cargar con `aFormato2()` (idempotente, acepta también el
+  formato 1; las copias congeladas del formato 1 para las pruebas están en `pruebas/datos/`). Herramienta: `npm run formato -- validar|comprobar|convertir <archivo>`.
+  **Tipos de pregunta que se juegan hoy** (`js/nucleo/preguntas/index.js`, cada uno con `pintar` y `corregir`):
+  `opcion_multiple` (`ops`, `ok`), `verdadero_falso` (`ok: true|false`), `numerica` (`valor`, `tolerancia?`, `unidad?`),
+  `respuesta_corta` (`aceptadas[]`, `pista?`). En lo guardado, opción múltiple usa `elegida` y los demás `dada`.
+  Normalización de textos y números en `preguntas/normalizar.js`; casos compartidos en `pruebas/vectores-correccion.json`
+  (el SQL del servidor tendrá que dar lo mismo). Añadir un tipo = un archivo + una línea en `index.js` + su validación.
+  **Los bancos de examen (con soluciones) NO van al repo**: es público. Van al servidor, subidos desde el panel.
 - Base de datos: `supabase/01_esquema.sql` (tablas, RLS, `entrar`, `guardar_intento`),
   `03_profesor_alumnos.sql` (alta/baja de alumnos), `04_latido.sql` (anti-pausa) y
-  `05_datos_prueba.sql` (alumnos inventados, SOLO proyecto de pruebas; se niega a correr en uno real).
+  `05_datos_prueba.sql` (alumnos inventados, SOLO proyecto de pruebas; se niega a correr en uno real),
+  `06_contenido.sql` (fase 1: `bancos`, `items` con soluciones, `juegos`, `asignaciones`, `partidas`, `respuestas`, `eventos`; RLS cerrada,
+  el profesor solo LEE las tablas y escribe con `profe_subir_banco`, `profe_crear_juego`, `profe_asignar`, `profe_publicar_notas`…).
+  La validación de preguntas de SQL (`_validar_item`) y la de JS (`validarBanco`) deben coincidir: lo comprueba `npm run test:sql`.
+  `08_panel_examen.sql` (fase 1: `profe_resultados` en el resultado normalizado, `profe_estadisticas_examen`, `profe_borrar_partida`),
+  `07_examen.sql` (fase 1: funciones del ALUMNO, siempre con su código: `mis_juegos`, `empezar_partida` (elige y baraja las
+  preguntas, reanuda si había una en marcha), `responder` (corrige en el servidor y NO dice si acertó), `evento`,
+  `terminar_partida`, `mi_resultado` (la nota solo se ve si el profesor la publica)). Lo que ve el alumno sale de una LISTA BLANCA
+  de campos (`_item_alumno`): nunca ok, sol, trampa, valor, aceptadas… La corrección de textos y números de SQL
+  (`_normalizar_texto`, `_parsear_numero`) debe dar lo mismo que `preguntas/normalizar.js`: lo comprueba `npm run test:sql`
+  con unos 3.800 caracteres y los vectores compartidos. Las pruebas de SQL usan bases UTF8 y simulan los privilegios por defecto de Supabase.
+  Para el proyecto de PRUEBAS hay un paquete único generado, `supabase/paquete_pruebas.sql` (`npm run empaquetar-sql`; una prueba comprueba
+  que está al día; lleva una guarda que aborta si la base tiene alumnos reales).
   El usuario los ejecuta a mano en el SQL Editor de Supabase: **dale siempre el SQL listo y dile qué debe salir**.
 - Pruebas (`pruebas/`): `npm test` (Playwright a 1280 y 390 px, Supabase simulado: nunca toca el real;
-  la simulación es automática), `npm run test:sql` (Postgres local embebido), `npm run test:latido`.
+  la simulación es automática; el examen se prueba con `pruebas/servidor-examen-falso.js`), `npm run test:sql` (Postgres local embebido,
+  incluye `contrato-examen.test.js`: el servidor falso y el SQL real deben responder con la MISMA FORMA; si cambias una función de 07, cambia también el falso), `npm run test:latido`,
+  `npm run test:formato`, `npm run test:preguntas`, `npm run test:simulador`.
+  Ensayo real: `docs/ensayo-examen.md` (proyecto de pruebas, varios móviles, banco inventado en `docs/ensayo/`) y `npm run ensayo:simular`
+  (`scripts/simular-clase.mjs`: 5 alumnos de prueba a la vez contra el servidor de pruebas; se niega a tocar producción). El panel se prueba con `pruebas/servidor-panel-falso.js` (login, tablas y
+  funciones `profe_*`; `contrato-panel.test.js` comprueba que tiene la misma forma que el SQL real).
   GitHub Actions las lanza en cada subida (`.github/workflows/pruebas.yml`); `latido.yml` llama a
   `latido()` cada 3 días (solo corre desde `main`).
 - Modo profe en móvil: cabecera ajustada a 390 y 360 px (CHULETA solo icono en ≤ 430 px); la cubre `pruebas/alumno.spec.js`.

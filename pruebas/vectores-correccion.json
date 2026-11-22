@@ -1,0 +1,37 @@
+{
+  "_nota": "Casos de corrección compartidos. Los usan el navegador (pruebas/preguntas.test.js) y el SQL del servidor (pruebas/sql-examen.test.js), para que los dos corrijan igual.",
+  "normalizarTexto": [
+    ["  Memoria  RAM. ", "memoria ram"], ["Ñandú", "nandu"], ["¿Qué es?", "que es"], ["RAM", "ram"], ["Ráfaga", "rafaga"],
+    ["«hola»", "hola"], ["(caché)", "cache"], ["a   b\tc", "a b c"], ["C++", "c++"], ["192.168.1.1", "192.168.1.1"],
+    ["", ""], ["   ", ""], ["...", ""], ["Über", "uber"]
+  ],
+  "parsearNumero": [
+    ["12", 12], ["3,5", 3.5], ["3.5", 3.5], ["-3", -3], ["+2", 2], ["−4", -4], [" 7 ", 7], ["0", 0], ["007", 7],
+    ["", null], ["abc", null], ["12a", null], ["1.2.3", null], ["1,2,3", null], ["1 000", null], ["1e3", null], ["0x2F", null], ["--3", null], [".5", null], ["5.", null]
+  ],
+  "corregir": [
+    { "p": { "tipo": "verdadero_falso", "ok": true }, "dada": true, "ok": true },
+    { "p": { "tipo": "verdadero_falso", "ok": true }, "dada": false, "ok": false },
+    { "p": { "tipo": "verdadero_falso", "ok": false }, "dada": false, "ok": true },
+    { "p": { "tipo": "opcion_multiple", "ops": ["a", "b", "c", "d"], "ok": 2 }, "dada": 2, "ok": true },
+    { "p": { "tipo": "opcion_multiple", "ops": ["a", "b", "c", "d"], "ok": 2 }, "dada": 1, "ok": false },
+    { "p": { "tipo": "numerica", "valor": 47 }, "dada": "47", "ok": true },
+    { "p": { "tipo": "numerica", "valor": 47 }, "dada": "47,0", "ok": true },
+    { "p": { "tipo": "numerica", "valor": 47 }, "dada": " 47 ", "ok": true },
+    { "p": { "tipo": "numerica", "valor": 47 }, "dada": "46.9", "ok": false },
+    { "p": { "tipo": "numerica", "valor": 47 }, "dada": "47a", "ok": false },
+    { "p": { "tipo": "numerica", "valor": 47 }, "dada": "", "ok": false },
+    { "p": { "tipo": "numerica", "valor": 3.5, "tolerancia": 0.5 }, "dada": "3,9", "ok": true },
+    { "p": { "tipo": "numerica", "valor": 3.5, "tolerancia": 0.5 }, "dada": "3", "ok": true },
+    { "p": { "tipo": "numerica", "valor": 3.5, "tolerancia": 0.5 }, "dada": "4,1", "ok": false },
+    { "p": { "tipo": "numerica", "valor": 0.3 }, "dada": "0,3", "ok": true },
+    { "p": { "tipo": "numerica", "valor": -2 }, "dada": "−2", "ok": true },
+    { "p": { "tipo": "respuesta_corta", "aceptadas": ["RAM", "memoria RAM"] }, "dada": "ram", "ok": true },
+    { "p": { "tipo": "respuesta_corta", "aceptadas": ["RAM", "memoria RAM"] }, "dada": " Memoria  Ram. ", "ok": true },
+    { "p": { "tipo": "respuesta_corta", "aceptadas": ["RAM", "memoria RAM"] }, "dada": "rom", "ok": false },
+    { "p": { "tipo": "respuesta_corta", "aceptadas": ["RAM", "memoria RAM"] }, "dada": "", "ok": false },
+    { "p": { "tipo": "respuesta_corta", "aceptadas": ["RAM"] }, "dada": "...", "ok": false },
+    { "p": { "tipo": "respuesta_corta", "aceptadas": ["caché"] }, "dada": "CACHE", "ok": true },
+    { "p": { "tipo": "respuesta_corta", "aceptadas": ["ñandú"] }, "dada": "nandu", "ok": true }
+  ]
+}

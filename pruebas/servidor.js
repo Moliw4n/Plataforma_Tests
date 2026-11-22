@@ -10,8 +10,13 @@ const TIPOS = {
   '.woff2': 'font/woff2', '.png': 'image/png', '.svg': 'image/svg+xml'
 };
 
+// Solo se sirve lo que es WEB (como GitHub Pages): las páginas, css, js, img, fonts, tests y chuletas. Nada más (.git, node_modules,
+// pruebas, docs, supabase, archivos *.local.*…): este servidor puede escuchar en la WiFi y no debe enseñar el resto del proyecto.
+const PERMITIDO = /^\/(jugar\.html|panel\.html|test\.html|panel\.webmanifest|(css|js|img|fonts|tests|chuletas)\/[^?]+)$/;
+
 http.createServer((req, res) => {
   const ruta = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+  if (!PERMITIDO.test(ruta) || /\.local\.|\/\./.test(ruta)) { res.writeHead(404); return res.end('no encontrado'); }
   const archivo = path.join(RAIZ, ruta === '/' ? 'index.html' : ruta);
   if (!archivo.startsWith(RAIZ + path.sep)) { res.writeHead(403); return res.end(); }
   fs.readFile(archivo, (err, datos) => {
@@ -19,4 +24,9 @@ http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': TIPOS[path.extname(archivo)] || 'application/octet-stream' });
     res.end(datos);
   });
-}).listen(4173, () => console.log('Servidor de pruebas en http://localhost:4173'));
+}).listen(4173, () => {
+  // Escucha en todas las interfaces: los móviles de la misma WiFi pueden abrir http://<IP-de-tu-ordenador>:4173
+  console.log('Servidor de pruebas en http://localhost:4173');
+  const ips = Object.values(require('os').networkInterfaces()).flat().filter(i => i && i.family === 'IPv4' && !i.internal).map(i => i.address);
+  for (const ip of ips) console.log('  desde los móviles (misma WiFi): http://' + ip + ':4173/jugar.html?j=<examen>&entorno=pruebas   ·   panel: http://' + ip + ':4173/panel.html?entorno=pruebas');
+});

@@ -11,8 +11,8 @@
      }
    ctx = { alumno, juego, contenido, api, nucleo, contenedor, chuleta, modoProfe, salir }
      alumno     {codigo, alumno:'TDA2-07', grupo} o null (modo profesor / sin conexión)
-     juego      configuración del juego (null mientras no existan los juegos: fase 1)
-     contenido  el banco/test ya cargado ({id, titulo, preguntas, …})
+     juego      la asignación del juego a este alumno, tal como la da mis_juegos() (null en la práctica de tests/*.json)
+     contenido  el banco/test ya cargado ({id, titulo, preguntas, …}) · null en los modos que traen las preguntas del servidor (examen)
      api        { rpc } · la única puerta a Supabase
      nucleo     piezas comunes (pintar de cada tipo de pregunta, …)
      contenedor elemento donde el modo dibuja
@@ -49,7 +49,7 @@ export function resultadoNormalizado(r) {
     partida: r.partida ?? null,
     alumno: r.alumno ?? null,
     juego: r.juego ?? null,
-    nota: r.nota ?? 0,
+    nota: r.nota === undefined ? 0 : r.nota,      // null = «no se sabe todavía» (examen: la nota está oculta)
     puntos: r.puntos ?? 0,
     segundos: r.segundos ?? 0,
     por_criterio: r.por_criterio || {},
