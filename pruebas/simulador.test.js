@@ -29,6 +29,11 @@ test.before(async () => {
       const u = new URL(req.url, 'http://x'), enviar = (st, obj) => { res.writeHead(st, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
       if (req.headers.apikey !== CLAVE) return enviar(401, { message: 'Invalid API key' });
       const rpc = u.pathname.match(/^\/rest\/v1\/rpc\/(\w+)$/);
+      if (rpc && req.method === 'POST' && rpc[1] === 'entrar') {              // como entrar() del SQL real
+        const cod = JSON.parse(cuerpo || '{}').p_codigo, k = ['AAA222', 'BBB333', 'CCC444', 'DDD555', 'EEE666'].indexOf(cod);
+        return enviar(200, k < 0 ? { ok: false, motivo: 'codigo' } : { ok: true, alumno: 'PRUEBA-0' + (k + 1), grupo: 'PRUEBA' });
+      }
+      if (rpc && req.method === 'POST' && rpc[1] === 'latido') return enviar(200, { ok: true, escrito: false });
       if (rpc && req.method === 'POST') {
         const r = S.llamar(rpc[1], JSON.parse(cuerpo || '{}'));
         if (r === null) return enviar(403, { code: '42501', message: 'permission denied for function ' + rpc[1] });       // profe_* e internas: no están al alcance de la web pública
@@ -117,6 +122,32 @@ test.describe('una clase completa', () => {
     await crear();
     const r = await lanzar(['jugar', '--url', URL_LOCAL(), '--key', CLAVE, '--juego', 'no-existe', '--banco', banco, '--estado', estado]);
     assert.equal(r.codigo, 1); assert.match(r.salida, /no tiene asignado el examen «no-existe»/);
+  });
+});
+
+test.describe('comprobación rápida (fase base)', () => {
+  const base = () => lanzar(['base', '--url', URL_LOCAL(), '--key', CLAVE]);
+  test('con el servidor bien montado, todo sale en verde', async () => {
+    await crear();
+    const r = await base();
+    assert.equal(r.codigo, 0, r.salida); assert.match(r.salida, /Todo correcto/);
+    for (const k of [1, 2, 3, 4, 5]) assert.match(r.salida, new RegExp('✓ el código de prueba ' + k + ' entra como PRUEBA-0' + k));
+    assert.match(r.salida, /✓ un código que no existe se rechaza/); assert.match(r.salida, /✓ latido\(\) responde ok/); assert.match(r.salida, /✓ mis_juegos responde/);
+  });
+  test('si una tabla se puede leer desde fuera, lo dice', async () => {
+    await crear(); gancho.fuga = 'alumnos';
+    const r = await base();
+    assert.equal(r.codigo, 1, r.salida); assert.match(r.salida, /tabla «alumnos»: la web pública no puede leerla/);
+  });
+  test('no hace falta ningún examen ni ningún banco', async () => {
+    await crear();
+    assert.equal((await base()).codigo, 0);
+    assert.equal(S.partidas.length, 0);
+  });
+  test('también tiene las guardas: producción y otras direcciones, rechazadas', async () => {
+    const prod = fs.readFileSync(path.join(RAIZ, 'js', 'config.js'), 'utf8').match(/https:\/\/[a-z0-9]+\.supabase\.co/)[0];
+    assert.match((await lanzar(['base', '--url', prod, '--key', CLAVE])).salida, /PRODUCCIÓN/);
+    assert.match((await lanzar(['base', '--url', 'https://evil.com', '--key', CLAVE])).salida, /Solo se admite/);
   });
 });
 

@@ -67,6 +67,14 @@ Enseña la dirección de tu ordenador en la WiFi, por ejemplo `http://192.168.1.
    | PRUEBA-05 | `EEE-666` |
 
 ## 7. Ensayo automático (puedo hacerlo yo, o tú)
+**Antes de nada, la comprobación rápida** (no necesita ningún examen; 10 segundos):
+```bash
+npm run ensayo:simular -- base --url https://TU-PROYECTO.supabase.co --key sb_publishable_…
+```
+Comprueba que los 5 alumnos de prueba entran con su código, que uno inventado se rechaza, que el latido y las funciones del examen responden y que
+desde fuera (con la clave pública) no se puede leer ni escribir ninguna tabla ni llamar a las funciones del profesor. Se puede repetir las veces que quieras.
+
+**Luego, el ensayo completo con los 5 alumnos a la vez:**
 Simula 5 alumnos a la vez contra el servidor **de verdad** y comprueba, entre otras cosas: que no llega ninguna solución, que la nota no se ve antes de publicarla, que desde fuera no se puede leer ninguna tabla y que las notas salen como deben.
 ```bash
 npm run ensayo:simular -- jugar --url https://TU-PROYECTO.supabase.co --key sb_publishable_… --juego ensayo --banco docs/ensayo/banco-ensayo.json

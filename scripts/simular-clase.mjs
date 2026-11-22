@@ -2,13 +2,16 @@
 /* Simula una CLASE entera haciendo un examen contra el proyecto de PRUEBAS de Supabase (nunca contra el de verdad).
    Usa los alumnos inventados de supabase/05_datos_prueba.sql (PRUEBA-01…05) y el banco de ensayo (docs/ensayo/banco-ensayo.json).
 
-   Dos fases:
+   Tres fases:
+     base       comprobación RÁPIDA del servidor (no necesita ningún examen): los 5 alumnos de prueba entran con su código, un código malo se
+                rechaza, el latido responde, las funciones del alumno existen y desde fuera no se puede leer ninguna tabla.
      jugar      5 alumnos a la vez: empiezan, contestan (con distinta puntería, cambios de respuesta y en blanco), salen de la pestaña,
                 entregan. Por el camino COMPRUEBA con el servidor de verdad: que no llega ninguna solución, que la nota no se ve antes de
                 publicarla y que desde fuera no se puede leer ninguna tabla. Guarda lo que esperaba en un archivo de estado.
      comprobar  (después de publicar las notas en el panel) pide el resultado de cada alumno y lo compara con lo esperado.
 
    Uso:
+     node scripts/simular-clase.mjs base      --url https://TU-PROYECTO-DE-PRUEBAS.supabase.co --key sb_publishable_…
      node scripts/simular-clase.mjs jugar     --url https://TU-PROYECTO-DE-PRUEBAS.supabase.co --key sb_publishable_… --juego ID --banco docs/ensayo/banco-ensayo.json
      node scripts/simular-clase.mjs comprobar --url … --key … [--estado ensayo-estado.local.json]
    Opciones: --alumnos 1..5 (5) · --penalizacion 0..1 (0, la del examen) · --estado archivo (ensayo-estado.local.json)
@@ -26,7 +29,7 @@ const op = {};
 for (let i = 0; i < resto.length; i += 2) op[resto[i].replace(/^--/, '')] = resto[i + 1];
 const SALIR = (msg, codigo = 1) => { console.error('\n✗ ' + msg); process.exit(codigo); };
 
-if (!['jugar', 'comprobar'].includes(fase) || !op.url || !op.key) SALIR('Uso: node scripts/simular-clase.mjs jugar|comprobar --url <URL del proyecto de PRUEBAS> --key <clave publishable> [--juego ID --banco archivo.json]', 2);
+if (!['base', 'jugar', 'comprobar'].includes(fase) || !op.url || !op.key) SALIR('Uso: node scripts/simular-clase.mjs base|jugar|comprobar --url <URL del proyecto de PRUEBAS> --key <clave publishable> [--juego ID --banco archivo.json]', 2);
 
 /* ---------- guardas ---------- */
 const url = op.url.replace(/\/+$/, '');
@@ -45,6 +48,23 @@ const fallos = [];
 const exige = (cond, msg) => { if (cond) ok(msg); else { fallos.push(msg); console.log('  ✗ ' + msg); } };
 const pausa = ms => new Promise(r => setTimeout(r, ms));
 const nota = (ac, fa, total, pen) => Math.round(Math.max(0, (ac - pen * fa) / Math.max(total, 1) * 10) * 100) / 100;
+
+/* ---------- base: comprobación rápida ---------- */
+async function base() {
+  console.log('\n● Comprobación rápida del servidor de pruebas: ' + host);
+  for (const [k, cod] of CODIGOS.entries()) {
+    const r = await rpc('entrar', { p_codigo: cod });
+    exige(r.ok === true && r.alumno === 'PRUEBA-0' + (k + 1) && r.grupo === 'PRUEBA', 'el código de prueba ' + (k + 1) + ' entra como PRUEBA-0' + (k + 1));
+  }
+  const mal = await rpc('entrar', { p_codigo: 'ZZZ999' });
+  exige(mal.ok === false && mal.motivo === 'codigo', 'un código que no existe se rechaza («codigo»)');
+  const mj = await rpc('mis_juegos', { p_codigo: CODIGOS[0] });
+  exige(mj.ok === true && Array.isArray(mj.juegos), 'mis_juegos responde (las funciones del examen están instaladas y la web pública puede llamarlas)');
+  const l = await rpc('latido', {});
+  exige(l.ok === true, 'latido() responde ok (escribe: ' + l.escrito + ')');
+  await seguridad();
+  resumen();
+}
 
 /* ---------- jugar ---------- */
 async function jugar() {
@@ -130,8 +150,11 @@ async function seguridad() {
     const r = await fetch(url + '/rest/v1/rpc/' + fn, { method: 'POST', headers: cab, body: '{}' });
     exige(r.status >= 400 && r.status !== 500, '«' + fn + '»: la web pública no puede llamarla (HTTP ' + r.status + ')');
   }
-  const r = await fetch(url + '/rest/v1/partidas', { method: 'DELETE', headers: cab });
-  exige(r.status >= 400, 'borrar partidas desde fuera: rechazado (HTTP ' + r.status + ')');
+  // Con un filtro (sin filtro PostgREST contesta 400 antes de mirar permisos, y eso no demostraría nada): debe ser un rechazo de PERMISOS
+  for (const [metodo, t, cuerpo] of [['DELETE', 'partidas?id=eq.00000000-0000-0000-0000-000000000000'], ['DELETE', 'intentos?id=eq.0'], ['PATCH', 'alumnos?id=eq.PRUEBA-01', '{"activo":false}'], ['POST', 'bancos', '{"id":"x","titulo":"x"}']]) {
+    const r = await fetch(url + '/rest/v1/' + t, { method: metodo, headers: cab, body: cuerpo });
+    exige(r.status === 401 || r.status === 403, metodo + ' ' + t.split('?')[0] + ' desde fuera: rechazado por permisos (HTTP ' + r.status + ')');
+  }
 }
 
 /* ---------- comprobar ---------- */
@@ -157,5 +180,5 @@ function resumen() {
   console.log('\n✓ Todo correcto.\n');
 }
 
-try { await (fase === 'jugar' ? jugar() : comprobar()); }
+try { await (fase === 'base' ? base() : fase === 'jugar' ? jugar() : comprobar()); }
 catch (e) { SALIR('Ha fallado algo inesperado: ' + (e && e.message ? e.message : e) + (e && e.status ? ' (HTTP ' + e.status + ')' : '')); }
