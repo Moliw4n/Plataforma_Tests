@@ -150,7 +150,7 @@ test.describe('crear un examen y ponérselo a un grupo', () => {
   });
   test('asignar: manda grupo, fechas en ISO, intentos y soluciones, y da el enlace para los alumnos', async ({ page, servidor }) => {
     const S = await abrir(page, servidor); await aGestion(page);
-    await page.selectOption('#aGrupo', 'TDA1'); await page.fill('#aDesde', '2026-11-25T09:00'); await page.fill('#aHasta', '2026-11-25T10:30'); await page.fill('#aInt', '2'); await page.check('#aSol');
+    await page.selectOption('#aGrupo', 'TDA1'); await page.check('#aFechas'); await page.fill('#aDesde', '2026-11-25T09:00'); await page.fill('#aHasta', '2026-11-25T10:30'); await page.fill('#aInt', '2'); await page.check('#aSol');
     await page.click('#bAsignar');
     await expect(page.locator('#msgAsignar')).toContainText('/jugar.html?j=ex1');
     const a = rpcs(S, 'profe_asignar')[0].args;
@@ -158,6 +158,27 @@ test.describe('crear un examen y ponérselo a un grupo', () => {
     expect(new Date(a.p_desde).getTime()).toBe(new Date('2026-11-25T09:00').getTime());
     expect(new Date(a.p_hasta).getTime()).toBe(new Date('2026-11-25T10:30').getTime());
     await expect(page.locator('#secAsignar table')).toContainText('TDA1');
+  });
+  test('las fechas solo existen si se marca la casilla: por defecto, sin límite (aunque el navegador enseñe un relleno)', async ({ page, servidor }) => {
+    const S = await abrir(page, servidor); await aGestion(page);
+    await expect(page.locator('#aDesde')).toBeHidden(); await expect(page.locator('#aHasta')).toBeHidden();
+    await page.fill('#aInt', '2');
+    await page.click('#bAsignar');
+    await expect(page.locator('#msgAsignar')).toContainText('/jugar.html?j=ex1');
+    expect(rpcs(S, 'profe_asignar')[0].args).toMatchObject({ p_desde: null, p_hasta: null, p_intentos: 2 });
+  });
+  test('al marcar la casilla salen las dos fechas con valores razonables; al desmarcarla se ignoran aunque estén rellenas', async ({ page, servidor }) => {
+    const S = await abrir(page, servidor); await aGestion(page);
+    await page.check('#aFechas');
+    await expect(page.locator('#aDesde')).toBeVisible(); await expect(page.locator('#aHasta')).toBeVisible();
+    const [desde, hasta] = [await page.inputValue('#aDesde'), await page.inputValue('#aHasta')];
+    expect(desde).toMatch(/^\d{4}-\d\d-\d\dT\d\d:\d\d$/);
+    expect(new Date(hasta) - new Date(desde)).toBe(2 * 3600e3);
+    await page.uncheck('#aFechas');
+    await expect(page.locator('#aDesde')).toBeHidden();
+    await page.click('#bAsignar');
+    await expect.poll(() => rpcs(S, 'profe_asignar').length).toBe(1);
+    expect(rpcs(S, 'profe_asignar')[0].args).toMatchObject({ p_desde: null, p_hasta: null });
   });
   test('en móvil, la gestión no se desborda', async ({ page, servidor }) => {
     await abrir(page, servidor); await aGestion(page); await sinDesborde(page);

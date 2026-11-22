@@ -109,8 +109,9 @@ export function crearExamenes(P) {
       '<form id="fAsignar" class="form-ex"><div class="rejilla-form">' +
         '<div class="campo"><label for="aJuego">EXAMEN</label><select id="aJuego">' + juegos.map(j => '<option value="' + esc(j.id) + '">' + esc(j.titulo) + '</option>').join('') + '</select></div>' +
         '<div class="campo"><label for="aGrupo">GRUPO</label><select id="aGrupo">' + P.grupos().map(g => '<option value="' + esc(g.id) + '">' + esc(g.nombre) + '</option>').join('') + '</select></div>' +
-        '<div class="campo"><label for="aDesde">SE ABRE (opcional)</label><input id="aDesde" type="datetime-local"></div>' +
-        '<div class="campo"><label for="aHasta">ÚLTIMO MOMENTO PARA EMPEZAR (opcional)</label><input id="aHasta" type="datetime-local"></div>' +
+        '<div class="campo"><label>FECHAS</label><div class="checks"><label><input type="checkbox" id="aFechas"> Limitar por fechas (si no, siempre abierto)</label></div></div>' +
+        '<div class="campo campo-fecha" hidden><label for="aDesde">SE ABRE</label><input id="aDesde" type="datetime-local"></div>' +
+        '<div class="campo campo-fecha" hidden><label for="aHasta">ÚLTIMO MOMENTO PARA EMPEZAR</label><input id="aHasta" type="datetime-local"></div>' +
         '<div class="campo"><label for="aInt">INTENTOS</label><input id="aInt" type="number" min="1" max="10" value="1"></div>' +
         '<div class="campo"><label>SOLUCIONES</label><div class="checks"><label><input type="checkbox" id="aSol"> Enseñar la revisión cuando publique las notas</label></div></div>' +
       '</div><button class="btn pri" id="bAsignar">Poner el examen</button></form>' : '<div class="vacio">Primero crea un examen.</div>') +
@@ -126,7 +127,20 @@ export function crearExamenes(P) {
     $('#iBanco').onchange = () => { const a = $('#iBanco').files[0]; $('#iBanco').value = ''; if (a) subirBanco(a); };
     P.app.querySelectorAll('[data-borrar-banco]').forEach(b => b.onclick = () => borrarBanco(b.dataset.borrarBanco));
     if ($('#fJuego')) $('#fJuego').onsubmit = e => { e.preventDefault(); crearJuego(); };
-    if ($('#fAsignar')) $('#fAsignar').onsubmit = e => { e.preventDefault(); asignar(); };
+    if ($('#fAsignar')) {
+      $('#fAsignar').onsubmit = e => { e.preventDefault(); asignar(); };
+      // Las fechas solo existen si se marca la casilla (un campo de fecha vacío se ve «relleno» en Safari y confunde)
+      $('#aFechas').onchange = () => {
+        const on = $('#aFechas').checked;
+        P.app.querySelectorAll('.campo-fecha').forEach(c => { c.hidden = !on; });
+        if (on) {
+          const local = d => { const p2 = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()) + 'T' + p2(d.getHours()) + ':' + p2(d.getMinutes()); };
+          const ahora = new Date(); ahora.setSeconds(0, 0);
+          if (!$('#aDesde').value) $('#aDesde').value = local(ahora);
+          if (!$('#aHasta').value) $('#aHasta').value = local(new Date(ahora.getTime() + 2 * 3600e3));
+        }
+      };
+    }
   }
 
   async function subirBanco(archivo) {
@@ -166,7 +180,8 @@ export function crearExamenes(P) {
   async function asignar() {
     const msg = $('#msgAsignar');
     const iso = v => (v ? new Date(v).toISOString() : null);
-    const args = { p_juego: $('#aJuego').value, p_grupo: $('#aGrupo').value, p_desde: iso($('#aDesde').value), p_hasta: iso($('#aHasta').value), p_intentos: +$('#aInt').value, p_mostrar_soluciones: $('#aSol').checked };
+    const conFechas = $('#aFechas').checked;          // sin marcar = sin límite de fechas (siempre abierto)
+    const args = { p_juego: $('#aJuego').value, p_grupo: $('#aGrupo').value, p_desde: conFechas ? iso($('#aDesde').value) : null, p_hasta: conFechas ? iso($('#aHasta').value) : null, p_intentos: +$('#aInt').value, p_mostrar_soluciones: $('#aSol').checked };
     try {
       await rpc('profe_asignar', args);
       await recargarDatos(); pintarGestion();
