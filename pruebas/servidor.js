@@ -10,8 +10,13 @@ const TIPOS = {
   '.woff2': 'font/woff2', '.png': 'image/png', '.svg': 'image/svg+xml'
 };
 
+// Solo se sirve lo que es WEB (como GitHub Pages): las páginas, css, js, img, fonts, tests y chuletas. Nada más (.git, node_modules,
+// pruebas, docs, supabase, archivos *.local.*…): este servidor puede escuchar en la WiFi y no debe enseñar el resto del proyecto.
+const PERMITIDO = /^\/(jugar\.html|panel\.html|test\.html|panel\.webmanifest|(css|js|img|fonts|tests|chuletas)\/[^?]+)$/;
+
 http.createServer((req, res) => {
   const ruta = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+  if (!PERMITIDO.test(ruta) || /\.local\.|\/\./.test(ruta)) { res.writeHead(404); return res.end('no encontrado'); }
   const archivo = path.join(RAIZ, ruta === '/' ? 'index.html' : ruta);
   if (!archivo.startsWith(RAIZ + path.sep)) { res.writeHead(403); return res.end(); }
   fs.readFile(archivo, (err, datos) => {

@@ -48,6 +48,16 @@ test.describe('alias test.html → jugar.html', () => {
   });
 });
 
+test.describe('el servidor de pruebas solo sirve lo que es web (puede escuchar en la WiFi para los móviles)', () => {
+  test('páginas, css, js, tests y chuletas sí; .git, node_modules, pruebas, docs y supabase no', async ({ request }) => {
+    for (const ok of ['/jugar.html', '/test.html', '/panel.html', '/panel.webmanifest', '/js/config.js', '/css/estilo.css', '/tests/index.json', '/chuletas/python-u1.html', '/img/logo-kiron.svg', '/fonts/orbitron-latin-800-normal.woff2'])
+      expect((await request.get(ok)).status(), ok).toBe(200);
+    for (const no of ['/.git/config', '/.git/HEAD', '/node_modules/playwright/package.json', '/pruebas/fixtures.js', '/docs/ensayo-examen.md', '/supabase/paquete_pruebas.sql',
+                      '/CLAUDE.md', '/package.json', '/test-results/x', '/scripts/simular-clase.mjs', '/js/../CLAUDE.md', '/js/%2e%2e/CLAUDE.md', '/ensayo-estado.local.json', '/js/algo.local.json', '/.gitignore'])
+      expect((await request.get(no)).status(), no).toBe(404);
+  });
+});
+
 test.describe('jugar.html directo', () => {
   test('abre el test por defecto y con ?t=', async ({ page }) => {
     await page.goto('jugar.html');
