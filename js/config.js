@@ -13,8 +13,12 @@
       supabaseUrl: 'https://vltooganezktrqduwhzy.supabase.co',
       supabaseKey: 'sb_publishable_OjurBy5nEKkHHuu2WVk2eQ_gTeDlML4'
     },
-    // Proyecto de PRUEBAS de Supabase (la URL y la clave «publishable», que son públicas). null = todavía no configurado.
-    pruebas: null
+    // Proyecto de PRUEBAS de Supabase (kiron-pruebas): datos inventados. La URL y la clave «publishable» son públicas por diseño.
+    // IMPORTANTE: va DESPUÉS de producción (scripts como el latido leen la primera URL del archivo).
+    pruebas: {
+      supabaseUrl: 'https://mjqdfpmozslarfqwnwee.supabase.co',
+      supabaseKey: 'sb_publishable_RxOaHwmhF_U4cpNT6MwKLQ_4PmsQDiA'
+    }
   };
   var local = /^(localhost|127\.0\.0\.1|\[::1\]|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|[a-z0-9-]+\.local)$/i.test(location.hostname);
   var pedido = new URLSearchParams(location.search).get('entorno');

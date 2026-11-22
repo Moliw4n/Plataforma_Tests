@@ -80,16 +80,25 @@ test.describe('entorno (config.js)', () => {
     expect(await page.evaluate(() => window.CONFIG.supabaseUrl)).toContain('supabase.co');
   });
 
-  test('?entorno=pruebas sin proyecto de pruebas configurado: sin conexión, nunca producción', async ({ page }) => {
+  test('?entorno=pruebas desde localhost usa el proyecto de PRUEBAS (otra URL que producción) y enseña la franja', async ({ page }) => {
     await page.goto('test.html?modo=profe&entorno=pruebas');
     expect(await page.evaluate(() => window.ENTORNO)).toBe('pruebas');
-    expect(await page.evaluate(() => window.CONFIG)).toBeNull();
+    const url = await page.evaluate(() => window.CONFIG.supabaseUrl);
+    expect(url).toMatch(/^https:\/\/[a-z0-9]+\.supabase\.co$/);
+    expect(url).not.toContain('vltooganezktrqduwhzy');                      // NO es el de producción
+    expect(await page.evaluate(() => window.CONFIG.supabaseKey)).toMatch(/^sb_publishable_/);
+    await expect(page.locator('#franja-pruebas')).toContainText('PRUEBAS');
+  });
+  test('sin ?entorno=pruebas no hay franja y se usa producción', async ({ page }) => {
+    await page.goto('test.html?modo=profe');
+    await expect(page.locator('#franja-pruebas')).toHaveCount(0);
+    expect(await page.evaluate(() => window.CONFIG.supabaseUrl)).toContain('vltooganezktrqduwhzy');
   });
 
   // Carga config.js (con un proyecto de pruebas de mentira, si se pide) bajo un nombre de host dado y devuelve el entorno resultante
   const entornoEn = (page, hostname, { pruebas = null } = {}) => page.evaluate(async ([host, prb]) => {
     let src = await (await fetch('/js/config.js')).text();
-    if (prb) src = src.replace('pruebas: null', 'pruebas: ' + JSON.stringify(prb));
+    if (prb) src = src.replace(/pruebas: \{[^}]*\}/, 'pruebas: ' + JSON.stringify(prb));
     const w = {}, avisos = [];
     const doc = { body: null, addEventListener() {}, createElement: () => ({ style: {} }) };
     new Function('window', 'location', 'URLSearchParams', 'console', 'document', src)(w, { hostname: host, search: '?entorno=pruebas' }, URLSearchParams,
