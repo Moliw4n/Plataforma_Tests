@@ -8,6 +8,7 @@
 <title>Kiron · Panel del profesor</title>
 <link rel="stylesheet" href="css/estilo.css">
 <link rel="stylesheet" href="css/panel.css">
+<link rel="stylesheet" href="css/kronos.css">
 <link rel="manifest" href="panel.webmanifest">
 <link rel="icon" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
@@ -16,7 +17,13 @@
 <meta name="apple-mobile-web-app-title" content="Kiron">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
-<body>
+<body class="kronos">
+<nav class="lateral" aria-label="Kiron">
+  <a href="panel.html" data-nav="inicio" class="on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg><span>Inicio</span></a>
+  <a href="directo.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z"/></svg><span>Directo</span></a>
+  <a href="panel.html#examenes" data-nav="examenes"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9z"/><path d="M9 14l2 2 4-4"/></svg><span>Exámenes</span></a>
+</nav>
+
 <header class="top">
   <div class="marca"><svg class="logo-kiron" role="img" aria-label="Kiron"><use href="img/logo-kiron.svg#logo"/></svg> <span>· PANEL DEL PROFESOR</span></div>
   <span class="espacio-top"></span>

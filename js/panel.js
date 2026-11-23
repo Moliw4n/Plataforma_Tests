@@ -147,6 +147,7 @@ import { crearExamenes } from './panel-examenes.js';
     try { EX = crearExamenes(P); if (!await EX.cargar()) EX = null; }   // sin las tablas de exámenes, el panel funciona exactamente como antes
     catch (e) { return; }                                                // 401: ya se ha pedido entrar otra vez
     if (mia !== carga) return;
+    if (EX && location.hash === '#examenes') f.vista = 'gestion';          // desde la barra lateral de directo.html
     if (EX === null && (f.vista === 'gestion' || f.vista === 'examen')) f.vista = 'inicio';
     pintar();
   }
@@ -186,10 +187,23 @@ import { crearExamenes } from './panel-examenes.js';
     });
   }
 
+  /* ---------- barra lateral: Inicio y Exámenes son vistas de este mismo panel ---------- */
+  function marcarNav() {
+    const ex = f.vista === 'gestion' || f.vista === 'examen';
+    document.querySelectorAll('.lateral [data-nav]').forEach(a => a.classList.toggle('on', (a.dataset.nav === 'examenes') === ex));
+  }
+  document.querySelectorAll('.lateral [data-nav]').forEach(a => a.addEventListener('click', e => {
+    if (!ses || !grupos.length) return;                               // sin datos cargados, que el enlace haga su trabajo
+    e.preventDefault();
+    if (a.dataset.nav === 'examenes') { if (!EX) return; f.vista = 'gestion'; } else f.vista = 'inicio';
+    pintar(); window.scrollTo({ top: 0 });
+  }));
+
   /* ---------- pintar ---------- */
   function pintar() {
     if (!ses) return;          // sin sesión no se pinta nada (el acceso ya está en pantalla)
     guarda.set('pt_filtros', f);
+    marcarNav();
     if (f.vista === 'inicio') return pintarInicio();
     if (EX && f.vista === 'gestion') return EX.pintarGestion();
     if (EX && f.vista === 'examen') return EX.pintarResultados();
