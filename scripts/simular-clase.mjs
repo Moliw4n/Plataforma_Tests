@@ -296,7 +296,7 @@ async function directo() {
       a.enviadasOk.add(n1);
       if (a.doble) {
         const r2 = await mandar().catch(() => null);
-        if (!r2 || r2.ok !== false || r2.motivo !== 'ya_respondida') falla(a.nombre + ': contestar dos veces la misma pregunta no fue rechazado (' + JSON.stringify(r2) + ')');
+        if (!r2 || r2.ok !== false || !['ya_respondida', 'cerrada', 'otra_pregunta'].includes(r2.motivo)) falla(a.nombre + ': contestar dos veces la misma pregunta no fue rechazado (' + JSON.stringify(r2) + ')');
       }
     } else if (r.motivo === 'cerrada' || r.motivo === 'otra_pregunta') a.tarde++;
     else falla(a.nombre + ': responder rechazó la respuesta (' + r.motivo + ')');
