@@ -178,7 +178,7 @@ import { crearSesionProfe } from './nucleo/sesion-profe.js';
     if (clave !== k) {
       clave = k; clearInterval(relojId);
       app.innerHTML = cabSala(r) +
-        '<div class="espera-directo"><div class="sup">ÚNETE DESDE EL MÓVIL</div><div class="codigo-sala" id="codigoSala">' + codigoBonito(r.sala) + '</div>' +
+        '<div class="espera-directo"><div class="sup">ÚNETE DESDE TU ORDENADOR O MÓVIL</div><div class="codigo-sala" id="codigoSala">' + codigoBonito(r.sala) + '</div>' +
         '<div class="enlace-sala" id="enlaceSala">' + esc(ENLACE()) + '</div><p class="dato-p">Escribe tu código de alumno de siempre y ya estás dentro.</p>' +
         '<div class="acciones"><button class="btn" id="bCopiar">Copiar el enlace</button><button class="btn" id="bIds">' + (mostrarIds ? 'Ocultar quién es quién' : 'Ver quién es quién') + '</button></div>' +
         '<div class="chips-jugadores" id="chips"></div></div>' +

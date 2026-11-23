@@ -64,3 +64,7 @@
 .puesto small{color:var(--mut)}
 .puesto-1{border-color:var(--ambar);padding-top:28px;padding-bottom:28px}
 @media (max-width:640px){.podio{flex-direction:column;align-items:stretch}.puesto{min-width:0}}
+
+/* En el entorno de pruebas la franja amarilla «PRUEBAS» va fija abajo: los botones se suben para que no los tape */
+body:has(#franja-pruebas) .controles-directo{bottom:32px;border-bottom:1px solid var(--borde)}
+body:has(#franja-pruebas) .directo{padding-bottom:150px}

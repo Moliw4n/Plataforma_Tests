@@ -98,6 +98,7 @@ test.describe('la sala en marcha', () => {
   test('en la espera salen los apodos de quien entra (atenuados si no están conectados), sin números de alumno hasta que se pida', async ({ page, servidor }) => {
     const D = await conSala(page, servidor);
     await expect(page.locator('#chips')).toContainText('Aún no ha entrado nadie');
+    await expect(page.locator('.espera-directo .sup')).toHaveText('ÚNETE DESDE TU ORDENADOR O MÓVIL');       // en clase se usa sobre todo el ordenador
     jugador(D, 'AAA222'); jugador(D, 'BBB333');
     await expect(page.locator('.chip-jug')).toHaveCount(2);
     await expect(page.locator('.sala-cab')).toContainText('2 jugadores');
