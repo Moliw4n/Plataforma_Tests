@@ -77,6 +77,7 @@ test.describe('entrar y crear la sala', () => {
     await expect(page.locator('#codigoSala')).toHaveText('123 456');
     expect(D.creadaCon).toEqual({ grupo: 'TDA2', bancos: ['u1'], preguntas: 3, tiempo_s: 30, equilibrar: 'ninguno', titulo: 'Repaso U1' });
     await expect(page.locator('#enlaceSala')).toHaveText(/\/jugar\.html\?d=123456$/);
+    await expect(page.locator('#enlaceFijo')).toHaveText(/\/jugar\.html\?d$/);                  // el enlace fijo (sin código) es el destacado: en clase se escribe el código de la sala
     await expect(page.locator('.sala-cab')).toContainText('Repaso U1');
     await expect(page.locator('#bAvanzar')).toHaveText('Empezar ▶');
     await sinDesborde(page);

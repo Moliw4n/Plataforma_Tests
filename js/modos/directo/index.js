@@ -17,6 +17,7 @@ const REINTENTO_RESP_MS = AJUSTES.reintentoRespMs || 1000;   // cada cuánto se 
 const LET = 'ABCDEF';
 
 let ctx, E;
+let sala = null, salaEscrita = false;   // sala = el código de 6 cifras; escrita = lo ha tecleado el alumno (enlace fijo) en vez de venir en el enlace
 let sesion = null, apodo = '', titulo = '', total = 0;
 let activo = false, sondeoId = null, relojId = null, token = 0;   // token: invalida sondeos viejos si se sale o se vuelve a entrar
 let clave = '';                    // «estado:pregunta»: qué pantalla se está enseñando, para no repintar lo mismo en cada sondeo
@@ -53,14 +54,42 @@ function avisoRed(hay) {
 }
 
 /* ---------- entrar en la sala ---------- */
+// Con el enlace fijo (jugar.html?d) la sala no viene en el enlace: se pide aquí, con el código que proyecta el profesor
+function pedirSala(msg) {
+  parar(); sala = null;
+  $('#bot').hidden = true; $('#reloj').hidden = true; $('#contador').textContent = '';
+  E.innerHTML =
+    '<div class="portada acceso"><div class="sup">DIRECTO</div><h1>¿En qué <span>sala</span> entras?</h1>' +
+    '<form class="caja-codigo" id="fSalaCodigo" autocomplete="off">' +
+      '<label for="iSala">Escribe el código de la sala</label>' +
+      '<input id="iSala" class="orb" inputmode="numeric" spellcheck="false" maxlength="20" placeholder="123 456" aria-describedby="msgSalaCodigo">' +
+      '<button class="btn pri" id="bSalaCodigo">Entrar →</button>' +
+      '<p class="msg" id="msgSalaCodigo" role="status">' + esc(msg || 'Son 6 cifras y están en la pantalla del profesor.') + '</p>' +
+    '</form><div class="acciones"><button class="btn" id="bSalirDirecto">No soy yo</button></div></div>';
+  const inp = $('#iSala');
+  inp.addEventListener('input', () => { const v = inp.value.replace(/\D/g, '').slice(0, 6); inp.value = v.length > 3 ? v.slice(0, 3) + ' ' + v.slice(3) : v; inp.classList.remove('mal'); });
+  $('#fSalaCodigo').onsubmit = e => {
+    e.preventDefault();
+    const digitos = inp.value.replace(/\D/g, '');
+    if (digitos.length !== 6) { $('#msgSalaCodigo').textContent = 'El código de la sala son 6 cifras, por ejemplo 123 456.'; inp.classList.add('mal'); inp.focus(); return; }
+    sala = digitos; salaEscrita = true;
+    unirse();
+  };
+  $('#bSalirDirecto').onclick = () => ctx.salir();
+  inp.focus();
+}
+
 async function unirse() {
   E.innerHTML = '<div class="cargando">Entrando en la sala…</div>';
   let r;
-  try { r = await llamar('directo_unirse', { p_sala: ctx.sala }, { reintentos: 1 }); }
+  try { r = await llamar('directo_unirse', { p_sala: sala }, { reintentos: 1 }); }
   catch (e) { return mensaje('No hay conexión con el servidor. Comprueba internet y vuelve a probar.', { reintentar: unirse }); }
   if (!r.ok) {
     if (r.motivo === 'espera') return mensaje('Demasiados intentos seguidos. Espera un minuto y vuelve a probar.', { reintentar: unirse });
-    if (r.motivo === 'sala') return mensaje('Esa sala no existe, ya ha terminado o no es para tu grupo. Revisa el enlace con tu profesor.');
+    if (r.motivo === 'sala') {
+      const texto = 'Esa sala no existe, ya ha terminado o no es para tu grupo.';
+      return salaEscrita ? pedirSala(texto + ' Revisa el código que hay en la pantalla.') : mensaje(texto + ' Revisa el enlace con tu profesor.');
+    }
     return mensaje('No he podido comprobar tu código. Vuelve a entrar.');
   }
   sesion = r.sesion; apodo = r.apodo; titulo = r.titulo; total = r.total;
@@ -241,8 +270,9 @@ export default {
 
   async iniciar(c) {
     ctx = c; E = c.contenedor; sesion = null; apodo = ''; ultimo = null; sinRed = false;
+    sala = c.sala || null; salaEscrita = !sala;
     $('#bot').hidden = true;
-    await unirse();
+    if (sala) await unirse(); else pedirSala();
   },
 
   async terminar() {

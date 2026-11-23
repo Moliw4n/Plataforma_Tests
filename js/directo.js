@@ -157,7 +157,8 @@ import { crearSesionProfe } from './nucleo/sesion-profe.js';
     else if (el) el.remove();
   }
 
-  const ENLACE = () => new URL('jugar.html?d=' + est.sala + (window.ENTORNO === 'pruebas' ? '&entorno=pruebas' : ''), location.href).href;
+  const ENLACE = () => new URL('jugar.html?d=' + est.sala + (window.ENTORNO === 'pruebas' ? '&entorno=pruebas' : ''), location.href).href;     // con el código de la sala dentro
+  const ENLACE_FIJO = () => new URL('jugar.html?d' + (window.ENTORNO === 'pruebas' ? '&entorno=pruebas' : ''), location.href).href;                   // el mismo siempre: el alumno escribe el código
   function cabSala(r) {
     return '<div class="sala-cab"><span class="chip-sala">Sala <b>' + codigoBonito(r.sala) + '</b></span><span>' + esc(r.titulo) + '</span><span class="dato-p">' + esc(r.grupo) + ' · <span id="nJug">' + r.participantes.length + '</span> jugadores</span></div>';
   }
@@ -178,9 +179,11 @@ import { crearSesionProfe } from './nucleo/sesion-profe.js';
     if (clave !== k) {
       clave = k; clearInterval(relojId);
       app.innerHTML = cabSala(r) +
-        '<div class="espera-directo"><div class="sup">ÚNETE DESDE TU ORDENADOR O MÓVIL</div><div class="codigo-sala" id="codigoSala">' + codigoBonito(r.sala) + '</div>' +
-        '<div class="enlace-sala" id="enlaceSala">' + esc(ENLACE()) + '</div><p class="dato-p">Escribe tu código de alumno de siempre y ya estás dentro.</p>' +
-        '<div class="acciones"><button class="btn" id="bCopiar">Copiar el enlace</button><button class="btn" id="bIds">' + (mostrarIds ? 'Ocultar quién es quién' : 'Ver quién es quién') + '</button></div>' +
+        '<div class="espera-directo"><div class="sup">ÚNETE DESDE TU ORDENADOR O MÓVIL</div>' +
+        '<div class="enlace-sala" id="enlaceFijo">' + esc(ENLACE_FIJO()) + '</div><p class="dato-p">Escribe tu código de alumno y, cuando te lo pida, el código de la sala:</p>' +
+        '<div class="codigo-sala" id="codigoSala">' + codigoBonito(r.sala) + '</div>' +
+        '<p class="dato-p">o entra directo con este enlace: <span class="enlace-chico" id="enlaceSala">' + esc(ENLACE()) + '</span></p>' +
+        '<div class="acciones"><button class="btn" id="bCopiar">Copiar el enlace con el código</button><button class="btn" id="bIds">' + (mostrarIds ? 'Ocultar quién es quién' : 'Ver quién es quién') + '</button></div>' +
         '<div class="chips-jugadores" id="chips"></div></div>' +
         controles('<button class="btn pri grande" id="bAvanzar">Empezar ▶</button><button class="btn peligro" id="bCerrarSala">Cerrar sala</button>');
       enlazarComunes();

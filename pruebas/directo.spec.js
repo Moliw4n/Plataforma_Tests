@@ -32,7 +32,7 @@ test.describe('acceso', () => {
     await expect(page.locator('#escena')).toContainText('Entra en la sala');
     await expect(page).toHaveTitle(/Directo · Kiron/);
     await sinDesborde(page);
-    for (const mala of ['12', '1234567', 'abcdef', '']) {
+    for (const mala of ['12', '1234567', 'abcdef']) {
       await page.goto('jugar.html?d=' + mala);
       await expect(page.locator('#escena')).toContainText('El enlace de la sala no está bien');
       await expect(page.locator('#iCodigo')).toHaveCount(0);
@@ -262,6 +262,73 @@ test.describe('si algo falla', () => {
     S.avanzar();                                                                   // el profesor cierra mientras la respuesta viaja
     await expect(page.locator('.directo-res h1')).toBeVisible();
     expect(S.respuestas.length).toBeLessThanOrEqual(1);
+  });
+});
+
+test.describe('enlace fijo (jugar.html?d): el código de la sala se escribe', () => {
+  const fijo = { url: 'jugar.html?d' };
+  test('tras el código de alumno pide el de la sala (teclado numérico) y entra', async ({ page, servidor }) => {
+    const S = await abrir(page, servidor, {}, fijo);
+    await expect(page.locator('#iSala')).toBeVisible();
+    await expect(page.locator('#escena')).toContainText('¿En qué sala entras?');
+    await expect(page.locator('#iSala')).toHaveAttribute('inputmode', 'numeric');
+    await sinDesborde(page);
+    await page.fill('#iSala', '123456');
+    await expect(page.locator('#iSala')).toHaveValue('123 456');                         // se escribe con el espacio en medio, como en la pantalla del profesor
+    await page.click('#bSalaCodigo');
+    await expect(page.locator('.directo-espera h1')).toHaveText('¡Estás dentro!');
+    expect(S.participantes).toHaveLength(1);
+    S.avanzar();
+    await expect(page.locator('.q.en-examen')).toBeVisible();
+  });
+  test('vale escribirlo con espacios, guiones o letras de más: solo cuentan las cifras', async ({ page, servidor }) => {
+    await abrir(page, servidor, {}, fijo);
+    await page.fill('#iSala', '12-34a56');
+    await expect(page.locator('#iSala')).toHaveValue('123 456');
+    await page.press('#iSala', 'Enter');
+    await expect(page.locator('.directo-espera h1')).toBeVisible();
+  });
+  test('con menos de 6 cifras lo dice y no llama al servidor', async ({ page, servidor }) => {
+    const S = await abrir(page, servidor, {}, fijo);
+    await page.fill('#iSala', '1234'); await page.click('#bSalaCodigo');
+    await expect(page.locator('#msgSalaCodigo')).toContainText('6 cifras');
+    expect(S.llamadas.filter(l => l.fn === 'directo_unirse')).toHaveLength(0);
+  });
+  test('una sala que no existe: avisa AQUÍ y se puede corregir sin volver a escribir el código de alumno', async ({ page, servidor }) => {
+    const S = await abrir(page, servidor, {}, fijo);
+    await page.fill('#iSala', '999999'); await page.click('#bSalaCodigo');
+    await expect(page.locator('#msgSalaCodigo')).toContainText('Esa sala no existe');
+    await expect(page.locator('#iSala')).toBeVisible();
+    await page.fill('#iSala', S.sala); await page.click('#bSalaCodigo');
+    await expect(page.locator('.directo-espera h1')).toBeVisible();
+  });
+  test('una sala terminada también se rechaza con el mismo aviso', async ({ page, servidor }) => {
+    const S = await abrir(page, servidor, {}, fijo);
+    S.terminar();
+    await page.fill('#iSala', S.sala); await page.click('#bSalaCodigo');
+    await expect(page.locator('#msgSalaCodigo')).toContainText('ya ha terminado');
+  });
+  test('«No soy yo» vuelve a pedir el código de alumno; y al salir tras jugar, se vuelve a pedir la sala', async ({ page, servidor }) => {
+    const S = await abrir(page, servidor, {}, fijo);
+    await page.click('#bSalirDirecto');
+    await expect(page.locator('#iCodigo')).toBeVisible();
+    await entrar(page);
+    await page.fill('#iSala', S.sala); await page.click('#bSalaCodigo');
+    await expect(page.locator('.directo-espera h1')).toBeVisible();
+    S.terminar();
+    await page.click('#bSalirDirecto');
+    await expect(page.locator('#iCodigo')).toBeVisible();
+    await entrar(page);
+    await expect(page.locator('#iSala')).toBeVisible();
+  });
+  test('el enlace con el código sigue funcionando igual que antes (entra directo)', async ({ page, servidor }) => {
+    await abrir(page, servidor);
+    await expect(page.locator('#iSala')).toHaveCount(0);
+    await expect(page.locator('.directo-espera h1')).toBeVisible();
+  });
+  test('con el enlace fijo, si la sala no existe y el enlace traía el código mal, no se pide otra vez: es un enlace roto', async ({ page, servidor }) => {
+    await abrir(page, servidor, {}, { entrarYa: false, url: 'jugar.html?d=12' });
+    await expect(page.locator('#escena')).toContainText('El enlace de la sala no está bien');
   });
 });
 

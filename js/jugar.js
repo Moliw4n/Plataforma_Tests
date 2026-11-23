@@ -3,7 +3,8 @@
      jugar.html?t=<id-del-test>   práctica: carga tests/<id>.json (test.html es un alias que reenvía aquí) · &modo=profe = sin código y sin guardar.
      jugar.html?j=<id-del-juego>  examen: pide el código y busca ese juego entre los asignados a su grupo (mis_juegos);
                                   el contenido NO está aquí: lo manda el servidor, sin soluciones. &modo=profe no vale: siempre hace falta código.
-     jugar.html?d=<sala>          directo (tipo Kahoot): pide el código y entra en la sala de 6 cifras que el profesor ha abierto; contesta desde el móvil.
+     jugar.html?d=<sala>          directo (tipo Kahoot): pide el código y entra en la sala de 6 cifras que el profesor ha abierto.
+     jugar.html?d                 el mismo directo con ENLACE FIJO (sin código de sala): tras el código de alumno pide el de la sala, que es el que proyecta el profesor.
    Pide el código y entrega el control al MODO que corresponda. El contrato de los modos está en nucleo/modos.js. */
 import { rpc } from './nucleo/api.js';
 import { esc, tituloBonito } from './nucleo/util.js';
@@ -121,10 +122,10 @@ import { RENDERIZADORES } from './nucleo/preguntas/index.js';
   function cargarDirecto() {
     document.title = 'Directo · Kiron';
     $('#marca').innerHTML = LOGO_KIRON + ' <span>· Directo</span>';
-    ctx = { alumno: null, juego: null, sala: SALA, contenido: null, api: { rpc }, nucleo: { preguntas: RENDERIZADORES },
+    ctx = { alumno: null, juego: null, sala: SALA || null, contenido: null, api: { rpc }, nucleo: { preguntas: RENDERIZADORES },
             contenedor: E, chuleta: null, modoProfe: false, temaActual: () => null, salir };
     if (!CFG) { E.innerHTML = '<div class="cargando">No hay conexión con el servidor. Avisa a tu profesor.</div>'; return; }
-    if (!/^[0-9]{6}$/.test(SALA)) { E.innerHTML = '<div class="cargando">El enlace de la sala no está bien. Pídele a tu profesor que te lo vuelva a pasar.</div>'; return; }
+    if (SALA !== '' && !/^[0-9]{6}$/.test(SALA)) { E.innerHTML = '<div class="cargando">El enlace de la sala no está bien. Pídele a tu profesor que te lo vuelva a pasar.</div>'; return; }
     accesoDirecto();
   }
   function accesoDirecto(mensaje) {

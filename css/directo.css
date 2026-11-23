@@ -68,3 +68,4 @@
 /* En el entorno de pruebas la franja amarilla «PRUEBAS» va fija abajo: los botones se suben para que no los tape */
 body:has(#franja-pruebas) .controles-directo{bottom:32px;border-bottom:1px solid var(--borde)}
 body:has(#franja-pruebas) .directo{padding-bottom:150px}
+.enlace-chico{color:var(--cian);font-weight:700;overflow-wrap:anywhere;font-size:.95em}
