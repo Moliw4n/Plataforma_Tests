@@ -16,18 +16,27 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
 - Páginas: `jugar.html` (alumno; `?t=<id>` elige test, `&modo=profe` = sin código y sin guardar).
   `test.html` es solo un **alias** que reenvía a `jugar.html` conservando `?t`, `&modo` y `#`
   (los alumnos tienen ese enlace: no se borra). `panel.html` (profesor, login Supabase Auth,
-  se puede instalar en el móvil).
+  se puede instalar en el móvil). `directo.html` (profesor/proyector del modo directo; misma sesión que el panel).
 - Código (módulos ES, sin compilar):
   - `js/jugar.js` — el runner: carga el test, cabecera, chuleta y acceso, y pasa el control al modo.
   - `js/nucleo/` — piezas comunes: `api.js` (ÚNICA puerta a Supabase), `acceso.js`, `chuleta.js`,
     `codigo.js` (resaltado), `util.js`, `modos.js` (contrato de los modos), `preguntas/<tipo>.js`
     (un renderizador por tipo: `pintar(item, contenedor, opciones)`).
   - `js/modos/<modo>/index.js` — un modo por carpeta, con el contrato de `nucleo/modos.js`.
-    Hoy `practica` (tests de `tests/*.json`; un test puede pedir otro con `"modo": "…"`) y `examen`.
+    Hoy `practica` (tests de `tests/*.json`; un test puede pedir otro con `"modo": "…"`), `examen` y `directo`.
   - **Examen**: se abre con `jugar.html?j=<id-del-juego>` (siempre con código; `&modo=profe` no vale). El contenido NO está en el repo:
     lo manda el servidor sin soluciones (`empezar_partida`), corrige el servidor (`responder`) y la nota no se ve hasta que el profesor la publica.
     Cada preg. se contesta por POSICIÓN; se puede cambiar hasta entregar; si se corta internet las respuestas esperan y se reenvían solas;
     recargar reanuda; salir de la pestaña se anota (`evento`). Los renderizadores de `preguntas/` aceptan `examen: true` (sin corrección a la vista).
+  - **Directo** (fase 2, tipo Kahoot): el profesor abre una SALA de 6 cifras en `directo.html` y los alumnos entran con su código de siempre.
+    Alumno: `jugar.html?d` (**enlace fijo**: tras su código pide el de la sala, 6 cifras) o `jugar.html?d=<sala>` (entra directo); modo en `js/modos/directo/index.js`.
+    Profesor/proyector: `directo.html` + `js/directo.js` (crear sala con grupo, bancos, nº de preguntas y segundos; código y enlace grandes; apodos de quien entra;
+    pregunta con cuenta atrás; resultado con reparto, «por qué» y top 5; podio; botón o teclado Espacio/Intro/→; la pantalla del móvil no se apaga: Wake Lock).
+    Sesión del profesor compartida con el panel (`js/nucleo/sesion-profe.js`, clave `pt_sesion_profe`). Solo se juegan `opcion_multiple` y `verdadero_falso`;
+    las opciones salen en el mismo orden para todos. **Sin Realtime**: el móvil sondea `directo_estado` cada 1-1,5 s (así todo pasa por funciones seguras y el servidor
+    manda tiempo, corrección y puntos; con 25 alumnos: pico de 37 peticiones/s). Puntos: de 1000 (al instante) a 500 (al límite) por acertar, 0 si falla o no contesta;
+    una sola respuesta por pregunta (la primera cuenta); 1 s de cortesía; el móvil nunca recibe el reparto de los demás ni la solución antes de cerrar la pregunta.
+    En pantalla solo **apodos** («Zorro Azul»); los números de alumno solo con «Ver quién es quién». **En clase se usa sobre todo el ORDENADOR**, no el móvil.
   - `js/config.js` — entornos: producción por defecto; `?entorno=pruebas` solo desde localhost o una dirección de red local
     (192.168.x.x, 10.x, 172.16-31.x, .local: los móviles del ensayo), con franja «PRUEBAS» visible, y se niega a usar la URL de producción como si fuera la de pruebas.
   - `js/panel.js` (módulo ES) y `js/panel-examenes.js`: la parte de EXÁMENES del panel (subir bancos desde un archivo del
@@ -63,11 +72,19 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
   `supabase/verificar_fase1.sql` (solo lee): una fila con 5 comprobaciones, todas `true`, para tras instalar 06-08.
   **Producción tiene 06, 07 y 08 instalados desde el 22 nov 2026** (se ejecutaron por separado, nunca el paquete). Si cambias un SQL ya instalado
   (p. ej. `terminar_partida`: entregar en el último segundo o después queda «caducada»), hay que volver a ejecutar ese archivo en producción Y en pruebas.
+  `09_directo.sql` (fase 2: tablas `directo_sesiones`, `directo_participantes`, `directo_respuestas`, RLS cerrada; profesor `profe_directo_crear|estado|avanzar|terminar|activas|borrar`
+  (`avanzar` recibe el estado que el profesor TIENE EN PANTALLA y devuelve `estado_cambiado` si la sala cambió sola); alumno `directo_unirse|estado|responder`;
+  una sala se cierra sola 1 s después de su límite y las olvidadas (12 h) al abrir otra). `10_alumnos_carga.sql` (SOLO pruebas: PRUEBA-06…25, códigos `LOAD06…LOAD25`,
+  para simular 25 alumnos; se niega en una base con alumnos reales). `verificar_fase1.sql` y `verificar_fase2.sql`: comprobaciones de solo lectura (todas `true`) para tras instalar en producción.
+  **Producción tiene 06-09 instalados** (09 el 23 nov 2026); `paquete_pruebas.sql` ya incluye el 09 (no el 10).
   El usuario los ejecuta a mano en el SQL Editor de Supabase: **dale siempre el SQL listo y dile qué debe salir** (cada archivo termina con su comprobación).
 - Pruebas (`pruebas/`): `npm test` (Playwright a 1280 y 390 px, Supabase simulado: nunca toca el real;
   la simulación es automática; el examen se prueba con `pruebas/servidor-examen-falso.js`), `npm run test:sql` (Postgres local embebido,
   incluye `contrato-examen.test.js`: el servidor falso y el SQL real deben responder con la MISMA FORMA; si cambias una función de 07, cambia también el falso), `npm run test:latido`,
-  `npm run test:formato`, `npm run test:preguntas`, `npm run test:simulador`.
+  `npm run test:formato`, `npm run test:preguntas`, `npm run test:simulador`. Directo: `pruebas/directo.spec.js` (alumno) y `directo-profe.spec.js` (profesor) con
+  `servidor-directo-falso.js` (imita las 9 funciones del 09; el panel falso lo usa vía `servidor.panel.directo`), y `contrato-directo.test.js` (falso y SQL real con la MISMA FORMA: si cambias
+  una función de 09, cambia también el falso). `npm run ensayo:simular -- directo --sala <código>` (`scripts/simular-clase.mjs`): hasta 25 alumnos a la vez contra el proyecto de pruebas, con
+  comportamientos distintos y comprobaciones (no llega ninguna solución, `responder` no dice si acertó, puntos y marcador cuadran) más tráfico por segundo; 12 fallos provocados, todos detectados.
   Ensayo real: `docs/ensayo-examen.md` (proyecto de pruebas, varios móviles, banco inventado en `docs/ensayo/`) y `npm run ensayo:simular`
   (`scripts/simular-clase.mjs`: 5 alumnos de prueba a la vez contra el servidor de pruebas; se niega a tocar producción). El panel se prueba con `pruebas/servidor-panel-falso.js` (login, tablas y
   funciones `profe_*`; `contrato-panel.test.js` comprueba que tiene la misma forma que el SQL real).
@@ -80,6 +97,10 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
   Panel: por alumno, mapa de preguntas (al pulsar una: lo que contestó, la correcta y el porqué, leído de `items`), «Anular intento»
   y **cronología** de incidencias con hora (salidas, vueltas, recargas, cortes). Si el alumno cierra la pestaña y vuelve con una recarga, el tiempo
   fuera entre la salida y la recarga no se suma (la cronología sí lo deja ver).
+- **Lenguaje**: «sala» y «apodo» en el directo; «intento» y «examen» en el examen; nunca «partida» ni «jugar».
+- **Primer directo en clase**: TDA I, 24 nov 2026, en producción (alumnos en los ordenadores del aula, el profesor desde el móvil). Guía en `docs/ensayo-directo.md` y hoja imprimible
+  `docs/checklist-directo.pdf` (guion por fases, qué mirar, registro de incidencias). Pendiente: ajustar con lo que se anote, **ver los resultados del directo en el panel** (puntos por alumno y por
+  criterios) y el borrado de salas desde la interfaz.
 - Modo profe en móvil: cabecera ajustada a 390 y 360 px (CHULETA solo icono en ≤ 430 px); la cubre `pruebas/alumno.spec.js`.
 
 ## Reglas que no se negocian

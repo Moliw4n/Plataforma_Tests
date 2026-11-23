@@ -81,7 +81,7 @@ nuevo = una carpeta nueva en `modos/`, sin tocar el resto.
 
 ### 3.3 Páginas
 - `jugar.html` — alumno (sustituye a `test.html`, que se queda como alias para no romper enlaces).
-- `directo.html` — pantalla del proyector para los modos en directo (la del profesor).
+- `directo.html` — pantalla del profesor y del proyector para el modo directo (crear sala, código, preguntas, resultado, podio). Los alumnos entran por `jugar.html?d` (enlace fijo) o `jugar.html?d=<sala>`.
 - `panel.html` — panel web del profesor (móvil).
 
 ## 4. El contenido
@@ -141,6 +141,10 @@ rosco, y **cada juego alimenta la nota por criterios**.
   móviles solo envían la respuesta.
 - Límite del plan gratuito: 200 conexiones simultáneas y 100 mensajes por segundo. Una clase
   de 25 está muy por debajo; dos clases a la vez, también.
+- **Decisión tomada en la fase 2 (23 nov 2026): SIN Realtime, por ahora.** Cada dispositivo sondea `directo_estado` cada 1-1,5 s. Motivos: (1) con Broadcast abierto cualquiera que sepa el código de
+  sala podría mandar mensajes falsos, y así corrección, tiempos y puntos son siempre del servidor y todo pasa por funciones `security definer` como en el examen; (2) no hay una pieza más que
+  mantener ni un límite de conexiones; (3) el coste real es pequeño: 25 alumnos simulados → media de 19 y pico de 37 peticiones/s, 95 % bajo 182 ms, ninguna fallida. **Revisar** si en alguna
+  clase se nota lag o si hay varias clases a la vez: Realtime podría añadirse solo como aviso de «hay novedades» (el estado seguiría llegando por las funciones).
 
 ## 6. Decisión tecnológica
 
@@ -171,7 +175,7 @@ rosco, y **cada juego alimenta la nota por criterios**.
 |---|---|---|
 | **0. Reorganización** · *hecha y publicada en `main` el 20 nov 2026* | Núcleo en módulos, contrato de modos, `jugar.html`, práctica como primer modo, pruebas Playwright, latido anti-pausa, proyecto de pruebas | Que todo lo demás sea barato. El alumno no nota nada. |
 | **1. Contenido en el servidor + examen** · *hecha y publicada en `main` el 22 nov 2026* | Bancos e ítems en Supabase, tipos de pregunta nuevos, `partidas`/`respuestas`, modo examen (20 al azar equilibradas, un intento, tiempo, registro de salidas de pestaña, nota oculta hasta publicarla) | Exámenes sin soluciones a la vista. |
-| **2. Directo** | Modo Kahoot: sala con código, proyector, móviles, marcador con apodos, podio | El primer juego en clase. |
+| **2. Directo** · *en `main` desde el 23 nov 2026; primer uso en clase (TDA I) el 24 nov* | Modo Kahoot: sala con código, proyector, móviles, marcador con apodos, podio | El primer juego en clase. |
 | **3. Rosco** | Pasapalabra con letras, tiempo y «pasapalabra»; respuesta corta con normalización | Primer juego individual con otro tipo de pregunta. |
 | **4. Escape room** | Salas con candados: cada candado se abre con un código que sale de resolver retos; pistas con penalización; por equipos | El más ambicioso: valida que el contrato de modos aguanta. |
 | **5. Gamificación** | Puntos, niveles, insignias, rachas, retos diarios, «mi progreso» por criterios para el alumno | Que vuelvan sin que se lo pidas. |
@@ -194,6 +198,14 @@ cola de reintentos sin internet, salidas de pestaña anotadas, nota oculta hasta
 opcionales, resultados con cronología de incidencias, estadísticas por pregunta, publicar notas, anular intento, exportar a Excel). Ensayada con móviles reales contra el
 proyecto de pruebas (`docs/ensayo-examen.md`, 15 escenarios). **Pendiente / ideas**: sumar al tiempo fuera el que pasa entre una salida y una recarga, un examen real
 subido desde el panel, y la fase 2 (directo).
+
+### Estado de la fase 2
+Hecho (en `main` el 23 nov 2026; SQL 09 en producción): salas con código de 6 cifras (`09_directo.sql`: tablas cerradas por RLS, 6 funciones del profesor y 3 del alumno), modo `directo` del
+alumno (`jugar.html?d` con **enlace fijo** o `?d=<sala>`; apodos generados por el servidor; una respuesta por pregunta; puntos de 1000 a 500 según la rapidez, medida por el servidor; recarga y cortes
+de internet tolerados), pantalla del profesor/proyector `directo.html` (misma sesión que el panel; teclado o botón; pantalla del móvil siempre encendida) y sondeo en vez de Realtime (ver 5.4).
+Pruebas: batería de navegador a 390 y 1280 px, SQL local con sabotajes, contrato falso↔SQL y **simulador de clase de 25 alumnos** contra el proyecto de pruebas (`10_alumnos_carga.sql`).
+Primer directo real con alumnos: TDA I, 24 nov 2026 (guía `docs/ensayo-directo.md`, hoja imprimible `docs/checklist-directo.pdf`). **Pendiente:** ajustes con lo que salga de esa clase; **resultados
+del directo en el panel** (puntos por alumno y por criterios, resultado normalizado de 5.3); borrar salas desde la interfaz; opcional: tipos `numerica` y `respuesta_corta` (mejor en el Rosco), QR de la sala.
 
 ## 9. Riesgos y cómo se cubren
 
