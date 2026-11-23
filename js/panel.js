@@ -260,8 +260,31 @@ import { crearExamenes } from './panel-examenes.js';
     const ids = [...new Set([...Object.keys(tests), ...intentos.map(i => i.test_id)])];
     return ids.filter(id => id.toUpperCase().startsWith(g.toUpperCase() + '-'));
   }
+  // Resumen de la semana (con lo que ya está cargado: no pide nada nuevo al servidor)
+  function resumenInicio() {
+    const desde = Date.now() - 7 * 86400000;
+    const activos = alumnos.filter(a => a.activo);
+    const ids = new Set(activos.map(a => a.id));
+    const sem = intentos.filter(i => ids.has(i.alumno) && i.terminado && new Date(i.terminado) >= desde);
+    const quien = new Set(sem.map(i => i.alumno));
+    const notas = sem.map(i => Number(i.nota)).filter(n => !isNaN(n));
+    return '<div class="resumen resumen-inicio" aria-label="Resumen de los últimos 7 días">' +
+      '<div class="regla"><span class="g">' + quien.size + '<small style="font-size:16px;color:var(--mut)">/' + activos.length + '</small></span><p>alumnos activos esta semana</p></div>' +
+      '<div class="regla"><span class="g">' + sem.length + '</span><p>intentos esta semana</p></div>' +
+      '<div class="regla"><span class="g">' + (notas.length ? fmtNotaTxt(media(notas)) : '—') + '</span><p>nota media de la semana</p></div>' +
+    '</div>';
+  }
+  // Las tres cosas que se hacen con Kiron: practicar, examinar y jugar en directo
+  function accesosInicio() {
+    return '<nav class="accesos" aria-label="Qué quieres hacer">' +
+      '<a class="acceso directo" href="directo.html"><span class="ico">▶</span><b>Directo</b><small>Abre una sala y juega en clase, con puntos y podio</small></a>' +
+      (EX ? '<button class="acceso examen" id="bAccExamen"><span class="ico">✎</span><b>Exámenes</b><small>Crea, asigna y publica notas</small></button>' : '') +
+      '<a class="acceso repaso" href="#tests-repaso" id="bAccRepaso"><span class="ico">↻</span><b>Tests de repaso</b><small>Resultados, enlaces y prueba de cada test</small></a>' +
+    '</nav><h2 class="subtit" id="tests-repaso">Por grupo</h2>';
+  }
   function pintarInicio() {
     let h = '<div class="inicio-cab"><h1>Hola 👋</h1><span class="espacio"></span>' + (EX ? '<button class="btn" id="bGestion">⚙ Gestionar exámenes</button>' : '') + '<button class="btn" id="bRecargar">↻ Actualizar</button></div>';
+    h += resumenInicio() + accesosInicio();
     h += grupos.map(g => {
       const als = alumnos.filter(a => a.grupo === g.id && a.activo);
       const ids = new Set(als.map(a => a.id));
@@ -292,6 +315,8 @@ import { crearExamenes } from './panel-examenes.js';
     }).join('');
     app.innerHTML = h;
     $('#bRecargar').onclick = arrancar;
+    if ($('#bAccExamen')) $('#bAccExamen').onclick = () => { f.vista = 'gestion'; pintar(); window.scrollTo({ top: 0 }); };
+    $('#bAccRepaso').onclick = e => { e.preventDefault(); $('#tests-repaso').scrollIntoView({ behavior: 'smooth' }); };
     if (EX) EX.enlazarInicio();
     app.querySelectorAll('[data-res]').forEach(b => b.onclick = () => {
       const [g, t] = b.dataset.res.split('|'); f.grupo = g; f.test = t; f.vista = 'alumnos'; pintar(); window.scrollTo({ top: 0 });

@@ -207,6 +207,13 @@ Pruebas: batería de navegador a 390 y 1280 px, SQL local con sabotajes, contrat
 Primer directo real con alumnos: TDA I, 24 nov 2026 (guía `docs/ensayo-directo.md`, hoja imprimible `docs/checklist-directo.pdf`). **Pendiente:** ajustes con lo que salga de esa clase; **resultados
 del directo en el panel** (puntos por alumno y por criterios, resultado normalizado de 5.3); borrar salas desde la interfaz; opcional: tipos `numerica` y `respuesta_corta` (mejor en el Rosco), QR de la sala.
 
+### Idea para después del primer directo: pantalla de inicio (anotada el 23 nov 2026)
+Hoy `panel.html` y `directo.html` son islas: no hay enlace de una a otra, y el profesor llega a `directo.html` escribiendo la dirección. Propuesta, **en rama aparte, con las pruebas en verde y el visto bueno del usuario antes de tocar `main`**:
+- **Profesor**: entrada común con tarjetas (Exámenes, Directo, Alumnos, Resultados). Es lo que más falta y lo primero que haría. Mínimo: un botón «Directo» en el panel y uno «Panel» en `directo.html`.
+- **Alumno**: NO tocar los enlaces que ya tiene (`jugar.html?t=…`, `?j=…`, `?d`, `test.html`; regla 4). Opcional: un `index.html` sencillo («Practicar» / «Entrar en una sala») como favorito único; el examen no va ahí, su enlace lo reparte el profesor.
+- **Nombre**: la función se llama **«Directo»** (en código y documentos) y el alumno oye **«sala»** («entra en la sala»). Se descarta «Kahoot» como nombre de cara al alumno. Alternativas barajadas: «Duelo de clase», «Reto en clase».
+- Revisar antes con el registro de incidencias del directo del 24 nov: puede cambiar lo que haga falta en esa pantalla.
+
 ## 9. Riesgos y cómo se cubren
 
 - **Abarcar demasiado a la vez** → la fase 0 primero, sin juegos nuevos hasta cerrarla.

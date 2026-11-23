@@ -201,3 +201,17 @@ section.gestion h2{font-family:Orbitron,sans-serif;font-size:15px;letter-spacing
 /* tablas de la gestión de exámenes: siempre visibles (también en móvil, con scroll si no caben) */
 .tabla-ex{overflow-x:auto;border:1px solid var(--borde);border-radius:var(--r)}
 .tabla-ex table.datos{min-width:480px}
+
+/* ---------- pantalla de inicio: accesos y resumen ---------- */
+.resumen-inicio{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.accesos{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.acceso{display:flex;flex-direction:column;gap:6px;text-align:left;text-decoration:none;color:var(--tinta);background:var(--panel);border:1px solid var(--borde);border-radius:16px;padding:16px 18px;border-left:5px solid var(--cian);cursor:pointer;font:inherit}
+.acceso:hover{background:var(--panel2,var(--panel));border-color:var(--tinta)}
+.acceso .ico{font-size:22px;line-height:1}
+.acceso b{font-family:Orbitron,sans-serif;font-size:17px;letter-spacing:.04em}
+.acceso small{color:var(--mut);font-size:14px;line-height:1.35}
+.acceso.directo{border-left-color:var(--naranja)}
+.acceso.examen{border-left-color:var(--morado)}
+.subtit{font-family:Orbitron,sans-serif;font-size:12px;letter-spacing:.14em;color:var(--mut);margin:8px 0 -4px;scroll-margin-top:70px}
+.top .nav-top{display:flex;gap:8px}
+.top .nav-top a.btn{padding:7px 12px;font-size:14px;text-decoration:none}

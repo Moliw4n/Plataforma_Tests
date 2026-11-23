@@ -98,6 +98,16 @@ test.describe('inicio: grupos y tests', () => {
     await expect(grupo(page, 'TDA I').locator('.tc-tit')).toContainText('Repaso U1 y U2');
     await sinDesborde(page);
   });
+  test('arriba: resumen de la semana y tres accesos (Directo, Exámenes, Tests de repaso)', async ({ page, servidor }) => {
+    await abrir(page, servidor);
+    await expect(page.locator('.resumen-inicio .regla')).toHaveCount(3);
+    await expect(page.locator('.resumen-inicio')).toContainText('alumnos activos esta semana');
+    await expect(page.locator('.accesos .acceso.directo')).toHaveAttribute('href', 'directo.html');
+    await expect(page.locator('#bAccRepaso')).toBeVisible();
+    await sinDesborde(page);
+    await page.click('#bAccRepaso');
+    await expect(page.locator('.grupo').first()).toBeVisible();
+  });
   test('«▶ Probar» abre el modo profe por el enlace antiguo test.html; «🔗 Enlace» es el de los alumnos', async ({ page, servidor }) => {
     await abrir(page, servidor);
     const probar = grupo(page, 'TDA II').locator('a.btn', { hasText: 'Probar' });
