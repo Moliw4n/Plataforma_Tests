@@ -12,7 +12,7 @@ const TIPOS = {
 
 // Solo se sirve lo que es WEB (como GitHub Pages): las páginas, css, js, img, fonts, tests y chuletas. Nada más (.git, node_modules,
 // pruebas, docs, supabase, archivos *.local.*…): este servidor puede escuchar en la WiFi y no debe enseñar el resto del proyecto.
-const PERMITIDO = /^\/(jugar\.html|panel\.html|test\.html|panel\.webmanifest|(css|js|img|fonts|tests|chuletas)\/[^?]+)$/;
+const PERMITIDO = /^\/(jugar\.html|panel\.html|directo\.html|test\.html|panel\.webmanifest|(css|js|img|fonts|tests|chuletas)\/[^?]+)$/;
 
 http.createServer((req, res) => {
   const ruta = decodeURIComponent(new URL(req.url, 'http://x').pathname);

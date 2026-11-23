@@ -17,9 +17,10 @@ const test = base.test.extend({
      servidor.guardados → cuerpos de guardar_intento · servidor.llamadas → nombres de funciones llamadas
      servidor.modoGuardar = 'ok' | 'error' → qué contesta guardar_intento
      servidor.panel = await crearServidorPanel() → atiende el login, las tablas y las funciones profe_* del panel del profesor
-     servidor.examen = await crearServidorFalso() → atiende mis_juegos, empezar_partida, responder, evento, terminar_partida y mi_resultado */
+     servidor.examen = await crearServidorFalso() → atiende mis_juegos, empezar_partida, responder, evento, terminar_partida y mi_resultado
+     servidor.directo = await crearServidorDirecto() → atiende directo_unirse, directo_estado y directo_responder (y deja mover la sala: avanzar()) */
   servidor: [async ({ page }, use) => {
-    const s = { guardados: [], llamadas: [], inesperadas: [], modoGuardar: 'ok', examen: null, panel: null };   // examen: servidor falso del examen (opcional)
+    const s = { guardados: [], llamadas: [], inesperadas: [], modoGuardar: 'ok', examen: null, panel: null, directo: null };   // examen: servidor falso del examen (opcional)
     await page.route('**/*', ruta => {
       const url = new URL(ruta.request().url());
       if (url.hostname === 'localhost') return ruta.continue();
@@ -54,6 +55,12 @@ const test = base.test.extend({
         if (s.examen.red === false) return ruta.abort();                 // corte de internet simulado
         const resp = s.examen.llamar(fn, args);
         return s.examen.latencia ? setTimeout(() => json(resp), s.examen.latencia) : json(resp);
+      }
+      // Funciones del directo: las atiende el servidor falso (pruebas/servidor-directo-falso.js) si el test lo ha puesto en s.directo
+      if (s.directo && ['directo_unirse', 'directo_estado', 'directo_responder'].includes(fn)) {
+        if (s.directo.red === false) return ruta.abort();
+        const resp = s.directo.llamar(fn, args);
+        return s.directo.latencia ? setTimeout(() => json(resp), s.directo.latencia) : json(resp);
       }
       s.inesperadas.push(url.href);
       return json({}, 404);

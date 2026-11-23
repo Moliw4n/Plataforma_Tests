@@ -3,6 +3,8 @@
      jugar.html?t=<id-del-test>   práctica: carga tests/<id>.json (test.html es un alias que reenvía aquí) · &modo=profe = sin código y sin guardar.
      jugar.html?j=<id-del-juego>  examen: pide el código y busca ese juego entre los asignados a su grupo (mis_juegos);
                                   el contenido NO está aquí: lo manda el servidor, sin soluciones. &modo=profe no vale: siempre hace falta código.
+     jugar.html?d=<sala>          directo (tipo Kahoot): pide el código y entra en la sala de 6 cifras que el profesor ha abierto.
+     jugar.html?d                 el mismo directo con ENLACE FIJO (sin código de sala): tras el código de alumno pide el de la sala, que es el que proyecta el profesor.
    Pide el código y entrega el control al MODO que corresponda. El contrato de los modos está en nucleo/modos.js. */
 import { rpc } from './nucleo/api.js';
 import { esc, tituloBonito } from './nucleo/util.js';
@@ -20,7 +22,8 @@ import { RENDERIZADORES } from './nucleo/preguntas/index.js';
   // Modo profesor (…&modo=profe): sin código y sin guardar nada.
   const PARAMS = new URLSearchParams(location.search);
   const JUEGO_ID = PARAMS.get('j');
-  const MODO_PROFE = !JUEGO_ID && PARAMS.get('modo') === 'profe';
+  const SALA = JUEGO_ID ? null : PARAMS.get('d');
+  const MODO_PROFE = !JUEGO_ID && SALA === null && PARAMS.get('modo') === 'profe';
   const E = $('#escena'), barra = $('#barra');
 
   let T = null;          // el contenido (test)
@@ -29,6 +32,7 @@ import { RENDERIZADORES } from './nucleo/preguntas/index.js';
 
   async function cargar() {
     if (JUEGO_ID) return cargarJuego();
+    if (SALA !== null) return cargarDirecto();
     const id = PARAMS.get('t') || window.TEST_POR_DEFECTO;
     try {
       if (window.TEST_EMBEBIDO) T = window.TEST_EMBEBIDO;
@@ -76,7 +80,7 @@ import { RENDERIZADORES } from './nucleo/preguntas/index.js';
   async function salir() {
     ctx.alumno = null;
     if (modo) await modo.terminar();
-    if (JUEGO_ID) accesoJuego('Has salido. Escribe tu código para volver a entrar.'); else acceso('Has salido. Escribe tu código para volver a entrar.');
+    if (JUEGO_ID) accesoJuego('Has salido. Escribe tu código para volver a entrar.'); else if (SALA !== null) accesoDirecto('Has salido. Escribe tu código para volver a entrar.'); else acceso('Has salido. Escribe tu código para volver a entrar.');
   }
 
   /* ---------- examen: jugar.html?j=<juego> ---------- */
@@ -111,6 +115,26 @@ import { RENDERIZADORES } from './nucleo/preguntas/index.js';
     document.title = juego.titulo + ' · Kiron';
     $('#marca').innerHTML = LOGO_KIRON + ' <span>· ' + esc(juego.titulo) + '</span>';
     ctx.juego = juego;
+    modo.iniciar(ctx);
+  }
+
+  /* ---------- directo: jugar.html?d=<sala> ---------- */
+  function cargarDirecto() {
+    document.title = 'Directo · Kiron';
+    $('#marca').innerHTML = LOGO_KIRON + ' <span>· Directo</span>';
+    ctx = { alumno: null, juego: null, sala: SALA || null, contenido: null, api: { rpc }, nucleo: { preguntas: RENDERIZADORES },
+            contenedor: E, chuleta: null, modoProfe: false, temaActual: () => null, salir };
+    if (!CFG) { E.innerHTML = '<div class="cargando">No hay conexión con el servidor. Avisa a tu profesor.</div>'; return; }
+    if (SALA !== '' && !/^[0-9]{6}$/.test(SALA)) { E.innerHTML = '<div class="cargando">El enlace de la sala no está bien. Pídele a tu profesor que te lo vuelva a pasar.</div>'; return; }
+    accesoDirecto();
+  }
+  function accesoDirecto(mensaje) {
+    $('#bot').hidden = true; $('#reloj').hidden = true; barra.innerHTML = ''; $('#contador').textContent = '';
+    mostrarAcceso({ contenedor: E, mensaje, sup: 'Directo', titulo: 'Entra en la sala', alEntrar: s => { ctx.alumno = s; abrirDirecto(); } });
+  }
+  async function abrirDirecto() {
+    try { modo = await cargarModo('directo'); }
+    catch (e) { console.error(e); E.innerHTML = '<div class="cargando">Este juego necesita algo que todavía no está disponible. Avisa a tu profesor.</div>'; return; }
     modo.iniciar(ctx);
   }
 
