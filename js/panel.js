@@ -4,6 +4,7 @@
      (localStorage). Nunca se envían a Supabase ni a ningún sitio. */
 import { aFormato2 } from './nucleo/formato.js';
 import { crearExamenes } from './panel-examenes.js';
+import { icono } from './nucleo/iconos.js';
 
 (function () {
   'use strict';
@@ -215,18 +216,18 @@ import { crearExamenes } from './panel-examenes.js';
     const pregs = estadisticasPreguntas();
     const peor = pregs[0];
 
-    let h = '<div class="migas"><button class="btn" id="bInicio">← Inicio</button>' +
-      (T ? '<a class="btn" href="test.html?t=' + encodeURIComponent(T.id) + '&modo=profe" target="_blank" rel="noopener">▶ Probar este test</a>' : '') + '</div>' +
+    let h = '<div class="migas"><button class="btn" id="bInicio">'+icono("volver")+' Inicio</button>' +
+      (T ? '<a class="btn" href="test.html?t=' + encodeURIComponent(T.id) + '&modo=profe" target="_blank" rel="noopener">'+icono("probar")+' Probar este test</a>' : '') + '</div>' +
       '<div class="filtros">' +
       '<div class="campo"><label for="sGrupo">GRUPO</label><select id="sGrupo">' + grupos.map(g => '<option value="' + esc(g.id) + '"' + (g.id === f.grupo ? ' selected' : '') + '>' + esc(g.nombre) + '</option>').join('') + '</select></div>' +
       '<div class="campo"><label for="sTest">TEST</label><select id="sTest">' + Object.keys(tests).concat([...new Set(intentos.map(i => i.test_id))].filter(id => !tests[id])).map(id => '<option value="' + esc(id) + '"' + (id === f.test ? ' selected' : '') + '>' + esc(tests[id] ? tests[id].titulo : id) + '</option>').join('') + '</select></div>' +
       '<span class="espacio"></span>' +
-      '<button class="btn" id="bRecargar">↻ Actualizar</button>' +
-      '<button class="btn pri" id="bExcel">⬇ Descargar para Excel</button>' +
+      '<button class="btn" id="bRecargar">'+icono("actualizar")+' Actualizar</button>' +
+      '<button class="btn pri" id="bExcel">'+icono("bajar")+' Descargar para Excel</button>' +
     '</div>';
 
     h += hayNombres
-      ? '<div class="nombres-ok">👤 Nombres cargados desde tu archivo (solo en este navegador). <button class="enlace" id="bCambiarCSV">Cambiar archivo</button> · <button class="enlace" id="bOlvidar">Olvidar nombres</button></div>'
+      ? '<div class="nombres-ok">'+icono("persona")+' Nombres cargados desde tu archivo (solo en este navegador). <button class="enlace" id="bCambiarCSV">Cambiar archivo</button> · <button class="enlace" id="bOlvidar">Olvidar nombres</button></div>'
       : '<div class="aviso-nombres">Ahora ves solo números. Para ver los nombres, elige tu archivo <b>TDA2_alumnos.csv</b> (carpeta Plataforma_Tests_privado). No se sube a ningún sitio. <button class="btn" id="bCSV">Elegir archivo…</button></div>';
     h += '<input type="file" id="iCSV" accept=".csv,text/csv" hidden>';
 
@@ -291,13 +292,13 @@ import { crearExamenes } from './panel-examenes.js';
   // Las tres cosas que se hacen con Kiron: practicar, examinar y jugar en directo
   function accesosInicio() {
     return '<nav class="accesos" aria-label="Qué quieres hacer">' +
-      '<a class="acceso directo" href="directo.html"><span class="ico">▶</span><b>Directo</b><small>Abre una sala y juega en clase, con puntos y podio</small></a>' +
-      (EX ? '<button class="acceso examen" id="bAccExamen"><span class="ico">✎</span><b>Exámenes</b><small>Crea, asigna y publica notas</small></button>' : '') +
-      '<a class="acceso repaso" href="#tests-repaso" id="bAccRepaso"><span class="ico">↻</span><b>Tests de repaso</b><small>Resultados, enlaces y prueba de cada test</small></a>' +
+      '<a class="acceso directo" href="directo.html"><span class="ico">'+icono("directo",22)+'</span><b>Directo</b><small>Abre una sala y juega en clase, con puntos y podio</small></a>' +
+      (EX ? '<button class="acceso examen" id="bAccExamen"><span class="ico">'+icono("examen",22)+'</span><b>Exámenes</b><small>Crea, asigna y publica notas</small></button>' : '') +
+      '<a class="acceso repaso" href="#tests-repaso" id="bAccRepaso"><span class="ico">'+icono("repaso",22)+'</span><b>Tests de repaso</b><small>Resultados, enlaces y prueba de cada test</small></a>' +
     '</nav><h2 class="subtit" id="tests-repaso">Por grupo</h2>';
   }
   function pintarInicio() {
-    let h = '<div class="inicio-cab"><h1>Hola 👋</h1><span class="espacio"></span>' + (EX ? '<button class="btn" id="bGestion">⚙ Gestionar exámenes</button>' : '') + '<button class="btn" id="bRecargar">↻ Actualizar</button></div>';
+    let h = '<div class="inicio-cab"><h1>Hola</h1><span class="espacio"></span>' + (EX ? '<button class="btn" id="bGestion">'+icono("ajustes")+' Gestionar exámenes</button>' : '') + '<button class="btn" id="bRecargar">'+icono("actualizar")+' Actualizar</button></div>';
     h += resumenInicio() + accesosInicio();
     h += grupos.map(g => {
       const als = alumnos.filter(a => a.grupo === g.id && a.activo);
@@ -320,8 +321,8 @@ import { crearExamenes } from './panel-examenes.js';
             '</div>' +
             '<div class="tc-acc">' +
               '<button class="btn pri" data-res="' + esc(g.id) + '|' + esc(id) + '">Ver resultados</button>' +
-              (T ? '<a class="btn" href="test.html?t=' + encodeURIComponent(id) + '&modo=profe" target="_blank" rel="noopener">▶ Probar</a>' : '') +
-              '<button class="btn" data-copiar="' + esc(enlaceAlumno(id)) + '">🔗 Enlace</button>' +
+              (T ? '<a class="btn" href="test.html?t=' + encodeURIComponent(id) + '&modo=profe" target="_blank" rel="noopener">'+icono("probar")+' Probar</a>' : '') +
+              '<button class="btn" data-copiar="' + esc(enlaceAlumno(id)) + '">'+icono("enlace")+' Enlace</button>' +
             '</div></div>';
         }).join('') : '<div class="vacio">Este grupo todavía no tiene tests.</div>') +
         (EX ? EX.tarjetas(g.id) : '') +
@@ -338,7 +339,7 @@ import { crearExamenes } from './panel-examenes.js';
     app.querySelectorAll('[data-copiar]').forEach(b => b.onclick = async () => {
       try { await navigator.clipboard.writeText(b.dataset.copiar); b.textContent = '✓ Copiado'; }
       catch (e) { prompt('Copia este enlace:', b.dataset.copiar); }
-      setTimeout(() => b.textContent = '🔗 Enlace', 2000);
+      setTimeout(() => b.innerHTML = icono('enlace') + ' Enlace', 2000);
     });
   }
 

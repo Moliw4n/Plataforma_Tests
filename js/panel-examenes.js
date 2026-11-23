@@ -4,6 +4,7 @@
    Habla con Supabase solo por las funciones profe_* (supabase/06, 07 y 08). P = lo que le presta panel.js. */
 import { aFormato2, validarBanco } from './nucleo/formato.js';
 import { NOMBRES_TIPO } from './nucleo/preguntas/comun.js';
+import { icono } from './nucleo/iconos.js';
 
 export function crearExamenes(P) {
   const { esc } = P;
@@ -70,7 +71,7 @@ export function crearExamenes(P) {
           '<div><span class="g">' + (j.reglas.tiempo_min || '—') + '<small> min</small></span><span class="dato-p">de tiempo</span></div>' +
           '<div><span class="estado-notas ' + (a.notas_publicadas ? 'pub' : '') + '">' + (a.notas_publicadas ? 'Notas publicadas' : 'Notas ocultas') + '</span></div></div>' +
         '<div class="tc-acc"><button class="btn pri" data-ex-res="' + a.id + '">Ver resultados</button>' +
-          '<button class="btn" data-ex-enlace="' + esc(enlaceExamen(a.juego)) + '">🔗 Enlace</button></div></div>';
+          '<button class="btn" data-ex-enlace="' + esc(enlaceExamen(a.juego)) + '">'+icono("enlace")+' Enlace</button></div></div>';
     }).join('') + '</div>';
   }
   function enlazarInicio() {
@@ -78,20 +79,20 @@ export function crearExamenes(P) {
     P.app.querySelectorAll('[data-ex-res]').forEach(b => b.onclick = () => { P.f.asignacion = +b.dataset.exRes; P.f.vista = 'examen'; tab = 'alumnos'; P.pintar(); window.scrollTo({ top: 0 }); });
     P.app.querySelectorAll('[data-ex-enlace]').forEach(b => b.onclick = async () => {
       try { await navigator.clipboard.writeText(b.dataset.exEnlace); b.textContent = '✓ Copiado'; } catch (e) { prompt('Copia este enlace:', b.dataset.exEnlace); }
-      setTimeout(() => b.textContent = '🔗 Enlace', 2000);
+      setTimeout(() => b.innerHTML = icono('enlace') + ' Enlace', 2000);
     });
   }
 
   /* ---------- gestión: bancos, crear examen, asignar ---------- */
   function pintarGestion() {
     const hoy = bancos.length > 0;
-    let h = '<div class="migas"><button class="btn" id="bInicio">← Inicio</button></div><h1 class="tit-ex">Exámenes</h1>';
+    let h = '<div class="migas"><button class="btn" id="bInicio">'+icono("volver")+' Inicio</button></div><h1 class="tit-ex">Exámenes</h1>';
     h += '<section class="gestion" id="secBancos"><h2>1 · Bancos de preguntas</h2>' +
       '<p class="dato-p">Un banco son las preguntas con sus soluciones. Elige el archivo <b>.json</b> en tu ordenador: solo se sube al servidor (no va al repositorio público).</p>' +
       (hoy ? '<div class="tabla-ex"><table class="datos"><thead><tr><th>Id</th><th>Título</th><th>Versión</th><th></th></tr></thead><tbody>' +
         bancos.map(b => '<tr><td class="num">' + esc(b.id) + '</td><td>' + esc(b.titulo) + '</td><td>' + b.version + '</td><td><button class="btn peligro" data-borrar-banco="' + esc(b.id) + '">Borrar</button></td></tr>').join('') +
         '</tbody></table></div>' : '<div class="vacio">Todavía no has subido ningún banco.</div>') +
-      '<div class="fila-acc"><button class="btn pri" id="bSubirBanco">⬆ Subir banco (.json)</button><input type="file" id="iBanco" accept=".json,application/json" hidden></div>' +
+      '<div class="fila-acc"><button class="btn pri" id="bSubirBanco">'+icono("subir")+' Subir banco (.json)</button><input type="file" id="iBanco" accept=".json,application/json" hidden></div>' +
       '<div class="msg-ex" id="msgBanco"></div></section>';
     h += '<section class="gestion" id="secJuego"><h2>2 · Crear un examen</h2>' + (hoy ?
       '<form id="fJuego" class="form-ex"><div class="rejilla-form">' +
@@ -118,7 +119,7 @@ export function crearExamenes(P) {
       '<div class="msg-ex" id="msgAsignar"></div>' +
       (asignaciones.length ? '<div class="tabla-ex"><table class="datos"><thead><tr><th>Examen</th><th>Grupo</th><th>Estado</th><th>Intentos</th><th>Notas</th><th></th></tr></thead><tbody>' +
         asignaciones.map(a => '<tr><td>' + esc(juegoDe(a.juego).titulo) + '</td><td>' + esc(a.grupo) + '</td><td>' + esc(ROTULO[ventana(a)]) + '</td><td>' + a.intentos + '</td><td>' + (a.notas_publicadas ? 'publicadas' : 'ocultas') +
-          '</td><td><button class="btn" data-ex-res="' + a.id + '">Resultados</button> <button class="btn" data-ex-enlace="' + esc(enlaceExamen(a.juego)) + '">🔗 Enlace</button></td></tr>').join('') + '</tbody></table></div>' : '') + '</section>';
+          '</td><td><button class="btn" data-ex-res="' + a.id + '">Resultados</button> <button class="btn" data-ex-enlace="' + esc(enlaceExamen(a.juego)) + '">'+icono("enlace")+' Enlace</button></td></tr>').join('') + '</tbody></table></div>' : '') + '</section>';
     P.app.innerHTML = h;
 
     $('#bInicio').onclick = () => { P.f.vista = 'inicio'; P.pintar(); };
@@ -213,10 +214,10 @@ export function crearExamenes(P) {
     const a = res.asignacion, fs = filas(), j = juegoDe(a.juego);
     const hechos = fs.filter(x => x.estado === 'entregada' || x.estado === 'caducada'), enCurso = fs.filter(x => x.estado === 'en_curso');
     const conSalidas = fs.filter(x => x.salidas > 0).length;
-    let h = '<div class="migas"><button class="btn" id="bInicio">← Inicio</button><button class="btn" id="bGestion2">⚙ Gestionar exámenes</button></div>' +
+    let h = '<div class="migas"><button class="btn" id="bInicio">'+icono("volver")+' Inicio</button><button class="btn" id="bGestion2">'+icono("ajustes")+' Gestionar exámenes</button></div>' +
       '<div class="filtros"><div class="campo"><label>EXAMEN</label><div class="valor-ex"><b>' + esc(a.titulo) + '</b> · ' + esc(a.grupo) + ' · ' + esc(ROTULO[ventana(a)]) + '</div></div>' +
-      '<span class="espacio"></span><button class="btn" id="bRecargarEx">↻ Actualizar</button><button class="btn pri" id="bExcelEx">⬇ Descargar para Excel</button></div>';
-    h += '<div class="banda-notas ' + (a.notas_publicadas ? 'pub' : '') + '"><span>' + (a.notas_publicadas ? '✓ Los alumnos YA ven su nota.' : '⚠ Los alumnos todavía NO ven su nota.') + '</span>' +
+      '<span class="espacio"></span><button class="btn" id="bRecargarEx">'+icono("actualizar")+' Actualizar</button><button class="btn pri" id="bExcelEx">'+icono("bajar")+' Descargar para Excel</button></div>';
+    h += '<div class="banda-notas ' + (a.notas_publicadas ? 'pub' : '') + '"><span>' + (a.notas_publicadas ? icono('ok') + ' Los alumnos YA ven su nota.' : icono('aviso') + ' Los alumnos todavía NO ven su nota.') + '</span>' +
       '<button class="btn ' + (a.notas_publicadas ? '' : 'pri') + '" id="bPublicar">' + (a.notas_publicadas ? 'Ocultar las notas' : 'Publicar las notas') + '</button></div>';
     h += '<div class="resumen">' +
       '<div class="regla"><span class="g">' + hechos.length + '<small style="font-size:16px;color:var(--mut)">/' + fs.length + '</small></span><p>han entregado</p></div>' +

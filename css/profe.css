@@ -1,0 +1,234 @@
+/* Kiron del PROFESOR dentro del universo Kronos (panel.html y directo.html).
+   Se carga la última y solo la usan esas dos páginas: el alumno (jugar.html) sigue con css/estilo.css en oscuro.
+   Valores copiados de Kronos (src/css/main.css) con tres correcciones deliberadas:
+     · un solo naranja (#ff9500, marca y acentos: nunca texto ni relleno de botón, porque no llega a 4,5:1);
+     · los botones primarios van en azul #4a6fc9 con texto blanco;
+     · el texto pequeño usa tonos oscuros (#b45f00, #1a8754…) sobre fondos tintados. */
+
+/* ============ 1 · TOKENS ============ */
+:root{
+  /* color (Kronos) */
+  --color-bg:#f0f2f5; --color-surface:#fff; --color-border:#e8e8e8; --color-border-mid:#d0d0d0;
+  --color-primary:#2c4a8f; --color-primary-l:#4a6fc9; --color-primary-xl:#eef2ff;
+  --color-accent:#ff9500; --color-accent-txt:#a35500;
+  --color-text:#1a2744; --color-text-mid:#555e70; --color-text-soft:#57626f; --color-text-mute:#64707f;
+  --color-ok:#2dc653; --color-ok-txt:#1a8754; --color-warn:#f77f00; --color-warn-txt:#946000; --color-danger:#e94560; --color-danger-txt:#c0344f;
+  --color-violeta:#8a5cd0; --color-teal:#1f9bb8;
+  --color-sidebar:#1e2a3a; --color-navy:#0e1820; --color-navy-2:#1b2b3a;
+  /* forma */
+  --radius-sm:4px; --radius-md:8px; --radius-lg:12px; --radius-xl:14px;
+  --sombra-tarjeta:0 1px 3px rgba(26,39,68,.07),0 1px 2px rgba(26,39,68,.04);
+  --sombra-hover:0 4px 16px rgba(0,0,0,.10),0 1px 4px rgba(0,0,0,.06);
+  --sombra-modal:0 20px 60px rgba(0,0,0,.3);
+  --foco:0 0 0 3px rgba(74,111,201,.25);
+  --t:.15s; --topbar-h:54px; --lateral:72px; --lateral-abierta:200px; --alto-nav:60px;
+
+  /* alias: lo que ya usan estilo.css, panel.css y directo.css (así todo se repinta sin tocar sus reglas) */
+  --fondo:var(--color-bg); --panel:var(--color-surface); --panel2:var(--color-primary-xl); --borde:var(--color-border);
+  --tinta:var(--color-text); --mut:var(--color-text-soft);
+  --naranja:var(--color-accent-txt); --cian:var(--color-primary); --verde:var(--color-ok-txt); --rojo:var(--color-danger-txt);
+  --ambar:var(--color-warn-txt); --morado:var(--color-violeta);
+  --oscuro:#fff;                      /* «texto sobre color vivo» y fondo de la cabecera */
+  --r:var(--radius-lg); --alto-top:var(--topbar-h);
+}
+html,body{-webkit-font-smoothing:antialiased}
+body.kronos{font-size:15px;--lat:var(--lateral);padding-left:var(--lat);transition:padding-left .22s cubic-bezier(.4,0,.2,1)}
+body.kronos:has(.lateral:hover),body.kronos:has(.lateral:focus-within){--lat:var(--lateral-abierta)}
+body.kronos:has(#usuario[hidden]){padding-left:0}
+body.kronos:has(#usuario[hidden]) .lateral{display:none}
+.num,.g,.tit-ex,.pct,.nota,.codigo-sala,.tiempo-grande{font-variant-numeric:tabular-nums}
+
+/* ============ 2 · ESQUELETO ============ */
+/* barra lateral (como la de Kronos: 72 → 200 px al pasar el ratón; la K y «IRON» al desplegarse) */
+.lateral{position:fixed;left:0;top:0;bottom:0;width:var(--lateral);z-index:100;background:var(--color-sidebar);display:flex;flex-direction:column;padding:0 0 12px;overflow:hidden;transition:width .22s cubic-bezier(.4,0,.2,1)}
+.lateral:hover,.lateral:focus-within{width:var(--lateral-abierta)}
+.lateral a{display:flex;align-items:center;gap:14px;height:42px;margin:2px 10px;padding:0 16px;border-radius:10px;color:#b8c4d8;text-decoration:none;font-weight:700;font-size:12.5px;letter-spacing:.2px;white-space:nowrap;transition:background var(--t),color var(--t)}
+.lateral a svg{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.lateral a span{opacity:0;transition:opacity .18s}
+.lateral:hover a span,.lateral:focus-within a span{opacity:1}
+.lateral a:hover,.lateral a:focus-visible{background:rgba(255,255,255,.08);color:#fff;outline:none}
+.lateral a.on{background:rgba(255,149,0,.14);color:var(--color-accent);box-shadow:inset 3px 0 0 var(--color-accent)}
+.lateral a.lat-logo{height:var(--topbar-h);margin:0 0 8px;padding:0 0 0 20px;border-radius:0;border-bottom:1px solid rgba(255,255,255,.08);background:none;box-shadow:none}
+.lat-logo span{display:block;width:32px;overflow:hidden;opacity:1!important;transition:width .22s cubic-bezier(.4,0,.2,1)}
+.lateral:hover .lat-logo span,.lateral:focus-within .lat-logo span{width:93px}
+.lateral a.lat-logo svg{display:block;height:30px;width:93px;max-width:none;stroke:none}
+.lateral .lat-pie{margin-top:auto;border-top:1px solid rgba(255,255,255,.09);padding-top:8px}
+
+/* cabecera: el título de la vista en Orbitron, como `.hor-title` de Kronos */
+.top{height:var(--topbar-h);padding:0 20px;background:#fff;border-bottom:1px solid var(--color-border);box-shadow:none}
+.top .marca{font-family:Orbitron,sans-serif;font-weight:600;font-size:20px;letter-spacing:1px;color:var(--color-text);text-transform:none}
+.top .marca span{color:var(--color-text);font-weight:600}
+.top .marca .logo-kiron{display:none}
+.usuario{font-size:12px;color:var(--color-text-soft);gap:10px}
+.usuario .btn{padding:5px 12px;font-size:11px}
+.panel{max-width:1400px;padding:24px 28px 60px;gap:20px}
+
+/* ============ 3 · COMPONENTES ============ */
+/* botones */
+.btn{background:#fff;border:1.5px solid var(--color-border-mid);border-radius:var(--radius-md);padding:8px 16px;font-size:13px;font-weight:700;color:var(--color-text);gap:8px;transition:background var(--t),border-color var(--t),color var(--t),box-shadow var(--t)}
+.btn:hover{border-color:var(--color-primary-l);background:var(--color-primary-xl);color:var(--color-primary)}
+.btn:focus-visible,.acceso:focus-visible,.lateral a:focus-visible{outline:none;box-shadow:var(--foco)}
+.btn.pri{background:var(--color-primary-l);border-color:var(--color-primary-l);color:#fff;font-family:Raleway,sans-serif;font-size:13px;letter-spacing:.2px;font-weight:800}
+.btn.pri:hover{background:#3d5fb4;border-color:#3d5fb4;color:#fff}
+a.btn,a.btn:hover{text-decoration:none}
+a.btn.pri,a.btn.pri:hover{color:#fff}
+.btn.peligro{background:#fff;border-color:var(--color-danger);color:var(--color-danger-txt)}
+.btn.peligro:hover{background:#fff0f0;color:var(--color-danger-txt)}
+.dialogo .btn.peligro{background:var(--color-danger-txt);border-color:var(--color-danger-txt);color:#fff}
+.btn.grande{font-size:clamp(15px,2vw,20px);padding:14px 30px;border-radius:var(--radius-lg)}
+.btn[disabled]{opacity:.45}
+.btn .ico,.acceso .ico{flex:none;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.enlace{color:var(--color-primary-l)}
+
+/* tarjetas (una sola receta) */
+.regla,.test-card,.examen-card,.caja-directo,section.gestion,.pfila,.intento,.acceso,.puesto,.al-card,.dialogo{background:var(--color-surface);border:1.5px solid var(--color-border);border-radius:var(--radius-xl);box-shadow:var(--sombra-tarjeta)}
+.regla .g,.tc-datos .g{font-family:Orbitron,sans-serif;font-weight:800;color:var(--color-primary);letter-spacing:.5px}
+.regla p,.dato-p{color:var(--color-text-soft)}
+.test-card{padding:18px 20px;gap:14px;transition:box-shadow .25s,transform .18s}
+.test-card:hover{box-shadow:var(--sombra-hover)}
+.tc-tit b{font-size:17px;font-weight:700}
+.grupo-cab{border-bottom:2px solid var(--color-accent)}
+.grupo-cab h2{color:var(--color-accent-txt);font-size:18px;font-weight:600;letter-spacing:.5px}
+.examen-card{border-left:5px solid var(--color-violeta)}
+.examenes-grupo h3{color:var(--color-violeta);font-size:11px;letter-spacing:.12em}
+.subtit{font-family:Raleway,sans-serif;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--color-text-soft)}
+
+/* accesos de la pantalla de inicio */
+.acceso{border-left-width:5px;padding:16px 18px;transition:box-shadow .25s,transform .18s}
+.acceso:hover{transform:translateY(-3px);box-shadow:var(--sombra-hover);background:var(--color-surface);border-color:var(--color-border)}
+.acceso .ico{width:22px;height:22px;color:var(--color-primary-l)}
+.acceso b{font-family:Orbitron,sans-serif;font-weight:600;font-size:15px;letter-spacing:.5px;color:var(--color-text)}
+.acceso.directo{border-left-color:var(--color-accent)}.acceso.directo .ico{color:var(--color-accent-txt)}
+.acceso.examen{border-left-color:var(--color-violeta)}.acceso.examen .ico{color:var(--color-violeta)}
+.acceso.repaso{border-left-color:var(--color-primary-l)}
+
+/* chips con tinte (receta de Kronos: 15 % del color sobre blanco; texto más oscuro) */
+.tipo{border:0;color:var(--color-text);background:color-mix(in srgb,var(--c-chip,var(--color-primary-l)) 16%,#fff);font-family:Raleway,sans-serif;font-weight:800;font-size:11px;letter-spacing:.06em;border-radius:99px;padding:5px 12px}
+.t-imprime,.t-verdadero_falso{--c-chip:#2c6fd6}.t-error{--c-chip:var(--color-danger)}.t-hueco,.t-numerica{--c-chip:var(--color-warn)}.t-programa,.t-respuesta_corta{--c-chip:var(--color-ok)}.t-opcion_multiple{--c-chip:var(--color-violeta)}
+.estado-notas{background:#fff8e6;color:#7a5500;border:1px solid #f0d08a;font-weight:700}
+.estado-notas.pub{background:#e6f9f0;color:#166534;border-color:#9bdcb6}
+.chip-sala{background:#fff;border-color:var(--color-accent);color:var(--color-accent-txt);letter-spacing:.06em}
+.chip-jug{background:color-mix(in srgb,var(--color-primary-l) 10%,#fff);border-color:color-mix(in srgb,var(--color-primary-l) 45%,#fff);color:var(--color-primary)}
+.salidas{background:#fff8e6;color:#7a5500}
+.estado-ex.e-entregada{color:var(--color-ok-txt)}.estado-ex.e-en_curso{color:var(--color-primary-l)}.estado-ex.e-caducada{color:var(--color-warn-txt)}
+
+/* formularios (receta .form-input / .form-label de Kronos) */
+.campo label,.bancos-sala legend{font-family:Raleway,sans-serif;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-soft)}
+.campo input,.campo select,.filtros select,.caja-codigo input{background:#fff;border:1.5px solid var(--color-border-mid);border-radius:var(--radius-md);color:var(--color-text);font-size:14px;padding:10px 12px;transition:border-color var(--t),box-shadow var(--t)}
+.campo input:focus,.campo select:focus,.filtros select:focus{border-color:var(--color-primary-l);box-shadow:var(--foco);outline:none}
+.check input,.checks input{accent-color:var(--color-primary-l)}
+.msg-error{color:var(--color-danger-txt)}
+
+/* barras (una receta para todas) */
+.medidor,.barra-fallo,.reparto .b,.reparto .barrita,.barra-tiempo{background:#e8ebf2;border-radius:99px}
+.medidor i{background:var(--color-ok)}
+.barra-tiempo i{background:var(--color-primary-l)}
+.barra-fallo{background:rgba(45,198,83,.25)}.barra-fallo i{background:var(--color-danger)}
+.reparto .b i,.reparto .barrita i{background:var(--color-text-mute)}
+.reparto .ok .b i,.reparto .ok .barrita i{background:var(--color-ok)}
+
+/* tablas como el cuaderno: cabecera blanca con línea de 2 px, zebra y hover suave */
+.tabla-wrap,.tabla-ex{background:#fff;border:1.5px solid var(--color-border);border-radius:var(--radius-xl);box-shadow:var(--sombra-tarjeta)}
+table.datos{font-size:13px}
+table.datos th{background:#fff;color:var(--color-text-soft);border-bottom:2px solid var(--color-border);font-family:Raleway,sans-serif;font-size:10.5px;font-weight:800;letter-spacing:.08em}
+table.datos th.orden{color:var(--color-primary)}
+table.datos th.orden::after{color:var(--color-accent-txt)}
+table.datos td{border-top:1px solid #eaecf0}
+table.datos tbody tr:nth-child(even){background:rgba(0,0,20,.025)}
+table.datos tbody tr:hover{background:#f0f4ff}
+.num{font-family:Orbitron,sans-serif;font-weight:600;color:var(--color-text-soft)}
+/* notas: sin fondo de semáforo (el valor lleva el color), y rojo suave solo si suspende, como en Kronos */
+.nota{background:transparent!important;color:var(--color-text);min-width:34px;padding:3px 8px;border-radius:5px;font-size:13px;font-family:Orbitron,sans-serif;font-weight:600}
+.n-sb{color:var(--color-ok-txt)}.n-nt{color:var(--color-primary)}.n-ap{color:var(--color-warn-txt)}
+.n-ss{background:#fde8e8!important;color:#c0392b}
+.estado i{background:var(--color-ok)}
+
+/* pestañas con barra de color arriba (receta .ev-tabs) */
+.tabs{border-bottom:1px solid var(--color-border);gap:4px}
+.tabs button{font-family:Raleway,sans-serif;font-size:11.5px;font-weight:800;letter-spacing:.08em;color:var(--color-text-soft);border-bottom:0;border-top:3px solid transparent;border-radius:6px 6px 0 0;padding:10px 18px}
+.tabs button:hover{background:var(--color-primary-xl)}
+.tabs button.on{color:var(--color-primary);border-top-color:var(--color-primary-l);background:color-mix(in srgb,var(--color-primary-l) 7%,#fff)}
+
+/* modales: cabecera navy, sombra y entrada como `.cal-modal` de Kronos */
+.capa{background:rgba(14,24,32,.45)}
+.chuleta{background:var(--color-bg);border-left:0;box-shadow:var(--sombra-modal)}
+.chuleta .cab{background:var(--color-navy);border-bottom:0}
+.chuleta .cab h2{color:#fff;font-family:Raleway,sans-serif;font-size:15px;font-weight:700;letter-spacing:.02em}
+.chuleta .cerrar{background:rgba(255,255,255,.12);border:0;color:#fff;opacity:.8}.chuleta .cerrar:hover{opacity:1;background:rgba(255,255,255,.2)}
+.dialogo-fondo{background:rgba(14,24,32,.45)}
+.dialogo{box-shadow:var(--sombra-modal);animation:ctx-in .12s ease}
+@keyframes ctx-in{from{opacity:0;transform:scale(.95) translateY(-4px)}to{opacity:1;transform:none}}
+
+/* estados vacíos y bandas de aviso (colores de las bandas de Kronos) */
+.vacio{background:transparent;border:2px dashed var(--color-border-mid);color:var(--color-text-mute);border-radius:var(--radius-xl);font-size:13px}
+.aviso-nombres{background:#fff8e6;border:1px solid #f0d08a;color:#7a5500;border-radius:var(--radius-lg)}
+.aviso-examen{background:#fff8e6;border:1px solid #f0d08a;color:#7a5500}
+.aviso-examen.rojo{background:#fee2e2;border-color:#fca5a5;color:#7f1d1d}
+.msg-ex.bien{background:#e6f9f0;color:#166534;border-color:#9bdcb6}
+.msg-ex.mal{background:#fee2e2;color:#7f1d1d;border-color:#fca5a5}
+.banda-notas{background:#fff8e6;color:#7a5500;border-color:#f0d08a}
+.banda-notas.pub{background:#e6f9f0;color:#166534;border-color:#9bdcb6}
+
+/* ============ 4 · PANTALLAS ============ */
+.inicio-cab h1,.tit-ex{font-family:Orbitron,sans-serif;font-weight:600;font-size:22px;letter-spacing:1px}
+.resumen-inicio .regla{padding:16px 18px}
+.resumen-inicio .regla .g{font-size:28px}
+.login{background:#fff;border:1.5px solid var(--color-border);border-radius:var(--radius-xl);box-shadow:var(--sombra-modal);padding:28px 26px;margin-top:8vh}
+.login h1{font-weight:600;font-size:24px;letter-spacing:1px}
+.login h1 span{color:var(--color-accent-txt)}
+
+/* preguntas y detalle */
+.pfila .idp{font-weight:600}
+.trampa-mas{background:#fff0f0;border-left-color:var(--color-danger)}
+.trampa-mas b{color:var(--color-danger-txt)}
+.trampa-mas code{color:#7f1d1d}
+.pct{font-weight:800}
+.codigo{background:var(--color-navy-2);border-color:var(--color-navy-2);border-left-color:var(--color-accent);color:#e9eefb}
+.mapa button{color:var(--color-text);border:2px solid transparent}
+.mapa button.ok{background:#d4edda;color:#155724}
+.mapa button.mal{background:#fde8e8;color:#c0392b}
+.mapa button.blanco{background:#eef0f4;color:var(--color-text-mute)}
+.mapa button.lento{outline:3px solid var(--color-warn);outline-offset:-3px}
+.mapa button:hover,.mapa button.on{border-color:var(--color-primary-l)}
+.ver-p{background:#f7f8fb;border-color:var(--color-border)}
+.ver-p .op-mini.ok{background:#e6f9f0}.ver-p .op-mini.elegida.mal{background:#fee2e2}
+.intento .cab-i .fecha{font-weight:700}
+.linea-eventos li{color:var(--color-text-mid)}
+
+/* directo (claro, como el resto): código y enunciado grandes en Orbitron azul/oscuro */
+main.directo{padding-bottom:110px}
+.codigo-sala{color:var(--color-primary);font-weight:800}
+.espera-directo .sup,.final-directo .sup,.meta-q{color:var(--color-accent-txt);font-weight:700}
+.enlace-sala,.enlace-chico{color:var(--color-primary-l)}
+.enun-directo{color:var(--color-text)}
+.tiempo-grande{color:var(--color-primary)}.tiempo-grande.ultimos{color:var(--color-danger-txt)}
+.op-d{color:var(--color-text);box-shadow:var(--sombra-tarjeta)}
+.op-d .l{background:rgba(26,39,68,.18);color:#fff}
+.op-d.correcta{outline:5px solid var(--color-text);outline-offset:-2px;box-shadow:none}
+.controles-directo{background:#fff;border-top:1px solid var(--color-border);left:var(--lat);transition:left .22s cubic-bezier(.4,0,.2,1)}
+.puesto{padding:18px 24px}
+.puesto b{color:var(--color-text)}
+.puesto .pt{color:var(--color-accent-txt)}
+.puesto-1{border-color:#e0a020;background:linear-gradient(#fffaf0,#fff)}
+.puesto-2{border-color:#a8b3c4}.puesto-3{border-color:#cc8f4a}
+.marcador li{background:#fff;border:1px solid var(--color-border)}
+.caja.porque{background:#e6f9f0;border-left-color:var(--color-ok)}
+.caja.trampa{background:#fff0f0;border-left-color:var(--color-danger)}
+
+/* ============ 5 · MÓVIL: la barra pasa abajo (punto de corte 700 px, el de siempre) ============ */
+@media (max-width:700px){
+  body.kronos{padding-left:0;padding-bottom:calc(var(--alto-nav) + env(safe-area-inset-bottom))}
+  .lateral,.lateral:hover,.lateral:focus-within{top:auto;width:100%;height:calc(var(--alto-nav) + env(safe-area-inset-bottom));flex-direction:row;justify-content:space-around;padding:0 0 env(safe-area-inset-bottom);box-shadow:0 -2px 12px rgba(15,24,48,.2)}
+  .lateral a{flex-direction:column;justify-content:center;gap:3px;flex:1;height:100%;margin:0;padding:0 4px;border-radius:0;font-size:11px}
+  .lateral a span{opacity:1}
+  .lateral a.on{box-shadow:inset 0 3px 0 var(--color-accent)}
+  .lateral a.lat-logo,.lateral .lat-pie{display:none}
+  .top{padding:0 14px}
+  .top .marca{font-size:16px}
+  .top .marca .logo-kiron{display:block;height:22px;width:auto;aspect-ratio:226/73}
+  .top .marca span{display:none}
+  .controles-directo{left:0;bottom:calc(var(--alto-nav) + env(safe-area-inset-bottom))}
+  .panel{padding:16px 12px 40px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.banda-notas .ico,.estado-ex .ico{vertical-align:-3px;margin-right:4px}
