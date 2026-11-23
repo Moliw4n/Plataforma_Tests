@@ -228,6 +228,26 @@ test.describe('la sala en marcha', () => {
   });
 });
 
+test.describe('la pantalla del móvil no se apaga', () => {
+  test('al abrir una sala pide que la pantalla siga encendida, y al volver al inicio la suelta', async ({ page, servidor }) => {
+    await page.addInitScript(() => {
+      window.__wl = { pedidas: 0, soltadas: 0 };
+      Object.defineProperty(navigator, 'wakeLock', { value: { request: async () => { window.__wl.pedidas++; return { release() { window.__wl.soltadas++; }, addEventListener() {} }; } } });
+    });
+    const D = await conSala(page, servidor);
+    await expect.poll(() => page.evaluate(() => window.__wl.pedidas)).toBe(1);
+    D.estado = 'terminada';
+    await page.click('#bNueva');
+    await expect(page.locator('#fSala')).toBeVisible();
+    expect(await page.evaluate(() => window.__wl.soltadas)).toBeGreaterThanOrEqual(1);
+  });
+  test('si el navegador no tiene esa función, todo sigue igual (no da error)', async ({ page, servidor }) => {
+    await page.addInitScript(() => { Object.defineProperty(navigator, 'wakeLock', { value: undefined }); });
+    await conSala(page, servidor);
+    await expect(page.locator('#codigoSala')).toBeVisible();
+  });
+});
+
 test.describe('salas abiertas y cerrar', () => {
   test('recargar la página en medio de una sala vuelve a ella (sin pedir otra vez la contraseña)', async ({ page, servidor }) => {
     const D = await conSala(page, servidor); jugador(D);

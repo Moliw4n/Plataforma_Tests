@@ -44,7 +44,13 @@ import { crearSesionProfe } from './nucleo/sesion-profe.js';
     const guardada = recuerda.get();
     if (guardada) abrirSala(guardada, true); else inicio();
   }
+  // Mientras se lleva una sala la pantalla no debe apagarse (sobre todo si se maneja desde el móvil)
+  let pantallaViva = null;
+  async function mantenerPantalla() { try { if ('wakeLock' in navigator && !pantallaViva) { pantallaViva = await navigator.wakeLock.request('screen'); pantallaViva.addEventListener('release', () => { pantallaViva = null; }); } } catch (e) { pantallaViva = null; } }
+  function soltarPantalla() { try { if (pantallaViva) pantallaViva.release(); } catch (e) {} pantallaViva = null; }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && sala) mantenerPantalla(); });     // el navegador la suelta al ocultar la pestaña: se vuelve a pedir
   function parar() {
+    soltarPantalla();
     token++; clearTimeout(sondeoId); clearInterval(relojId); clave = ''; est = null; sinRed = false;
     document.removeEventListener('keydown', teclas);
   }
@@ -131,6 +137,7 @@ import { crearSesionProfe } from './nucleo/sesion-profe.js';
     $('#bPantalla').hidden = !document.documentElement.requestFullscreen;
     app.innerHTML = '<div class="cargando">Abriendo la sala…</div>';
     document.addEventListener('keydown', teclas);
+    mantenerPantalla();
     sondear(++token, alRecargar);
   }
   async function sondear(mio, primera = false) {
