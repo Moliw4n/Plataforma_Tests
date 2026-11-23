@@ -1,7 +1,8 @@
 /* Kiron del PROFESOR dentro del universo Kronos (panel.html y directo.html).
    Se carga la última y solo la usan esas dos páginas: el alumno (jugar.html) sigue con css/estilo.css en oscuro.
    Valores copiados de Kronos (src/css/main.css) con tres correcciones deliberadas:
-     · un solo naranja (#ff9500, marca y acentos: nunca texto ni relleno de botón, porque no llega a 4,5:1);
+     · un solo color de acento: el turquesa de Kiron (#2ed3c0, el de la K del logo), en bordes, ítem activo y detalles; el texto de ese
+       color usa un turquesa oscuro (#0b7a6e) porque el vivo no llega a 4,5:1 sobre blanco (da 1,9);
      · los botones primarios van en azul #4a6fc9 con texto blanco;
      · el texto pequeño usa tonos oscuros (#b45f00, #1a8754…) sobre fondos tintados. */
 
@@ -10,7 +11,7 @@
   /* color (Kronos) */
   --color-bg:#f0f2f5; --color-surface:#fff; --color-border:#e8e8e8; --color-border-mid:#d0d0d0;
   --color-primary:#2c4a8f; --color-primary-l:#4a6fc9; --color-primary-xl:#eef2ff;
-  --color-accent:#ff9500; --color-accent-txt:#a35500;
+  --color-accent:#2ed3c0; --color-accent-txt:#0b7a6e;
   --color-text:#1a2744; --color-text-mid:#555e70; --color-text-soft:#57626f; --color-text-mute:#64707f;
   --color-ok:#2dc653; --color-ok-txt:#1a8754; --color-warn:#f77f00; --color-warn-txt:#946000; --color-danger:#e94560; --color-danger-txt:#c0344f;
   --color-violeta:#8a5cd0; --color-teal:#1f9bb8;
@@ -47,7 +48,7 @@ body.kronos:has(#usuario[hidden]) .lateral{display:none}
 .lateral a span{opacity:0;transition:opacity .18s}
 .lateral:hover a span,.lateral:focus-within a span{opacity:1}
 .lateral a:hover,.lateral a:focus-visible{background:rgba(255,255,255,.08);color:#fff;outline:none}
-.lateral a.on{background:rgba(255,149,0,.14);color:var(--color-accent);box-shadow:inset 3px 0 0 var(--color-accent)}
+.lateral a.on{background:rgba(46,211,192,.14);color:var(--color-accent);box-shadow:inset 3px 0 0 var(--color-accent)}
 .lateral a.lat-logo{height:var(--topbar-h);margin:0 0 8px;padding:0 0 0 20px;border-radius:0;border-bottom:1px solid rgba(255,255,255,.08);background:none;box-shadow:none}
 .lat-logo span{display:block;width:32px;overflow:hidden;opacity:1!important;transition:width .22s cubic-bezier(.4,0,.2,1)}
 .lateral:hover .lat-logo span,.lateral:focus-within .lat-logo span{width:93px}
