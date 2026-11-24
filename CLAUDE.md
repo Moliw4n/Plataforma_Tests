@@ -107,6 +107,7 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
   (`js/panel-directo.js`, vista `directo`): tarjetas «Directos» en el inicio de cada grupo, clasificación (puntos, aciertos, tiempo medio, sin contestar, quién no entró),
   detalle por alumno, preguntas (la más fallada primero, respuesta equivocada más elegida, reparto), criterios, descarga para Excel y «Borrar sala» (`profe_directo_borrar`).
   **No necesita SQL nuevo**: lee por REST `directo_sesiones|participantes|respuestas` e `items` (el profesor tiene SELECT). Pruebas: `pruebas/panel-directo.spec.js`.
+  «Ver quién es quién» enseña el **nombre** que el profesor cargó en el panel (`localStorage` `pt_nombres`, solo en ese navegador) más el número; sin nombres, el número.
   Pendiente: ajustar con lo que se anote en clase.
 - Modo profe en móvil: cabecera ajustada a 390 y 360 px (CHULETA solo icono en ≤ 430 px); la cubre `pruebas/alumno.spec.js`.
 
