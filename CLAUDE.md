@@ -103,8 +103,11 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
   fuera entre la salida y la recarga no se suma (la cronología sí lo deja ver).
 - **Lenguaje**: «sala» y «apodo» en el directo; «intento» y «examen» en el examen; nunca «partida» ni «jugar».
 - **Primer directo en clase**: TDA I, 24 nov 2026, en producción (alumnos en los ordenadores del aula, el profesor desde el móvil). Guía en `docs/ensayo-directo.md` y hoja imprimible
-  `docs/checklist-directo.pdf` (guion por fases, qué mirar, registro de incidencias). Pendiente: ajustar con lo que se anote, **ver los resultados del directo en el panel** (puntos por alumno y por
-  criterios) y el borrado de salas desde la interfaz.
+  `docs/checklist-directo.pdf` (guion por fases, qué mirar, registro de incidencias). Hecho el 24 nov 2026 (rama `directo-resultados`): **resultados del directo en el panel**
+  (`js/panel-directo.js`, vista `directo`): tarjetas «Directos» en el inicio de cada grupo, clasificación (puntos, aciertos, tiempo medio, sin contestar, quién no entró),
+  detalle por alumno, preguntas (la más fallada primero, respuesta equivocada más elegida, reparto), criterios, descarga para Excel y «Borrar sala» (`profe_directo_borrar`).
+  **No necesita SQL nuevo**: lee por REST `directo_sesiones|participantes|respuestas` e `items` (el profesor tiene SELECT). Pruebas: `pruebas/panel-directo.spec.js`.
+  Pendiente: ajustar con lo que se anote en clase.
 - Modo profe en móvil: cabecera ajustada a 390 y 360 px (CHULETA solo icono en ≤ 430 px); la cubre `pruebas/alumno.spec.js`.
 
 ## Reglas que no se negocian

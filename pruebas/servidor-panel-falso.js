@@ -15,13 +15,15 @@ async function crearServidorPanel(datos = {}) {
     grupos: datos.grupos || [{ id: 'TDA2', nombre: 'TDA II' }, { id: 'TDA1', nombre: 'TDA I' }],
     alumnos: datos.alumnos || [{ id: 'TDA2-01', grupo: 'TDA2', activo: true }, { id: 'TDA2-02', grupo: 'TDA2', activo: true }, { id: 'TDA2-03', grupo: 'TDA2', activo: true }, { id: 'TDA1-01', grupo: 'TDA1', activo: true }],
     intentos: datos.intentos || [], bancos: datos.bancos || [], juegos: datos.juegos || [], asignaciones: datos.asignaciones || [], eventos: datos.eventos || [], items: datos.items || [],
+    directo_sesiones: datos.directo_sesiones || [], directo_participantes: datos.directo_participantes || [], directo_respuestas: datos.directo_respuestas || [],
     resultados: datos.resultados || {}, estadisticas: datos.estadisticas || {},      // por id de asignación: lo que devolverían profe_resultados / profe_estadisticas_examen
     peticiones: [], llamadas: [],
     sesionCaducada() { this.token = 'tok-caducado-' + (++this.n); },
     nuevoToken() { this.token = 'tok-' + (++this.n); return this.token; }
   };
   const limpia = (fila, campos) => (campos ? Object.fromEntries(campos.map(c => [c, fila[c]])) : fila);
-  const TABLAS = { grupos: S.grupos, alumnos: S.alumnos, intentos: S.intentos, bancos: S.bancos, juegos: S.juegos, asignaciones: S.asignaciones, eventos: S.eventos, items: S.items };
+  const TABLAS = { grupos: S.grupos, alumnos: S.alumnos, intentos: S.intentos, bancos: S.bancos, juegos: S.juegos, asignaciones: S.asignaciones, eventos: S.eventos, items: S.items,
+    directo_sesiones: S.directo_sesiones, directo_participantes: S.directo_participantes, directo_respuestas: S.directo_respuestas };
 
   S.atender = ({ metodo, url, cuerpo, cabeceras }) => {
     S.peticiones.push({ metodo, ruta: url.pathname + url.search });
@@ -45,6 +47,7 @@ async function crearServidorPanel(datos = {}) {
     if (nombre.startsWith('rpc')) return error(404, 'no encontrado');
     const tabla = TABLAS[nombre]; if (!tabla) return error(404, 'tabla desconocida');
     if (S.sinExamenes && ['bancos', 'juegos', 'asignaciones'].includes(nombre)) return error(404, 'Could not find the table public.' + nombre + ' in the schema cache', { code: 'PGRST205' });   // aún no se ejecutaron los SQL 06-08
+    if (S.sinDirecto && nombre.startsWith('directo_')) return error(404, 'Could not find the table public.' + nombre + ' in the schema cache', { code: 'PGRST205' });   // aún no se ejecutó el SQL 09
     if (S.noEsProfesor) return { status: 200, body: [] };                         // RLS: una sesión que no es profesor ve 0 filas
     const select = url.searchParams.get('select');
     if (nombre === 'alumnos' && (!select || select.includes('*') || select.includes('codigo_hash'))) return error(403, 'permission denied for table alumnos');
@@ -113,6 +116,11 @@ async function crearServidorPanel(datos = {}) {
     }
     // Directo: lo atiende el servidor falso del directo si el test lo ha enchufado (servidor.panel.directo = servidor.directo)
     if (fn.startsWith('profe_directo_') && S.sinDirecto) return error(404, 'Could not find the function public.' + fn + ' in the schema cache', { code: 'PGRST202' });     // aún no se ejecutó el SQL 09
+    if (fn === 'profe_directo_borrar' && !S.directo) {               // borrar una sala ya jugada (en cascada, como el SQL real)
+      const i = S.directo_sesiones.findIndex(x => x.id === args.p_sesion);
+      if (i >= 0) { S.directo_sesiones.splice(i, 1); for (const t of [S.directo_participantes, S.directo_respuestas]) for (let k = t.length - 1; k >= 0; k--) if (t[k].sesion === args.p_sesion) t.splice(k, 1); }
+      return { status: 200, body: { ok: i >= 0 } };
+    }
     if (fn.startsWith('profe_directo_') && S.directo) {
       const r = S.directo.profe(fn, args);
       if (r === null) return error(404, 'función desconocida: ' + fn);
@@ -174,4 +182,30 @@ function datosExamen() {
   };
 }
 
-module.exports = { crearServidorPanel, intentosDePrueba, datosExamen, EMAIL, CLAVE };
+// Una sala de directo ya jugada por el grupo TDA2 (3 preguntas; entraron 2 de los 3 alumnos). Misma forma que las tablas directo_* del SQL real.
+function datosDirecto() {
+  const sesion = 'dddddddd-0000-4000-8000-000000000001';
+  const R = (alumno, pregunta, dada, ok, ms, puntos) => ({ sesion, alumno, pregunta, dada, ok, ms, puntos, momento: '2026-11-25T10:05:00+00:00' });
+  return {
+    items: [
+      { banco: 'd1', id: 'q1', tipo: 'opcion_multiple', tema: 'bucles', criterio: '2.1', datos: { tipo: 'opcion_multiple', enun: 'Primera del directo', ops: ['uno', 'dos', 'tres'], ok: 0, sol: 'Porque uno.' } },
+      { banco: 'd1', id: 'q2', tipo: 'verdadero_falso', tema: 'variables', criterio: '2.1', datos: { tipo: 'verdadero_falso', enun: 'Segunda del directo', ok: true, sol: 'Es verdadera.' } },
+      { banco: 'd1', id: 'q3', tipo: 'opcion_multiple', tema: 'cadenas', criterio: '2.2', datos: { tipo: 'opcion_multiple', enun: 'Tercera del directo', ops: ['a', 'b', 'c'], ok: 2, sol: 'Es la c.' } }
+    ],
+    directo_sesiones: [
+      { id: sesion, sala: '123456', grupo: 'TDA2', titulo: 'Directo U1', bancos: ['d1'], tiempo_s: 20, lectura_s: 3, estado: 'terminada', actual: 2, creada: '2026-11-25T10:00:00+00:00', terminada: '2026-11-25T10:10:00+00:00',
+        preguntas: [{ banco: 'd1', id: 'q1', clave: 'd1/q1' }, { banco: 'd1', id: 'q2', clave: 'd1/q2' }, { banco: 'd1', id: 'q3', clave: 'd1/q3' }] },
+      { id: 'dddddddd-0000-4000-8000-000000000002', sala: '654321', grupo: 'TDA2', titulo: 'Sala que no empezó', bancos: ['d1'], tiempo_s: 20, lectura_s: 0, estado: 'espera', actual: -1, creada: '2026-11-25T11:00:00+00:00', terminada: null, preguntas: [] }
+    ],
+    directo_participantes: [
+      { sesion, alumno: 'TDA2-01', apodo: 'Zorro Azul', puntos: 1900, aciertos: 2 },
+      { sesion, alumno: 'TDA2-02', apodo: 'Lince Verde', puntos: 900, aciertos: 1 }
+    ],
+    directo_respuestas: [
+      R('TDA2-01', 0, 0, true, 3000, 950), R('TDA2-01', 1, true, true, 5000, 950), R('TDA2-01', 2, 1, false, 6000, 0),
+      R('TDA2-02', 0, 1, false, 4000, 0), R('TDA2-02', 1, true, true, 9000, 900)
+    ]
+  };
+}
+
+module.exports = { crearServidorPanel, intentosDePrueba, datosExamen, datosDirecto, EMAIL, CLAVE };

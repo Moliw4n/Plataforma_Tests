@@ -4,6 +4,7 @@
      (localStorage). Nunca se envían a Supabase ni a ningún sitio. */
 import { aFormato2 } from './nucleo/formato.js';
 import { crearExamenes } from './panel-examenes.js';
+import { crearDirectos } from './panel-directo.js';
 import { icono } from './nucleo/iconos.js';
 
 (function () {
@@ -36,6 +37,7 @@ import { icono } from './nucleo/iconos.js';
   let ses = null;                 // {token, refresh, email, exp}
   let grupos = [], alumnos = [], intentos = [];
   let carga = 0;                  // número de la carga en curso (se invalida al cerrar la sesión)
+  let DI = null;                  // el módulo de resultados del directo (null si en esta base aún no está instalado el SQL 09)
   let EX = null;                  // el módulo de exámenes (null si en esta base aún no están instalados los SQL 06-08)
   const tests = {};               // id -> test JSON
   let nombres = guarda.get('pt_nombres', {});   // 'TDA2-07' -> 'Nombre'
@@ -152,8 +154,12 @@ import { icono } from './nucleo/iconos.js';
     try { EX = crearExamenes(P); if (!await EX.cargar()) EX = null; }   // sin las tablas de exámenes, el panel funciona exactamente como antes
     catch (e) { return; }                                                // 401: ya se ha pedido entrar otra vez
     if (mia !== carga) return;
+    try { DI = crearDirectos(P); if (!await DI.cargar()) DI = null; }
+    catch (e) { return; }
+    if (mia !== carga) return;
     if (EX && location.hash === '#examenes') f.vista = 'gestion';          // desde la barra lateral de directo.html
     if (EX === null && (f.vista === 'gestion' || f.vista === 'examen')) f.vista = 'inicio';
+    if (DI === null && f.vista === 'directo') f.vista = 'inicio';
     pintar();
   }
 
@@ -212,6 +218,7 @@ import { icono } from './nucleo/iconos.js';
     if (f.vista === 'inicio') return pintarInicio();
     if (EX && f.vista === 'gestion') return EX.pintarGestion();
     if (EX && f.vista === 'examen') return EX.pintarResultados();
+    if (DI && f.vista === 'directo') return DI.pintarResultados();
     const T = tests[f.test];
     const hayNombres = Object.keys(nombres).length > 0;
     const fs = filas();
@@ -329,7 +336,7 @@ import { icono } from './nucleo/iconos.js';
               '<button class="btn" data-copiar="' + esc(enlaceAlumno(id)) + '">'+icono("enlace")+' Enlace</button>' +
             '</div></div>';
         }).join('') : '<div class="vacio">Este grupo todavía no tiene tests.</div>') +
-        (EX ? EX.tarjetas(g.id) : '') +
+        (EX ? EX.tarjetas(g.id) : '') + (DI ? DI.tarjetas(g.id) : '') +
       '</section>';
     }).join('');
     app.innerHTML = h;
@@ -337,6 +344,7 @@ import { icono } from './nucleo/iconos.js';
     if ($('#bAccExamen')) $('#bAccExamen').onclick = () => { f.vista = 'gestion'; pintar(); window.scrollTo({ top: 0 }); };
     $('#bAccRepaso').onclick = e => { e.preventDefault(); $('#tests-repaso').scrollIntoView({ behavior: 'smooth' }); };
     if (EX) EX.enlazarInicio();
+    if (DI) DI.enlazarInicio();
     app.querySelectorAll('[data-res]').forEach(b => b.onclick = () => {
       const [g, t] = b.dataset.res.split('|'); f.grupo = g; f.test = t; f.vista = 'alumnos'; pintar(); window.scrollTo({ top: 0 });
     });
