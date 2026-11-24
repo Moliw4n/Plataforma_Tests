@@ -132,6 +132,94 @@ test.describe('subir un banco', () => {
 });
 
 test.describe('crear un examen y ponérselo a un grupo', () => {
+  test.describe('editar y duplicar un examen ya creado', () => {
+    // «ex1» ya lo han empezado dos alumnos; «ex2» está sin usar
+    const ex2 = { id: 'ex2', modo: 'examen', titulo: 'Examen sin usar', bancos: ['u1'], reglas: { preguntas: 12, tiempo_min: 40, penalizacion: 0.25, equilibrar: 'ninguno' } };
+    const abrirConEx2 = (page, servidor) => abrir(page, servidor, { extra: { juegos: [...datosExamen().juegos, ex2] } });
+
+    test('la lista enseña título, ID, preguntas, minutos y si ya hay intentos', async ({ page, servidor }) => {
+      await abrirConEx2(page, servidor); await aGestion(page);
+      const f1 = page.locator('tr[data-juego="ex1"]'), f2 = page.locator('tr[data-juego="ex2"]');
+      await expect(f1).toContainText('Ya hay 2 intentos');
+      await expect(f2).toContainText('Sin usar');
+      await expect(f2).toContainText('12'); await expect(f2).toContainText('40');
+      await expect(f1.locator('[data-ex-editar]')).toBeDisabled();
+      await expect(f2.locator('[data-ex-editar]')).toBeEnabled();
+      await expect(f1.locator('[data-ex-duplicar]')).toBeEnabled();                 // duplicar siempre se puede
+      await sinDesborde(page);
+    });
+
+    test('Editar rellena el formulario con el examen, deja el ID fijo y «Guardar cambios» lo sobrescribe', async ({ page, servidor }) => {
+      const S = await abrirConEx2(page, servidor); await aGestion(page);
+      await page.locator('tr[data-juego="ex2"] [data-ex-editar]').click();
+      await expect(page.locator('#jId')).toHaveValue('ex2');
+      await expect(page.locator('#jId')).toHaveJSProperty('readOnly', true);
+      await expect(page.locator('#jTitulo')).toHaveValue('Examen sin usar');
+      await expect(page.locator('#jPreg')).toHaveValue('12'); await expect(page.locator('#jMin')).toHaveValue('40');
+      await expect(page.locator('#jPen')).toHaveValue('0.25'); await expect(page.locator('#jEq')).toHaveValue('ninguno');
+      await expect(page.locator('.jBanco').first()).toBeChecked();
+      await expect(page.locator('#bCrearJuego')).toHaveText('Guardar cambios');
+      await expect(page.locator('#avisoEdicion')).toContainText('Editando «Examen sin usar»');
+      await page.fill('#jMin', '55');
+      await page.click('#bCrearJuego');
+      await expect(page.locator('#msgJuego')).toContainText('guardado');
+      expect(S.llamadas.filter(l => l.fn === 'profe_crear_juego').map(l => l.args.p_juego)).toEqual([
+        { id: 'ex2', modo: 'examen', titulo: 'Examen sin usar', bancos: ['u1'], reglas: { preguntas: 12, tiempo_min: 55, penalizacion: 0.25, equilibrar: 'ninguno' } }]);
+      expect(S.juegos.find(j => j.id === 'ex2').reglas.tiempo_min).toBe(55);
+      expect(S.juegos.filter(j => j.id === 'ex2')).toHaveLength(1);                  // se sobrescribe: no se crea otro
+      await expect(page.locator('tr[data-juego="ex2"]')).toContainText('55');
+      await expect(page.locator('#bCrearJuego')).toHaveText('Crear examen');          // el formulario vuelve a su modo normal
+      await expect(page.locator('#jId')).toHaveJSProperty('readOnly', false);
+    });
+
+    test('Cancelar vuelve al formulario vacío y editable', async ({ page, servidor }) => {
+      await abrirConEx2(page, servidor); await aGestion(page);
+      await page.locator('tr[data-juego="ex2"] [data-ex-editar]').click();
+      await page.click('#bCancelarEdicion');
+      await expect(page.locator('#jId')).toHaveValue('');
+      await expect(page.locator('#jId')).toHaveJSProperty('readOnly', false);
+      await expect(page.locator('#bCrearJuego')).toHaveText('Crear examen');
+      await expect(page.locator('#avisoEdicion')).toBeHidden();
+    });
+
+    test('Duplicar rellena con un ID nuevo (editable) y crea otro examen sin tocar el original', async ({ page, servidor }) => {
+      const S = await abrirConEx2(page, servidor); await aGestion(page);
+      await page.locator('tr[data-juego="ex1"] [data-ex-duplicar]').click();       // ex1 ya tiene intentos, y aun así se puede duplicar
+      await expect(page.locator('#jId')).toHaveValue('ex1-copia');
+      await expect(page.locator('#jId')).toHaveJSProperty('readOnly', false);
+      await expect(page.locator('#jTitulo')).toHaveValue('Examen U1 · Python (copia)');
+      await expect(page.locator('#bCrearJuego')).toHaveText('Crear examen');
+      await page.fill('#jMin', '45');
+      await page.click('#bCrearJuego');
+      await expect(page.locator('#msgJuego')).toContainText('creado');
+      expect(S.juegos.map(j => j.id)).toEqual(['ex1', 'ex2', 'ex1-copia']);
+      expect(S.juegos.find(j => j.id === 'ex1').reglas.tiempo_min).toBe(30);        // el original sigue igual
+      await page.locator('tr[data-juego="ex1-copia"] [data-ex-duplicar]').click();  // y duplicar la copia no repite el ID
+      await expect(page.locator('#jId')).toHaveValue('ex1-copia2');
+    });
+
+    test('si el servidor dice que el examen ya está en uso, lo explica con claridad', async ({ page, servidor }) => {
+      const S = await abrirConEx2(page, servidor); await aGestion(page);
+      await page.locator('tr[data-juego="ex2"] [data-ex-editar]').click();
+      S.partidas.push({ asignacion: 1 }, { asignacion: 2 });                         // alguien lo empieza justo ahora (el panel aún no lo sabe)
+      S.asignaciones.push({ id: 2, juego: 'ex2', grupo: 'TDA1', desde: null, hasta: null, intentos: 1, mostrar_soluciones: false, notas_publicadas: false });
+      await page.click('#bCrearJuego');
+      await expect(page.locator('#msgJuego')).toContainText('Ya hay alumnos que han hecho este examen');
+    });
+
+    test('si no se pueden leer los intentos, no se bloquea nada (decide el servidor)', async ({ page, servidor }) => {
+      const S = await crearServidorPanel({ intentos: intentosDePrueba(), ...datosExamen(), juegos: [...datosExamen().juegos, ex2] });
+      servidor.panel = S;
+      const origen = S.atender; S.atender = a => (a.url.pathname === '/rest/v1/partidas' ? { status: 404, body: { code: 'X', message: 'no' } } : origen(a));
+      await page.goto('panel.html');
+      await page.fill('#iEmail', EMAIL); await page.fill('#iPass', CLAVE); await page.click('#bLogin');
+      await expect(page.locator('.inicio-cab h1')).toBeVisible();
+      await aGestion(page);
+      await expect(page.locator('tr[data-juego="ex1"] [data-ex-editar]')).toBeEnabled();
+      await expect(page.locator('tr[data-juego="ex1"]')).not.toContainText('Ya hay');
+    });
+  });
+
   test('crear: manda las reglas elegidas y avisa de que falta ponerlo a un grupo', async ({ page, servidor }) => {
     const S = await abrir(page, servidor, { examen: false, extra: { bancos: datosExamen().bancos } }); await aGestion(page);
     await page.fill('#jId', 'nuevo-examen'); await page.fill('#jTitulo', 'Mi examen'); await page.check('.jBanco');

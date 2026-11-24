@@ -10,6 +10,7 @@ export function crearExamenes(P) {
   const { esc } = P;
   const $ = s => document.querySelector(s);
   let bancos = [], juegos = [], asignaciones = [];
+  let usos = null;                  // intentos hechos por examen {id: n}; null = no se ha podido saber (no se bloquea nada: el servidor es quien manda)
   let res = null, est = null, tab = 'alumnos';
   let orden = { col: 'num', asc: true };
 
@@ -49,6 +50,11 @@ export function crearExamenes(P) {
         P.api('juegos?select=id,modo,titulo,bancos,reglas&order=id'),
         P.api('asignaciones?select=id,juego,grupo,desde,hasta,intentos,mostrar_soluciones,notas_publicadas&order=id')
       ]);
+      try {
+        const ps = await P.api('partidas?select=asignacion&limit=10000');
+        const juegoDeAsig = Object.fromEntries(asignaciones.map(a => [a.id, a.juego]));
+        usos = {}; ps.forEach(x => { const j = juegoDeAsig[x.asignacion]; if (j) usos[j] = (usos[j] || 0) + 1; });
+      } catch (e) { if (String(e) === 'Error: 401') throw e; usos = null; }
       return true;
     } catch (e) {
       if (String(e) === 'Error: 401') throw e;
@@ -95,6 +101,7 @@ export function crearExamenes(P) {
       '<div class="fila-acc"><button class="btn pri" id="bSubirBanco">'+icono("subir")+' Subir banco (.json)</button><input type="file" id="iBanco" accept=".json,application/json" hidden></div>' +
       '<div class="msg-ex" id="msgBanco"></div></section>';
     h += '<section class="gestion" id="secJuego"><h2>2 · Crear un examen</h2>' + (hoy ?
+      '<div class="msg-ex bien" id="avisoEdicion" hidden></div>' +
       '<form id="fJuego" class="form-ex"><div class="rejilla-form">' +
         '<div class="campo"><label for="jId">ID (para el enlace)</label><input id="jId" required pattern="[a-z0-9][a-z0-9_-]{0,59}" placeholder="u1-python-nov" autocomplete="off"></div>' +
         '<div class="campo"><label for="jTitulo">TÍTULO</label><input id="jTitulo" required placeholder="Examen U1 · Python" autocomplete="off"></div>' +
@@ -105,7 +112,7 @@ export function crearExamenes(P) {
         '<div class="campo"><label for="jEq">REPARTO</label><select id="jEq"><option value="tema">Equilibrado por temas</option><option value="ninguno">Al azar</option></select></div>' +
       '</div><button class="btn pri" id="bCrearJuego">Crear examen</button></form>' : '<div class="vacio">Primero sube un banco.</div>') +
       '<div class="msg-ex" id="msgJuego"></div>' +
-      (juegos.length ? '<p class="dato-p">Exámenes creados: ' + juegos.map(j => '<code>' + esc(j.id) + '</code> (' + esc(j.titulo) + ')').join(' · ') + '</p>' : '') + '</section>';
+      tablaJuegos() + '</section>';
     h += '<section class="gestion" id="secAsignar"><h2>3 · Ponerlo a un grupo</h2>' + (juegos.length ?
       '<form id="fAsignar" class="form-ex"><div class="rejilla-form">' +
         '<div class="campo"><label for="aJuego">EXAMEN</label><select id="aJuego">' + juegos.map(j => '<option value="' + esc(j.id) + '">' + esc(j.titulo) + '</option>').join('') + '</select></div>' +
@@ -128,6 +135,8 @@ export function crearExamenes(P) {
     $('#iBanco').onchange = () => { const a = $('#iBanco').files[0]; $('#iBanco').value = ''; if (a) subirBanco(a); };
     P.app.querySelectorAll('[data-borrar-banco]').forEach(b => b.onclick = () => borrarBanco(b.dataset.borrarBanco));
     if ($('#fJuego')) $('#fJuego').onsubmit = e => { e.preventDefault(); crearJuego(); };
+    P.app.querySelectorAll('[data-ex-editar]').forEach(b => b.onclick = () => { if (!b.disabled) cargarEnFormulario(b.dataset.exEditar, 'editar'); });
+    P.app.querySelectorAll('[data-ex-duplicar]').forEach(b => b.onclick = () => cargarEnFormulario(b.dataset.exDuplicar, 'duplicar'));
     if ($('#fAsignar')) {
       $('#fAsignar').onsubmit = e => { e.preventDefault(); asignar(); };
       // Las fechas solo existen si se marca la casilla (un campo de fecha vacío se ve «relleno» en Safari y confunde)
@@ -167,15 +176,54 @@ export function crearExamenes(P) {
     try { await rpc('profe_borrar_banco', { p_id: id }); await recargarDatos(); pintarGestion(); }
     catch (e) { if (String(e) !== 'Error: 401') aviso($('#msgBanco'), errorLegible(e), true); }
   }
+  /* ---------- lista de exámenes creados, con Editar y Duplicar ---------- */
+  const hechos = id => (usos ? usos[id] || 0 : 0);
+  function tablaJuegos() {
+    if (!juegos.length) return '';
+    return '<div class="tabla-ex"><table class="datos"><thead><tr><th>Examen</th><th>ID</th><th>Preguntas</th><th>Minutos</th><th>Estado</th><th></th></tr></thead><tbody>' +
+      juegos.map(j => {
+        const n = hechos(j.id), r = j.reglas || {};
+        return '<tr data-juego="' + esc(j.id) + '"><td>' + esc(j.titulo) + '</td><td class="num">' + esc(j.id) + '</td><td>' + (r.preguntas || '—') + '</td><td>' + (r.tiempo_min || '—') + '</td>' +
+          '<td>' + (usos === null ? '—' : n ? '<span class="estado-ex e-en_curso">Ya hay ' + n + (n === 1 ? ' intento' : ' intentos') + '</span>' : 'Sin usar') + '</td>' +
+          '<td><button class="btn" data-ex-editar="' + esc(j.id) + '"' + (n ? ' disabled title="Ya hay intentos: no se puede cambiar. Usa Duplicar."' : '') + '>Editar</button> ' +
+          '<button class="btn" data-ex-duplicar="' + esc(j.id) + '">Duplicar</button></td></tr>';
+      }).join('') + '</tbody></table></div><p class="dato-p">Editar rellena el formulario de arriba con este examen. Solo se puede mientras nadie lo haya hecho; si ya hay intentos, usa Duplicar.</p>';
+  }
+  /* modo 'editar': el ID queda fijo y «Guardar cambios» sobrescribe ese examen · modo 'duplicar': mismos datos con un ID nuevo */
+  function cargarEnFormulario(id, modo) {
+    const j = juegos.find(x => x.id === id); if (!j || !$('#fJuego')) return;
+    const r = j.reglas || {};
+    $('#jId').value = modo === 'editar' ? j.id : nuevoId(j.id);
+    $('#jId').readOnly = modo === 'editar';
+    $('#jTitulo').value = modo === 'editar' ? j.titulo : j.titulo + ' (copia)';
+    P.app.querySelectorAll('.jBanco').forEach(c => { c.checked = (j.bancos || []).includes(c.value); });
+    $('#jPreg').value = r.preguntas || 20; $('#jMin').value = r.tiempo_min || 30;
+    const opt = [...$('#jPen').options].find(o => Number(o.value) === Number(r.penalizacion || 0)); $('#jPen').value = opt ? opt.value : '0';
+    $('#jEq').value = r.equilibrar === 'ninguno' ? 'ninguno' : 'tema';
+    $('#bCrearJuego').textContent = modo === 'editar' ? 'Guardar cambios' : 'Crear examen';
+    const av = $('#avisoEdicion'); av.hidden = false; av.className = 'msg-ex bien';
+    av.innerHTML = (modo === 'editar' ? 'Editando «' + esc(j.titulo) + '». Cambia lo que quieras y pulsa «Guardar cambios».' : 'Copia de «' + esc(j.titulo) + '»: cambia el ID (y lo que quieras) y pulsa «Crear examen».') +
+      ' <button type="button" class="btn" id="bCancelarEdicion">Cancelar</button>';
+    $('#bCancelarEdicion').onclick = salirDeEdicion;
+    $('#msgJuego').textContent = ''; $('#msgJuego').className = 'msg-ex';
+    $('#fJuego').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    (modo === 'editar' ? $('#jTitulo') : $('#jId')).focus();
+  }
+  function salirDeEdicion() {
+    $('#fJuego').reset(); $('#jId').readOnly = false; $('#bCrearJuego').textContent = 'Crear examen'; $('#avisoEdicion').hidden = true;
+  }
+  const nuevoId = id => { let n = id.replace(/-copia\d*$/, '') + '-copia', k = 1; while (juegos.some(x => x.id === n)) n = id.replace(/-copia\d*$/, '') + '-copia' + (++k); return n.slice(0, 60); };
+
   async function crearJuego() {
-    const msg = $('#msgJuego'), seleccion = [...P.app.querySelectorAll('.jBanco:checked')].map(x => x.value);
+    const msg = $('#msgJuego'), editando = $('#jId').readOnly, seleccion = [...P.app.querySelectorAll('.jBanco:checked')].map(x => x.value);
     if (!seleccion.length) return aviso(msg, 'Elige al menos un banco.', true);
     const juego = { id: $('#jId').value.trim(), modo: 'examen', titulo: $('#jTitulo').value.trim(), bancos: seleccion,
       reglas: { preguntas: +$('#jPreg').value, tiempo_min: +$('#jMin').value, penalizacion: +$('#jPen').value, equilibrar: $('#jEq').value } };
     try {
       const r = await rpc('profe_crear_juego', { p_juego: juego });
       await recargarDatos(); pintarGestion();
-      aviso($('#msgJuego'), 'Examen «' + r.juego + '» creado: ' + r.reglas.preguntas + ' preguntas, ' + r.reglas.tiempo_min + ' minutos. Ahora ponlo a un grupo (paso 3).');
+      aviso($('#msgJuego'), editando ? 'Examen «' + r.juego + '» guardado: ' + r.reglas.preguntas + ' preguntas, ' + r.reglas.tiempo_min + ' minutos. Si ya estaba puesto a un grupo, sigue puesto.'
+        : 'Examen «' + r.juego + '» creado: ' + r.reglas.preguntas + ' preguntas, ' + r.reglas.tiempo_min + ' minutos. Ahora ponlo a un grupo (paso 3).');
     } catch (e) { if (String(e) !== 'Error: 401') aviso(msg, errorLegible(e), true); }
   }
   async function asignar() {

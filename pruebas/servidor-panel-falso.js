@@ -15,6 +15,7 @@ async function crearServidorPanel(datos = {}) {
     grupos: datos.grupos || [{ id: 'TDA2', nombre: 'TDA II' }, { id: 'TDA1', nombre: 'TDA I' }],
     alumnos: datos.alumnos || [{ id: 'TDA2-01', grupo: 'TDA2', activo: true }, { id: 'TDA2-02', grupo: 'TDA2', activo: true }, { id: 'TDA2-03', grupo: 'TDA2', activo: true }, { id: 'TDA1-01', grupo: 'TDA1', activo: true }],
     intentos: datos.intentos || [], bancos: datos.bancos || [], juegos: datos.juegos || [], asignaciones: datos.asignaciones || [], eventos: datos.eventos || [], items: datos.items || [],
+    partidas: datos.partidas || [],
     directo_sesiones: datos.directo_sesiones || [], directo_participantes: datos.directo_participantes || [], directo_respuestas: datos.directo_respuestas || [],
     resultados: datos.resultados || {}, estadisticas: datos.estadisticas || {},      // por id de asignación: lo que devolverían profe_resultados / profe_estadisticas_examen
     peticiones: [], llamadas: [],
@@ -22,7 +23,7 @@ async function crearServidorPanel(datos = {}) {
     nuevoToken() { this.token = 'tok-' + (++this.n); return this.token; }
   };
   const limpia = (fila, campos) => (campos ? Object.fromEntries(campos.map(c => [c, fila[c]])) : fila);
-  const TABLAS = { grupos: S.grupos, alumnos: S.alumnos, intentos: S.intentos, bancos: S.bancos, juegos: S.juegos, asignaciones: S.asignaciones, eventos: S.eventos, items: S.items,
+  const TABLAS = { grupos: S.grupos, alumnos: S.alumnos, intentos: S.intentos, bancos: S.bancos, juegos: S.juegos, asignaciones: S.asignaciones, eventos: S.eventos, items: S.items, partidas: S.partidas,
     directo_sesiones: S.directo_sesiones, directo_participantes: S.directo_participantes, directo_respuestas: S.directo_respuestas };
 
   S.atender = ({ metodo, url, cuerpo, cabeceras }) => {
@@ -82,6 +83,7 @@ async function crearServidorPanel(datos = {}) {
         const j = args.p_juego;
         if (!j.bancos || !j.bancos.every(b => S.bancos.some(x => x.id === b))) return error(400, 'juego_no_valido: algún banco no existe');
         const reglas = { preguntas: 20, tiempo_min: 30, penalizacion: 0, equilibrar: 'tema', ...(j.reglas || {}) };
+        if (S.partidas.some(pa => { const a = S.asignaciones.find(x => x.id === pa.asignacion); return a && a.juego === j.id; })) return error(400, 'juego_en_uso');
         const previo = S.juegos.find(x => x.id === j.id), nuevo = { id: j.id, modo: j.modo, titulo: j.titulo, bancos: j.bancos, reglas };
         if (previo) Object.assign(previo, nuevo); else S.juegos.push(nuevo);
         return { status: 200, body: { ok: true, juego: j.id, reglas } };
@@ -156,6 +158,7 @@ function datosExamen() {
   return {
     bancos: [{ id: 'u1', titulo: 'Banco U1 · Python', materia: 'TDA II', unidad: 'U1', version: 1 }],
     juegos: [{ id: 'ex1', modo: 'examen', titulo: 'Examen U1 · Python', bancos: ['u1'], reglas: { preguntas: 20, tiempo_min: 30, penalizacion: 0, equilibrar: 'tema' } }],
+    partidas: [{ asignacion: 1 }, { asignacion: 1 }],          // el examen «ex1» ya lo han empezado dos alumnos (no se puede cambiar)
     asignaciones: [{ id: 1, juego: 'ex1', grupo: 'TDA2', desde: null, hasta: null, intentos: 1, mostrar_soluciones: false, notas_publicadas: false }],
     items: [
       { banco: 'u1', id: 'q1', tipo: 'opcion_multiple', datos: { tipo: 'opcion_multiple', enun: 'Primera', ops: ['uno', 'dos', 'tres'], ok: 0, sol: 'Porque uno.' } },
