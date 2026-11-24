@@ -98,6 +98,8 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
 - **Examen (fase 1, publicada en `main` el 22 nov 2026)**: ensayado con móviles reales contra el proyecto de pruebas (los 15 escenarios de `docs/ensayo-examen.md`).
   Portada con las reglas y «Has hecho 1 de 2. Te queda 1.»; «Ver mi resultado» (nota y revisión si el profesor las publica) aunque no queden intentos;
   botón «Entregar» en la barra (atajo a «Revisar y entregar»); el tiempo agotado se entrega solo y queda «Se acabó el tiempo».
+  **Editar exámenes** (rama `examenes-editar`, 24 nov 2026): la lista «Exámenes creados» del panel es una tabla con estado («Sin usar» / «Ya hay N intentos», leído de `partidas`) y botones **Editar** (rellena el formulario, ID fijo, «Guardar cambios»;
+  desactivado si hay intentos) y **Duplicar** (ID nuevo `…-copia`). Sin SQL nuevo: reutiliza `profe_crear_juego` (sobrescribe por ID; `juego_en_uso` si hay partidas). Pruebas en `pruebas/panel-examenes.spec.js`.
   Panel: por alumno, mapa de preguntas (al pulsar una: lo que contestó, la correcta y el porqué, leído de `items`), «Anular intento»
   y **cronología** de incidencias con hora (salidas, vueltas, recargas, cortes). Si el alumno cierra la pestaña y vuelve con una recarga, el tiempo
   fuera entre la salida y la recarga no se suma (la cronología sí lo deja ver).
