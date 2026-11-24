@@ -331,9 +331,13 @@ export function crearExamenes(P) {
     el.innerHTML = '<details><summary>Ver cronología (' + filas.length + ' incidencias)</summary><ol class="linea-eventos">' + filas.map(f => {
       const seg = f.detalle && Number.isFinite(+f.detalle.segundos) ? +f.detalle.segundos : null;
       const hora = fecha(f.momento).toLocaleTimeString('es-ES');
-      const texto = (CRONO[f.tipo] || f.tipo) + (seg != null ? (f.tipo === 'vuelta' ? ' (' + seg + ' s fuera)' : f.tipo === 'sin_red' ? ' (' + seg + ' s sin conexión)' : '') : '');
-      return '<li class="ev-' + esc(f.tipo) + '"><time>' + esc(hora) + '</time> ' + esc(texto) + '</li>';
+      const foco = f.tipo === 'otro' && f.detalle && f.detalle.foco;     // foco perdido: la ventana seguía visible pero pulsó en otra
+      const texto = foco ? (foco === 'perdido' ? 'Pulsó fuera de la ventana del examen' : 'Volvió a la ventana del examen' + (seg != null ? ' (' + seg + ' s fuera de foco)' : ''))
+        : (CRONO[f.tipo] || f.tipo) + (seg != null ? (f.tipo === 'vuelta' ? ' (' + seg + ' s fuera)' : f.tipo === 'sin_red' ? ' (' + seg + ' s sin conexión)' : '') : '');
+      return '<li class="ev-' + esc(foco ? 'foco' : f.tipo) + '"><time>' + esc(hora) + '</time> ' + esc(texto) + '</li>';
     }).join('') + '</ol></details>';
+    const nFoco = filas.filter(f => f.tipo === 'otro' && f.detalle && f.detalle.foco === 'perdido').length;
+    if (nFoco) el.insertAdjacentHTML('afterbegin', '<p class="eventos-ex alerta">⚠ Pulsó fuera de la ventana del examen ' + nFoco + (nFoco === 1 ? ' vez' : ' veces') + ' (otra ventana a la vez).</p>');
   }
   async function anular(partida, x) {
     const p = x.ps.find(z => z.partida === partida);
