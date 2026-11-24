@@ -143,6 +143,10 @@ import { icono } from './nucleo/iconos.js';
       try { const r = await fetch('tests/' + encodeURIComponent(id) + '.json', { cache: 'no-cache' }); if (r.ok) tests[id] = aFormato2(await r.json()); } catch (e) {}
     }));
     if (mia !== carga) return;
+    // Un grupo cuyos alumnos están todos de baja (la clase se desvinculó de Kronos) no se enseña: así no sale «0 alumnos».
+    // Si ninguno tiene alumnos activos, se enseñan todos como siempre.
+    const activos = grupos.filter(g => alumnos.some(a => a.grupo === g.id && a.activo));
+    if (activos.length) grupos = activos;
     if (!grupos.some(g => g.id === f.grupo)) f.grupo = grupos[0].id;
     if (!ids.includes(f.test)) f.test = testDelGrupo(ids);
     try { EX = crearExamenes(P); if (!await EX.cargar()) EX = null; }   // sin las tablas de exámenes, el panel funciona exactamente como antes

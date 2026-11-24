@@ -98,6 +98,18 @@ test.describe('inicio: grupos y tests', () => {
     await expect(grupo(page, 'TDA I').locator('.tc-tit')).toContainText('Repaso U1 y U2');
     await sinDesborde(page);
   });
+  test('un grupo con todos sus alumnos de baja (clase desvinculada de Kronos) no se enseña; si no hay otro, se enseñan todos', async ({ page, servidor }) => {
+    const alumnos = [{ id: 'TDA2-01', grupo: 'TDA2', activo: true }, { id: 'TDA1-01', grupo: 'TDA1', activo: false }, { id: 'TDA1-02', grupo: 'TDA1', activo: false }];
+    await abrir(page, servidor, { alumnos });
+    await expect(page.locator('.grupo')).toHaveCount(1);
+    await expect(grupo(page, 'TDA II')).toHaveCount(1);
+    await expect(grupo(page, 'TDA I')).toHaveCount(0);
+  });
+  test('si NINGÚN grupo tiene alumnos activos, el panel sigue enseñándolos todos', async ({ page, servidor }) => {
+    const alumnos = [{ id: 'TDA2-01', grupo: 'TDA2', activo: false }, { id: 'TDA1-01', grupo: 'TDA1', activo: false }];
+    await abrir(page, servidor, { alumnos });
+    await expect(page.locator('.grupo')).toHaveCount(2);
+  });
   test('arriba: resumen de la semana y tres accesos (Directo, Exámenes, Tests de repaso)', async ({ page, servidor }) => {
     await abrir(page, servidor);
     await expect(page.locator('.resumen-inicio .regla')).toHaveCount(3);
