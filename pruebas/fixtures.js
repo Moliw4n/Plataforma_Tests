@@ -57,7 +57,7 @@ const test = base.test.extend({
         return s.examen.latencia ? setTimeout(() => json(resp), s.examen.latencia) : json(resp);
       }
       // Funciones del directo: las atiende el servidor falso (pruebas/servidor-directo-falso.js) si el test lo ha puesto en s.directo
-      if (s.directo && ['directo_unirse', 'directo_estado', 'directo_responder'].includes(fn)) {
+      if (s.directo && ['directo_unirse', 'directo_estado', 'directo_responder', 'directo_apodo'].includes(fn)) {
         if (s.directo.red === false) return ruta.abort();
         const resp = s.directo.llamar(fn, args);
         return s.directo.latencia ? setTimeout(() => json(resp), s.directo.latencia) : json(resp);

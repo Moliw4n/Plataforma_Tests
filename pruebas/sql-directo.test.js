@@ -455,3 +455,94 @@ test.describe('alumno: responder y puntos', () => {
     assert.equal((await estado(r.sesion)).participantes.find(p => p.alumno === 'TDA2-02').conectado, true);
   });
 });
+
+test.describe('pausa de lectura, apodo libre y expulsar (mejoras tras el primer directo en clase)', () => {
+  const apodoDe = async (cod, ses, ap) => (await anon('select public.directo_apodo($1, $2::uuid, $3) as r', [cod, ses, ap])).rows[0].r;
+  const expulsar = (ses, alumno) => rpc('profe_directo_expulsar', ses, alumno);
+
+  test('con pausa de lectura: sale el enunciado SIN opciones, no se puede contestar, y al acabar la pausa salen las opciones y el tiempo empieza ahí', async () => {
+    const r = await salaEnMarcha({ lectura_s: 3, tiempo_s: 20 }, [A]);
+    const e = await miEstado(A, r.sesion);
+    assert.equal(e.estado, 'pregunta'); assert.ok(e.lectura_ms > 1500 && e.lectura_ms <= 3000, 'lectura_ms ' + e.lectura_ms);
+    assert.ok(e.restante_ms > 22000 && e.restante_ms <= 23000, 'restante_ms ' + e.restante_ms);        // 3 s de lectura + 20 s para contestar
+    assert.equal(e.pregunta.ops, undefined); assert.ok(e.pregunta.enun);
+    assert.equal((await estado(r.sesion)).pregunta.ops, undefined);                                   // el proyector tampoco las recibe
+    assert.deepEqual(await contestar(A, r.sesion, 0, true), { ok: false, motivo: 'aun_no' });
+    assert.equal(await n('select count(*) n from directo_respuestas'), 0);
+    await c.query("update directo_sesiones set abierta = now() - interval '1 second', limite = now() + interval '19 seconds'");   // pasa la pausa
+    const f = await miEstado(A, r.sesion);
+    assert.equal(f.lectura_ms, 0);
+    if (f.pregunta.tipo === 'opcion_multiple') assert.equal(f.pregunta.ops.length, 4);
+    assert.equal((await contestar(A, r.sesion, 0, f.pregunta.tipo === 'opcion_multiple' ? 1 : true)).ok, true);
+    const ms = await n('select ms n from directo_respuestas'); assert.ok(ms >= 0 && ms < 3000, 'ms ' + ms);      // medidos desde que salieron las opciones
+  });
+  test('sin pausa (lectura_s 0, lo de siempre) las opciones salen a la vez', async () => {
+    const r = await salaEnMarcha({}, [A]);
+    const e = await miEstado(A, r.sesion);
+    assert.equal(e.lectura_ms, 0);
+    if (e.pregunta.tipo === 'opcion_multiple') assert.equal(e.pregunta.ops.length, 4);
+    assert.equal((await contestar(A, r.sesion, 0, e.pregunta.tipo === 'opcion_multiple' ? 1 : true)).ok, true);
+  });
+  test('lectura_s y apodo_libre mal puestos: mensaje claro y no se crea nada', async () => {
+    for (const [extra, msg] of [[{ lectura_s: 11 }, 'lectura_s debe ser un entero de 0 a 10'], [{ lectura_s: -1 }, 'lectura_s debe ser un entero de 0 a 10'], [{ lectura_s: 1.5 }, 'lectura_s debe ser un entero de 0 a 10'],
+                                [{ lectura_s: 'tres' }, 'lectura_s debe ser un entero de 0 a 10'], [{ apodo_libre: 'si' }, 'apodo_libre debe ser verdadero o falso']])
+      await assert.rejects(crear(extra), new RegExp('directo_no_valido: ' + msg), JSON.stringify(extra));
+    assert.equal(await n('select count(*) n from directo_sesiones'), 0);
+  });
+
+  test('apodo libre: se cambia en la espera, con reglas, sin repetir y solo si el profesor lo activó', async () => {
+    const r = await crear({ apodo_libre: true });
+    const u = await unirse(A, r.sala); assert.equal(u.ok, true); assert.equal(u.apodo_libre, true);
+    assert.equal((await unirse(B, r.sala)).ok, true);
+    assert.deepEqual(await apodoDe(A, r.sesion, '  Capitán   Kiron '), { ok: true, apodo: 'Capitán Kiron' });         // espacios recortados y juntados
+    assert.equal((await miEstado(A, r.sesion)).apodo, 'Capitán Kiron');
+    assert.equal((await estado(r.sesion)).participantes.some(p => p.apodo === 'Capitán Kiron' && p.alumno === 'TDA2-01'), true);
+    assert.deepEqual(await apodoDe(B, r.sesion, 'capitán kiron'), { ok: false, motivo: 'ocupado' });                  // sin distinguir mayúsculas
+    assert.deepEqual(await apodoDe(A, r.sesion, 'capitán KIRON'), { ok: true, apodo: 'capitán KIRON' });             // el suyo propio sí puede retocarlo
+    for (const malo of ['x', '', '   ', 'a'.repeat(17), '<b>hola</b>', 'ho\u0007la']) assert.deepEqual(await apodoDe(B, r.sesion, malo), { ok: false, motivo: 'dato' }, JSON.stringify(malo));
+    assert.deepEqual(await apodoDe(B, r.sesion, null), { ok: false, motivo: 'dato' });
+    assert.equal((await apodoDe(B, r.sesion, 'Ñandú_1')).ok, true);                                                   // acentos y símbolos normales valen
+    assert.deepEqual(await apodoDe(C, r.sesion, 'Nuevo'), { ok: false, motivo: 'no_participas' });                    // no ha entrado
+    assert.deepEqual(await apodoDe(OTRO_GRUPO, r.sesion, 'Nuevo'), { ok: false, motivo: 'no_encontrada' });           // otro grupo: como si no existiera
+    assert.deepEqual(await apodoDe('ZZZ999', r.sesion, 'Nuevo'), { ok: false, motivo: 'codigo' });
+    await avanzar(r.sesion, 'espera');
+    assert.deepEqual(await apodoDe(A, r.sesion, 'Tarde'), { ok: false, motivo: 'empezada' });                          // ya no se cambia
+  });
+  test('sin «apodo libre» nadie puede cambiarse el apodo', async () => {
+    const r = await crear();
+    const u = await unirse(A, r.sala); assert.equal(u.apodo_libre, false);
+    assert.deepEqual(await apodoDe(A, r.sesion, 'Quiero este'), { ok: false, motivo: 'no_libre' });
+    assert.equal((await miEstado(A, r.sesion)).apodo, u.apodo);
+  });
+
+  test('expulsar: borra al alumno de la sala, se ve en el estado y no puede volver a entrar; los demás siguen', async () => {
+    const r = await salaEnMarcha({}, [A, B]);
+    const cl = (await miEstado(A, r.sesion)).pregunta.clave;
+    await contestar(A, r.sesion, 0, buena(cl));
+    assert.deepEqual(await expulsar(r.sesion, 'TDA2-01'), { ok: true });
+    assert.deepEqual((await estado(r.sesion)).participantes.map(p => p.alumno), ['TDA2-02']);
+    assert.equal(await n('select count(*) n from directo_respuestas'), 0);                                            // sus respuestas se van con él
+    assert.deepEqual(await miEstado(A, r.sesion), { ok: false, motivo: 'no_participas' });
+    assert.deepEqual(await unirse(A, r.sala), { ok: false, motivo: 'expulsado' });
+    assert.deepEqual(await contestar(A, r.sesion, 0, buena(cl)), { ok: false, motivo: 'no_participas' });
+    assert.equal((await miEstado(B, r.sesion)).ok, true);
+    assert.equal((await unirse(C, r.sala)).ok, true);                                                                  // otros sí pueden entrar
+    assert.deepEqual(await expulsar(r.sesion, 'TDA2-01'), { ok: false, motivo: 'no_participa' });
+    assert.deepEqual(await expulsar('00000000-0000-4000-8000-000000000000', 'TDA2-01'), { ok: false, motivo: 'no_encontrada' });
+  });
+  test('expulsar: solo el profesor, y solo vale para ESA sala (en otra sala el alumno entra)', async () => {
+    const r = await crear();
+    await unirse(A, r.sala);
+    await assert.rejects(anon('select public.profe_directo_expulsar($1::uuid, $2)', [r.sesion, 'TDA2-01']), /permission denied/);
+    await assert.rejects(comoUsuario(c, OTRO, 'select public.profe_directo_expulsar($1::uuid, $2)', [r.sesion, 'TDA2-01']), /no_autorizado|permission denied/);
+    assert.equal((await miEstado(A, r.sesion)).ok, true);                                                              // nada cambió
+    await expulsar(r.sesion, 'TDA2-01');
+    await rpc('profe_directo_terminar', r.sesion);
+    const r2 = await crear();
+    assert.equal((await unirse(A, r2.sala)).ok, true);
+  });
+  test('la web pública puede llamar a directo_apodo y no puede leer directo_expulsados', async () => {
+    await assert.rejects(anon('select * from public.directo_expulsados'), /permission denied/);
+    assert.equal((await anon("select public.directo_apodo('ZZZ999', gen_random_uuid(), 'x') as r")).rows[0].r.motivo, 'codigo');
+  });
+});

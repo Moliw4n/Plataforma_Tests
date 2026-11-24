@@ -75,7 +75,7 @@ test.describe('entrar y crear la sala', () => {
     await page.selectOption('#sGrupo', 'TDA2'); await page.check('[name=banco]'); await page.fill('#sPreg', '3'); await page.fill('#sSeg', '30'); await page.fill('#sTit', 'Repaso U1'); await page.uncheck('#sTema');
     await page.click('#bAbrirSala');
     await expect(page.locator('#codigoSala')).toHaveText('123 456');
-    expect(D.creadaCon).toEqual({ grupo: 'TDA2', bancos: ['u1'], preguntas: 3, tiempo_s: 30, equilibrar: 'ninguno', titulo: 'Repaso U1' });
+    expect(D.creadaCon).toEqual({ grupo: 'TDA2', bancos: ['u1'], preguntas: 3, tiempo_s: 30, equilibrar: 'ninguno', lectura_s: 3, apodo_libre: false, titulo: 'Repaso U1' });
     await expect(page.locator('#enlaceSala')).toHaveText(/\/jugar\.html\?d=123456$/);
     await expect(page.locator('#enlaceFijo')).toHaveText(/\/jugar\.html\?d$/);                  // el enlace fijo (sin código) es el destacado: en clase se escribe el código de la sala
     await expect(page.locator('.sala-cab')).toContainText('Repaso U1');
@@ -334,4 +334,55 @@ test('sin ningún error de JavaScript en toda una partida', async ({ page, servi
   for (let q = 0; q < 3; q++) { await page.click('#bAvanzar'); await expect(page.locator('.meta-q')).toContainText('RESULTADO'); await page.click('#bAvanzar'); }
   await expect(page.locator('.final-directo')).toBeVisible();
   expect(errores).toEqual([]);
+});
+
+test.describe('podio, pausa de lectura y sacar de la sala', () => {
+  test('podio: el ganador en el centro, el 2.º a su izquierda y el 3.º a su derecha, cada uno más bajo', async ({ page, servidor }) => {
+    const D = await conSala(page, servidor);
+    D.sembrar([3000, 2000, 1000]); D.estado = 'terminada';
+    await expect(page.locator('.puesto')).toHaveCount(3);
+    const caja = n => page.locator('.puesto-' + n).boundingBox();
+    const [p1, p2, p3] = [await caja(1), await caja(2), await caja(3)];
+    if (movil()) { expect(p2.x).toBeLessThan(p1.x); expect(p1.x).toBeLessThan(p3.x); }          // en el móvil también van en fila
+    else { expect(p2.x + p2.width).toBeLessThanOrEqual(p1.x + 2); expect(p1.x + p1.width).toBeLessThanOrEqual(p3.x + 2); }
+    expect(p1.height).toBeGreaterThan(p2.height); expect(p2.height).toBeGreaterThan(p3.height);
+    await expect(page.locator('.puesto-1')).toContainText('3.000');
+    await sinDesborde(page);
+  });
+  test('el formulario ofrece la pausa de lectura (activada) y el apodo libre (desactivado) y lo manda al crear', async ({ page, servidor }) => {
+    const D = await preparar(page, servidor); await entrar(page);
+    await expect(page.locator('#sLectura')).toBeChecked(); await expect(page.locator('#sApodo')).not.toBeChecked();
+    await page.check('[name=banco]'); await page.fill('#sPreg', '3'); await page.uncheck('#sLectura'); await page.check('#sApodo');
+    await page.click('#bAbrirSala');
+    await expect(page.locator('#codigoSala')).toBeVisible();
+    expect(D.creadaCon).toMatchObject({ lectura_s: 0, apodo_libre: true });
+  });
+  test('con pausa de lectura el proyector enseña primero el enunciado y, pasada la pausa, las opciones con la cuenta atrás', async ({ page, servidor }) => {
+    const D = await conSala(page, servidor); D.lecturaS = 1; jugador(D);
+    await page.click('#bAvanzar');
+    await expect(page.locator('.lectura-aviso')).toBeVisible();
+    await expect(page.locator('.enun-directo')).toHaveText('Enunciado t1mc');
+    await expect(page.locator('.op-d')).toHaveCount(0);
+    await expect(page.locator('#tiempoGrande')).toHaveCount(0);
+    await expect(page.locator('.op-d')).toHaveCount(4, { timeout: 4000 });
+    await expect(page.locator('.lectura-aviso')).toHaveCount(0);
+    await expect(page.locator('#tiempoGrande')).toHaveText(/^(20|19)$/);                          // el tiempo de contestar empieza cuando salen las opciones
+    await sinDesborde(page);
+  });
+  test('en la espera cada jugador lleva una × para sacarlo (con confirmación); desaparece y no puede volver', async ({ page, servidor }) => {
+    const D = await conSala(page, servidor); jugador(D, 'AAA222'); jugador(D, 'BBB333');
+    await expect(page.locator('.x-jug')).toHaveCount(2);
+    await page.locator('.x-jug').first().click();
+    await expect(page.locator('#dlgTexto')).toContainText('No podrá volver a entrar');
+    await page.click('#dlgNo');
+    await expect(page.locator('.x-jug')).toHaveCount(2);                                          // cancelar no saca a nadie
+    expect(D.llamadas.filter(l => l.fn === 'profe_directo_expulsar')).toHaveLength(0);
+    await page.locator('.x-jug').first().click(); await page.click('#dlgSi');
+    await expect(page.locator('.chip-jug')).toHaveCount(1);
+    await expect(page.locator('#nJug')).toHaveText('1');
+    const l = D.llamadas.filter(l => l.fn === 'profe_directo_expulsar');
+    expect(l).toHaveLength(1); expect(l[0].args.p_alumno).toMatch(/^TDA2-0[12]$/);
+    expect(jugador(D, l[0].args.p_alumno === 'TDA2-01' ? 'AAA222' : 'BBB333')).toEqual({ ok: false, motivo: 'expulsado' });
+    await sinDesborde(page);
+  });
 });

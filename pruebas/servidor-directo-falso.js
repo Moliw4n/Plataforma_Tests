@@ -12,7 +12,7 @@ async function crearServidorDirecto(opciones = {}) {
   const S = {
     banco, red: true, desfase: 0, latencia: 0, llamadas: [],
     sesion: '11111111-1111-4111-8111-111111111111', sala: opciones.sala || '123456', grupo: 'TDA2', titulo: opciones.titulo || 'Directo de prueba',
-    tiempoS: opciones.tiempoS || 20,
+    tiempoS: opciones.tiempoS || 20, lecturaS: opciones.lecturaS || 0, apodoLibre: !!opciones.apodoLibre, expulsados: [],
     preguntas: ids.map(id => ({ banco: 'grande', id, clave: 'grande/' + id })), todas: null,
     estado: 'espera', actual: -1, abierta: null, limite: null,
     creada: opciones.creada !== false,          // false: aún no existe; la crea el profesor con profe_directo_crear (como en la pantalla del profesor)
@@ -31,7 +31,7 @@ async function crearServidorDirecto(opciones = {}) {
   const itemAlumno = clave => {
     const d = fuente(clave), o = { clave, tipo: d.tipo, enun: d.enun };
     for (const k of ['code', 'act', 'categoria', 'pista', 'unidad']) if (d[k] !== undefined) o[k] = d[k];
-    if (d.tipo === 'opcion_multiple') o.ops = d.ops.slice();            // el orden de la sala es fijo
+    if (d.tipo === 'opcion_multiple' && !(S.estado === 'pregunta' && S.ahora() < S.abierta)) o.ops = d.ops.slice();    // el orden de la sala es fijo; en la pausa de lectura no salen
     return o;
   };
   // Como el SQL real: nunca se repite un apodo en la misma sala (aquí, 10 nombres y luego se les añade un número)
@@ -45,10 +45,10 @@ async function crearServidorDirecto(opciones = {}) {
     alDia();
     if (desde !== undefined && S.estado !== desde) return { ok: false, motivo: 'estado_cambiado', estado: S.estado };
     const ahora = S.ahora();
-    if (S.estado === 'espera') { S.estado = 'pregunta'; S.actual = 0; S.abierta = ahora; S.limite = ahora + S.tiempoS * 1000; }
+    if (S.estado === 'espera') { S.estado = 'pregunta'; S.actual = 0; S.abierta = ahora + S.lecturaS * 1000; S.limite = S.abierta + S.tiempoS * 1000; }
     else if (S.estado === 'pregunta') { S.estado = 'resultado'; S.limite = Math.min(S.limite, ahora); }
     else if (S.estado === 'resultado') {
-      if (S.actual + 1 < S.preguntas.length) { S.estado = 'pregunta'; S.actual++; S.abierta = ahora; S.limite = ahora + S.tiempoS * 1000; }
+      if (S.actual + 1 < S.preguntas.length) { S.estado = 'pregunta'; S.actual++; S.abierta = ahora + S.lecturaS * 1000; S.limite = S.abierta + S.tiempoS * 1000; }
       else S.estado = 'terminada';
     } else return { ok: false, motivo: 'terminada' };
     return { ok: true, estado: S.estado, actual: S.actual };
@@ -64,10 +64,23 @@ async function crearServidorDirecto(opciones = {}) {
       const a = al(p_codigo); if (!a) return ko('codigo');
       alDia();
       if (S.estado === 'terminada' || p_sala !== S.sala || a.grupo !== S.grupo) return ko('sala');
+      if (S.expulsados.includes(a.id)) return ko('expulsado');
       let pt = participante(a);
       if (!pt) { pt = { alumno: a.id, apodo: apodoNuevo(), puntos: 0, aciertos: 0 }; S.participantes.push(pt); }
       pt.visto = S.ahora();
-      return { ok: true, sesion: S.sesion, apodo: pt.apodo, titulo: S.titulo, total: S.preguntas.length };
+      return { ok: true, sesion: S.sesion, apodo: pt.apodo, titulo: S.titulo, total: S.preguntas.length, apodo_libre: S.apodoLibre };
+    },
+    directo_apodo({ p_codigo, p_sesion, p_apodo }) {
+      const a = al(p_codigo); if (!a) return ko('codigo');
+      if (p_sesion !== S.sesion || a.grupo !== S.grupo) return ko('no_encontrada');
+      const pt = participante(a); if (!pt) return ko('no_participas');
+      if (!S.apodoLibre) return ko('no_libre');
+      alDia(); if (S.estado !== 'espera') return ko('empezada');
+      const n = String(p_apodo || '').trim().replace(/\s+/g, ' ');
+      if (n.length < 2 || n.length > 16 || /[\u0000-\u001f<>]/.test(n)) return ko('dato');
+      if (S.participantes.some(p => p !== pt && p.apodo.toLowerCase() === n.toLowerCase())) return ko('ocupado');
+      pt.apodo = n;
+      return { ok: true, apodo: n };
     },
     directo_estado({ p_codigo, p_sesion }) {
       const a = al(p_codigo); if (!a) return ko('codigo');
@@ -83,6 +96,7 @@ async function crearServidorDirecto(opciones = {}) {
         ok: true, sesion: S.sesion, titulo: S.titulo, estado: S.estado, actual: S.actual, total: S.preguntas.length, tiempo_s: S.tiempoS,
         apodo: pt.apodo, puntos: pt.puntos, aciertos: pt.aciertos, posicion: pos, participantes: S.participantes.length, ahora: S.iso(S.ahora()),
         restante_ms: S.estado === 'pregunta' ? Math.max(0, S.limite - S.ahora()) : null,
+        lectura_ms: S.estado === 'pregunta' ? Math.max(0, S.abierta - S.ahora()) : null,
         pregunta: S.estado === 'pregunta' ? itemAlumno(S.preguntas[S.actual].clave) : null,
         respondio: S.actual >= 0 && S.estado !== 'terminada' ? !!r : null,
         mi_dada: S.estado === 'pregunta' && r ? r.dada : null,
@@ -98,6 +112,7 @@ async function crearServidorDirecto(opciones = {}) {
       const pt = participante(a); if (!pt) return ko('no_participas');
       if (p_pregunta !== S.actual) return ko('otra_pregunta');
       if (S.estado !== 'pregunta') return ko('cerrada');
+      if (S.ahora() < S.abierta) return ko('aun_no');
       const d = fuente(S.preguntas[S.actual].clave);
       if (d.tipo === 'opcion_multiple') { if (!Number.isInteger(p_dada) || p_dada < 0 || p_dada >= d.ops.length) return ko('dato'); }
       else if (typeof p_dada !== 'boolean') return ko('dato');
@@ -123,6 +138,8 @@ async function crearServidorDirecto(opciones = {}) {
       S.creadaCon = p_datos;
       S.estado = 'espera'; S.actual = -1; S.abierta = null; S.limite = null; S.participantes = []; S.respuestas = []; S.creada = true;
       if (p_datos.tiempo_s) S.tiempoS = p_datos.tiempo_s;
+      // lecturaS y apodoLibre NO se toman de p_datos: los fija cada prueba (S.lecturaS = 3…), para que la pausa no cambie el ritmo de las demás
+      S.expulsados = [];
       if (p_datos.titulo) S.titulo = p_datos.titulo;
       if (p_datos.grupo) S.grupo = p_datos.grupo;
       if (p_datos.preguntas && p_datos.preguntas < S.todas.length) S.preguntas = S.todas.slice(0, p_datos.preguntas);
@@ -135,6 +152,7 @@ async function crearServidorDirecto(opciones = {}) {
       return sinNulos({
         ok: true, sesion: S.sesion, sala: S.sala, titulo: S.titulo, grupo: S.grupo, estado: S.estado, actual: q, total: S.preguntas.length, tiempo_s: S.tiempoS, ahora: S.iso(S.ahora()),
         restante_ms: S.estado === 'pregunta' ? Math.max(0, S.limite - S.ahora()) : null,
+        lectura_ms: S.estado === 'pregunta' ? Math.max(0, S.abierta - S.ahora()) : null,
         participantes: ordenar().map(p => ({ alumno: p.alumno, apodo: p.apodo, puntos: p.puntos, aciertos: p.aciertos, conectado: S.ahora() - (p.visto || 0) < 8000,
                                              respondio: q >= 0 && !!respDe(p.alumno, q) })),
         respondidas: q >= 0 ? S.respuestas.filter(r => r.pregunta === q).length : null,
@@ -146,6 +164,12 @@ async function crearServidorDirecto(opciones = {}) {
     profe_directo_terminar({ p_sesion }) { if (!S.creada || p_sesion !== S.sesion) return { ok: false }; S.estado = 'terminada'; return { ok: true }; },
     profe_directo_activas() {
       return { ok: true, salas: S.creada && S.estado !== 'terminada' ? [{ sesion: S.sesion, sala: S.sala, titulo: S.titulo, grupo: S.grupo, estado: S.estado, creada: S.iso(S.ahora()), participantes: S.participantes.length }] : [] };
+    },
+    profe_directo_expulsar({ p_sesion, p_alumno }) {
+      if (!S.creada || p_sesion !== S.sesion) return ko('no_encontrada');
+      if (!S.participantes.some(p => p.alumno === p_alumno)) return ko('no_participa');
+      S.expulsados.push(p_alumno); S.participantes = S.participantes.filter(p => p.alumno !== p_alumno); S.respuestas = S.respuestas.filter(r => r.alumno !== p_alumno);
+      return { ok: true };
     },
     profe_directo_borrar({ p_sesion }) { if (!S.creada || p_sesion !== S.sesion) return { ok: false }; S.creada = false; return { ok: true }; }
   };

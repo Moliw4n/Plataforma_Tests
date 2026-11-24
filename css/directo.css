@@ -56,14 +56,20 @@
 .final-directo{display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center}
 .final-directo .sup{font-family:Orbitron,sans-serif;color:var(--naranja);font-weight:800;letter-spacing:.2em}
 .final-directo h1{font-family:Orbitron,sans-serif;font-size:clamp(34px,7vw,72px);margin:0}
-.podio{display:flex;gap:14px;align-items:flex-end;justify-content:center;flex-wrap:wrap;width:100%}
-.puesto{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--panel);border:2px solid var(--borde);border-radius:18px;padding:16px 22px;min-width:min(220px,28vw);max-width:100%}
-.puesto b{font-family:Orbitron,sans-serif;font-size:clamp(16px,2.6vw,30px);color:var(--cian);overflow-wrap:anywhere}
-.puesto .medalla{font-size:clamp(34px,6vw,64px)}
-.puesto .pt{font-family:Orbitron,sans-serif;color:var(--naranja);font-weight:800;font-size:clamp(16px,2.4vw,26px)}
-.puesto small{color:var(--mut)}
-.puesto-1{border-color:var(--ambar);padding-top:28px;padding-bottom:28px}
-@media (max-width:640px){.podio{flex-direction:column;align-items:stretch}.puesto{min-width:0}}
+.podio{display:flex;gap:0;align-items:flex-end;justify-content:center;width:100%;max-width:900px}
+.podio .puesto{box-shadow:none;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;border:2px solid var(--borde);border-bottom:0;border-radius:18px 18px 0 0;padding:16px 14px;flex:1 1 0;min-width:0;max-width:100%;text-align:center}
+.podio .puesto b{font-family:Orbitron,sans-serif;font-size:clamp(15px,2.4vw,28px);color:#0b1226;overflow-wrap:anywhere}
+.podio .puesto .medalla{font-size:clamp(34px,6vw,64px)}
+.podio .puesto .pt{font-family:Orbitron,sans-serif;font-weight:800;font-size:clamp(15px,2.2vw,24px);color:#0b1226}
+.podio .puesto small{color:#0b1226;opacity:.8}
+/* El ganador en el centro, el 2.º a su izquierda y el 3.º a su derecha; cada escalón a su altura */
+.podio .puesto-1{order:2;background:#d8b350;border-color:#d8b350;min-height:min(340px,52vw);}
+.podio .puesto-2{order:1;background:#aab1bb;border-color:#aab1bb;min-height:min(260px,40vw)}
+.podio .puesto-3{order:3;background:#b27f53;border-color:#b27f53;min-height:min(200px,31vw)}
+.x-jug{background:none;border:0;color:inherit;font-size:1.1em;line-height:1;cursor:pointer;padding:0 2px;opacity:.7}
+.x-jug:hover,.x-jug:focus-visible{opacity:1;color:#ff6b5e}
+.lectura-aviso{font-family:Orbitron,sans-serif;font-size:clamp(16px,2.4vw,28px);color:var(--cian);text-align:center;margin:28px 0 0}
+@media (max-width:640px){.podio{gap:6px}.podio .puesto{padding:10px 6px}.podio .puesto b{font-size:clamp(12px,3.6vw,18px)}.podio .puesto .medalla{font-size:32px}}
 
 /* En el entorno de pruebas la franja amarilla «PRUEBAS» va fija abajo: los botones se suben para que no los tape */
 body:has(#franja-pruebas) .controles-directo{bottom:32px;border-bottom:1px solid var(--borde)}

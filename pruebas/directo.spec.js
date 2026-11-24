@@ -343,3 +343,47 @@ test('sin ningún error de JavaScript en toda una partida', async ({ page, servi
   S.avanzar(); await expect(page.locator('.directo-res h1')).toHaveText('¡Se acabó!');
   expect(errores).toEqual([]);
 });
+
+test.describe('pausa de lectura, apodo libre y expulsado', () => {
+  test('con pausa de lectura: primero el enunciado SIN opciones y, al acabar la pausa, las opciones y el reloj', async ({ page, servidor }) => {
+    const S = await abrir(page, servidor, { lecturaS: 1 });
+    await expect(page.locator('.directo-espera h1')).toHaveText('¡Estás dentro!');
+    S.avanzar();
+    await expect(page.locator('.directo-lectura .enun')).toHaveText('Enunciado t1mc');
+    await expect(page.locator('.directo-lectura')).toContainText('las opciones salen enseguida');
+    await expect(page.locator('.op')).toHaveCount(0);
+    await sinDesborde(page);
+    await expect(page.locator('.q.en-examen .op')).toHaveCount(4, { timeout: 4000 });          // la pausa acaba y salen
+    await expect(page.locator('.directo-lectura')).toHaveCount(0);
+    await opcion(page, 'B t1').click();                                                         // y ya se puede contestar
+    await expect(page.locator('#estadoEnvio')).toContainText('Respuesta enviada');
+  });
+  test('con apodo libre: se puede cambiar en la espera, avisa si está ocupado y si no es válido', async ({ page, servidor }) => {
+    const S = await abrir(page, servidor, { apodoLibre: true });
+    await expect(page.locator('#fApodo')).toBeVisible();
+    await expect(page.locator('#escena')).toContainText('Nada de tu nombre real');
+    await page.fill('#iApodo', 'x'); await page.click('#bApodo');
+    await expect(page.locator('#msgApodo')).toContainText('de 2 a 16 caracteres');
+    S.sembrar([0]);                                                                              // otro jugador con apodo «Lobo Rojo 2»
+    await page.fill('#iApodo', 'lobo rojo 2'); await page.click('#bApodo');
+    await expect(page.locator('#msgApodo')).toContainText('ya lo tiene otra persona');
+    await page.fill('#iApodo', 'Capitán Kiron'); await page.click('#bApodo');
+    await expect(page.locator('#apodoGrande')).toHaveText('Capitán Kiron');
+    await expect(page.locator('#msgApodo')).toContainText('¡Hecho!');
+    S.avanzar();
+    await expect(page.locator('.apodo-chip')).toHaveText('Capitán Kiron');                        // lo ve también durante la partida
+    await sinDesborde(page);
+  });
+  test('sin apodo libre no hay formulario para cambiarlo', async ({ page, servidor }) => {
+    await abrir(page, servidor);
+    await expect(page.locator('#apodoGrande')).toBeVisible();
+    await expect(page.locator('#fApodo')).toHaveCount(0);
+  });
+  test('si el profesor lo saca de la sala, lo ve claro y no puede volver a entrar', async ({ page, servidor }) => {
+    const S = await abrir(page, servidor);
+    await expect(page.locator('.directo-espera h1')).toHaveText('¡Estás dentro!');
+    S.profe('profe_directo_expulsar', { p_sesion: S.sesion, p_alumno: 'TDA2-07' });
+    await expect(page.locator('#escena')).toContainText('Tu profesor te ha sacado de esta sala', { timeout: 4000 });
+    await expect(page.locator('.directo-espera')).toHaveCount(0);
+  });
+});

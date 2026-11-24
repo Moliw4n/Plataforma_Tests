@@ -98,6 +98,8 @@ import { crearSesionProfe } from './nucleo/sesion-profe.js';
         '<div class="campo"><label for="sSeg">SEGUNDOS POR PREGUNTA</label><input id="sSeg" type="number" min="5" max="120" value="20"></div></div>' +
         '<div class="campo"><label for="sTit">TÍTULO (opcional)</label><input id="sTit" type="text" maxlength="80" placeholder="Repaso de la unidad 1"></div>' +
         '<label class="check"><input type="checkbox" id="sTema" checked> <span>Repartir las preguntas por temas</span></label>' +
+        '<label class="check"><input type="checkbox" id="sLectura" checked> <span>Pausa de 3 s para leer la pregunta antes de que salgan las opciones</span></label>' +
+        '<label class="check"><input type="checkbox" id="sApodo"> <span>Que cada alumno pueda elegir su apodo (tú puedes sacar de la sala a quien ponga uno que no toca)</span></label>' +
         '<button class="btn pri" id="bAbrirSala" style="justify-content:center;padding:14px">Abrir sala →</button><p class="msg-error" id="msgSala" role="status"></p></form>'
         : '<p class="dato-p">Aún no hay bancos con preguntas de opción múltiple o verdadero/falso. Súbelos desde el panel (Exámenes → Bancos).</p>') +
       '</section>';
@@ -116,7 +118,7 @@ import { crearSesionProfe } from './nucleo/sesion-profe.js';
       if (n > total) { msg.textContent = 'Los bancos elegidos solo tienen ' + total + ' preguntas jugables.'; return; }
       if (!Number.isInteger(seg) || seg < 5 || seg > 120) { msg.textContent = 'Los segundos deben ser de 5 a 120.'; return; }
       $('#bAbrirSala').disabled = true; msg.textContent = '';
-      const datos = { grupo: $('#sGrupo').value, bancos: bs, preguntas: n, tiempo_s: seg, equilibrar: $('#sTema').checked ? 'tema' : 'ninguno' };
+      const datos = { grupo: $('#sGrupo').value, bancos: bs, preguntas: n, tiempo_s: seg, equilibrar: $('#sTema').checked ? 'tema' : 'ninguno', lectura_s: $('#sLectura').checked ? 3 : 0, apodo_libre: $('#sApodo').checked };
       if ($('#sTit').value.trim()) datos.titulo = $('#sTit').value.trim();
       try { const r = await S.rpc('profe_directo_crear', { p_datos: datos }); abrirSala(r.sesion); }
       catch (err) { if (String(err.message) === '401') return; msg.textContent = errorLegible(err); $('#bAbrirSala').disabled = false; }
@@ -154,7 +156,7 @@ import { crearSesionProfe } from './nucleo/sesion-profe.js';
       if (!r.ok) return inicio('Esa sala ya no existe.');
       est = r; pintar(r);
     }
-    sondeoId = setTimeout(() => sondear(mio), SONDEO_MS);
+    sondeoId = setTimeout(() => sondear(mio), r && r.ok && r.estado === 'pregunta' && r.lectura_ms > 0 ? Math.min(SONDEO_MS, r.lectura_ms + 150) : SONDEO_MS);
   }
   function avisoRed(hay) {
     if (hay === sinRed) return;
@@ -171,15 +173,17 @@ import { crearSesionProfe } from './nucleo/sesion-profe.js';
   }
   function pintar(r) {
     if (r.estado === 'pregunta') limiteLocal = Date.now() + r.restante_ms;
-    const k = r.estado + ':' + r.actual + ':' + (mostrarIds ? 'ids' : '');
+    const k = (r.estado === 'pregunta' && r.lectura_ms > 0 ? 'lectura' : r.estado) + ':' + r.actual + ':' + (mostrarIds ? 'ids' : '');
     if (r.estado === 'espera') return pintarEspera(r, k);
+    if (r.estado === 'pregunta' && r.lectura_ms > 0) return pintarLectura(r, k);
     if (r.estado === 'pregunta') return pintarPregunta(r, k);
     if (r.estado === 'resultado') return pintarResultado(r, k);
     return pintarFinal(r, k);
   }
   const controles = html => '<div class="controles-directo">' + html + '</div>';
-  const chipsJugadores = r => r.participantes.length ? r.participantes.map(p =>
-    '<span class="chip-jug' + (p.conectado ? '' : ' fuera') + '">' + esc(p.apodo) + (mostrarIds ? ' <small>' + esc(p.alumno) + '</small>' : '') + '</span>').join('') : '<span class="dato-p">Aún no ha entrado nadie…</span>';
+  const chipsJugadores = (r, sacar) => r.participantes.length ? r.participantes.map(p =>
+    '<span class="chip-jug' + (p.conectado ? '' : ' fuera') + '">' + esc(p.apodo) + (mostrarIds ? ' <small>' + esc(p.alumno) + '</small>' : '') +
+    (sacar ? ' <button type="button" class="x-jug" data-sacar="' + esc(p.alumno) + '" data-apodo="' + esc(p.apodo) + '" title="Sacar de la sala" aria-label="Sacar de la sala a ' + esc(p.apodo) + '">×</button>' : '') + '</span>').join('') : '<span class="dato-p">Aún no ha entrado nadie…</span>';
 
   /* ---------- espera: el código para unirse ---------- */
   function pintarEspera(r, k) {
@@ -194,9 +198,10 @@ import { crearSesionProfe } from './nucleo/sesion-profe.js';
         '<div class="chips-jugadores" id="chips"></div></div>' +
         controles('<button class="btn pri grande" id="bAvanzar">Empezar ▶</button><button class="btn peligro" id="bCerrarSala">Cerrar sala</button>');
       enlazarComunes();
+      $('#chips').onclick = e => { const b = e.target.closest('[data-sacar]'); if (b) sacar(b.dataset.sacar, b.dataset.apodo); };
       $('#bCopiar').onclick = async () => { try { await navigator.clipboard.writeText(ENLACE()); $('#bCopiar').textContent = '¡Copiado!'; } catch (e) { $('#bCopiar').textContent = 'Cópialo a mano'; } };
     }
-    $('#chips').innerHTML = chipsJugadores(r);
+    $('#chips').innerHTML = chipsJugadores(r, true);
     $('#nJug').textContent = r.participantes.length;
   }
 
@@ -218,6 +223,17 @@ import { crearSesionProfe } from './nucleo/sesion-profe.js';
     const p = r.pregunta;
     return '<h2 class="enun-directo">' + esc(p.enun) + '</h2>' + (p.code ? '<pre class="codigo codigo-directo">' + conLineas(p.code) + '</pre>' : '');
   }
+  function pintarLectura(r, k) {
+    if (clave !== k) {
+      clave = k; clearInterval(relojId);
+      app.innerHTML = cabSala(r) +
+        '<div class="proyector-q"><div class="meta-q"><span>PREGUNTA ' + (r.actual + 1) + ' DE ' + r.total + '</span><span>Lee la pregunta…</span></div>' +
+        preguntaHtml(r) + '<p class="lectura-aviso">Las opciones salen enseguida</p></div>' +
+        controles('<button class="btn pri grande" id="bAvanzar">Cerrar la pregunta ■</button><button class="btn peligro" id="bCerrarSala">Cerrar sala</button>');
+      enlazarComunes();
+    }
+    $('#nJug').textContent = r.participantes.length;
+  }
   function pintarPregunta(r, k) {
     if (clave !== k) {
       clave = k; clearInterval(relojId);
@@ -228,7 +244,7 @@ import { crearSesionProfe } from './nucleo/sesion-profe.js';
         controles('<button class="btn pri grande" id="bAvanzar">Cerrar la pregunta ■</button><button class="btn peligro" id="bCerrarSala">Cerrar sala</button>');
       enlazarComunes();
       const tic = () => {
-        const ms = Math.max(0, limiteLocal - Date.now()), s = Math.ceil(ms / 1000);
+        const ms = Math.min(Math.max(0, limiteLocal - Date.now()), r.tiempo_s * 1000), s = Math.ceil(ms / 1000);
         const g = $('#tiempoGrande'); if (g) { g.textContent = s; g.className = 'tiempo-grande' + (s <= 5 ? ' ultimos' : ''); }
         const b = $('#barraGrande'); if (b) b.style.width = Math.min(100, ms / (r.tiempo_s * 10)) + '%';
       };
@@ -292,6 +308,11 @@ import { crearSesionProfe } from './nucleo/sesion-profe.js';
       clearTimeout(sondeoId); sondear(++token);                       // se refresca ya, sin esperar al sondeo
     } catch (e) { if (String(e.message) !== '401') { avisoRed(true); if (b) b.disabled = false; } }
     ocupado = false;
+  }
+  async function sacar(alumno, apodo) {
+    if (!await confirmar('¿Sacar a «' + apodo + '» de la sala? No podrá volver a entrar en ella.', 'Sacar de la sala')) return;
+    try { await S.rpc('profe_directo_expulsar', { p_sesion: sala, p_alumno: alumno }); clearTimeout(sondeoId); sondear(++token); }
+    catch (e) { if (String(e.message) !== '401') alert(errorLegible(e)); }
   }
   async function cerrarSala() {
     if (!await confirmar('¿Cerrar la sala? Los alumnos verán el final.', 'Cerrar la sala')) return;
