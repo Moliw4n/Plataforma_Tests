@@ -2,7 +2,7 @@
    Se ejecuta con: npm run test:sql   (la ayuda común está en pruebas/ayuda-sql.js) */
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { SQL, iniciar, parar, conectar, baseNueva, como } = require('./ayuda-sql');
+const { SQL, iniciar, parar, conectar, baseNueva, como, comoUsuario } = require('./ayuda-sql');
 
 test.before(iniciar);
 test.after(parar);
@@ -10,6 +10,19 @@ test.after(parar);
 test('01 y 03 se pueden ejecutar dos veces seguidas sin romper nada', async () => {
   const c = await baseNueva('idem');
   await c.query(SQL('01_esquema.sql')); await c.query(SQL('03_profesor_alumnos.sql'));
+});
+
+test('profe_alta_alumnos: el nombre del grupo se pone al crearlo y las altas siguientes NO lo pisan', async () => {
+  const c = await baseNueva('nombre_grupo');
+  await c.query("insert into public.profesores(email) values ('p@ejemplo.es')");
+  const hash = 'a'.repeat(64), hash2 = 'b'.repeat(64);
+  const alta = (nombre, id, h) => comoUsuario(c, 'p@ejemplo.es', 'select public.profe_alta_alumnos($1, $2, $3::jsonb) r', ['TDA1', nombre, JSON.stringify([{ id, hash: h, activo: true }])]);
+  await alta('TDA I', 'TDA1-01', hash);
+  assert.equal((await c.query("select nombre from public.grupos where id = 'TDA1'")).rows[0].nombre, 'TDA I');
+  const r = await alta('1BACH_TDA_I', 'TDA1-02', hash2);      // otra sincronización, con otro nombre
+  assert.equal(r.rows[0].r.ok, true);
+  assert.equal((await c.query("select nombre from public.grupos where id = 'TDA1'")).rows[0].nombre, 'TDA I');
+  assert.equal((await c.query("select count(*)::int n from public.alumnos where grupo = 'TDA1'")).rows[0].n, 2);   // los alumnos sí se suman
 });
 
 test.describe('04_latido.sql', () => {

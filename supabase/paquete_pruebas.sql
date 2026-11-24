@@ -231,8 +231,9 @@ begin
   if jsonb_typeof(p_alumnos) is distinct from 'array' or jsonb_array_length(p_alumnos) > 60 then
     raise exception 'lista_no_valida';
   end if;
+  -- El nombre se pone SOLO al crear el grupo: las sincronizaciones siguientes no lo pisan.
   insert into public.grupos(id, nombre) values (p_grupo, left(coalesce(nullif(p_nombre, ''), p_grupo), 60))
-  on conflict (id) do update set nombre = excluded.nombre;
+  on conflict (id) do nothing;
   for a in select * from jsonb_array_elements(p_alumnos) loop
     if (a ->> 'id') !~ ('^' || p_grupo || '-[0-9]{2,3}$') then raise exception 'id_no_valido: %', a ->> 'id'; end if;
     if (a ->> 'hash') !~ '^[0-9a-f]{64}$' then raise exception 'hash_no_valido: %', a ->> 'id'; end if;
