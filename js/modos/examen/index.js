@@ -24,7 +24,7 @@ let t0 = 0, inicio = 0;
 let limiteLocal = 0;        // instante (Date.now()) en que se acaba, corregido con el reloj del servidor
 let relojId = null, reintentoId = null;
 let pendientes = new Map(), enVuelo = new Set();
-let sinRedDesde = null, salidas = 0, fueraDesde = null;
+let sinRedDesde = null, salidas = 0, fueraDesde = null, focoDesde = null, focos = 0;
 let activo = false, entregando = false, acabado = false;
 let aviso1 = null;
 
@@ -130,7 +130,7 @@ async function empezar() {
 
 function arrancar(r) {
   partida = r; items = r.items; pos = 0;
-  resp = {}; acumMs = {}; pendientes = new Map(); enVuelo = new Set(); salidas = 0; fueraDesde = null; sinRedDesde = null;
+  resp = {}; acumMs = {}; pendientes = new Map(); enVuelo = new Set(); salidas = 0; fueraDesde = null; focoDesde = null; focos = 0; sinRedDesde = null;
   for (const [clave, v] of Object.entries(r.respondidas || {})) resp[clave] = v;
   limiteLocal = Date.now() + r.restante_s * 1000;
   inicio = Date.now(); activo = true; entregando = false; acabado = false;
@@ -145,6 +145,8 @@ function arrancar(r) {
   if (!$('#bFin')) { const b = document.createElement('button'); b.className = 'btn'; b.id = 'bFin'; b.textContent = 'Entregar'; b.title = 'Revisar y entregar'; $('#bot').insertBefore(b, $('#bSig')); }
   $('#bFin').onclick = () => { if (activo) { guardarPendienteDeLaVista(); revisar(); } };
   document.addEventListener('visibilitychange', alCambiarVisibilidad);
+  window.addEventListener('blur', alPerderFoco);
+  window.addEventListener('focus', alRecuperarFoco);
   document.addEventListener('keydown', teclado);
   window.addEventListener('beforeunload', antesDeCerrar);
   window.addEventListener('online', reintentarYa);
@@ -269,6 +271,25 @@ function alCambiarVisibilidad() {
     aviso('Has salido de la página ' + (salidas === 1 ? 'una vez' : salidas + ' veces') + '. Queda anotado.', { id: 'salida', segundos: 12 });
   }
 }
+/* Foco perdido: la ventana del examen sigue VISIBLE pero el alumno ha pulsado en otra (dos ventanas a la vez).
+   Se anota como «otro» con detalle.foco (no hace falta cambiar el SQL). Si lo que pasa es una salida de pestaña, ya la cuenta visibilitychange. */
+const FOCO_MIN_MS = 1500;                       // un blur más corto (notificación del sistema, etc.) no se anota
+function alPerderFoco() {
+  if (!activo || focoDesde) return;
+  const t0 = Date.now(); focoDesde = t0;
+  setTimeout(() => {
+    if (focoDesde !== t0) return;               // ya volvió antes de tiempo
+    if (document.visibilityState === 'hidden' || fueraDesde) { focoDesde = null; return; }   // es una salida de pestaña: ya anotada
+    focos++; focoDesde = -t0;                   // negativo = ya anotado
+    evento('otro', { foco: 'perdido' });
+    aviso('Has pulsado fuera de la ventana del examen. Queda anotado.', { id: 'foco', segundos: 12 });
+  }, FOCO_MIN_MS);
+}
+function alRecuperarFoco() {
+  if (!activo || !focoDesde) return;
+  if (focoDesde < 0) { const seg = Math.round((Date.now() + focoDesde) / 1000); evento('otro', { foco: 'vuelto', segundos: seg }); }
+  focoDesde = null;
+}
 function antesDeCerrar(e) { if (pendientes.size) { e.preventDefault(); e.returnValue = ''; } }
 
 /* ---------- teclado ---------- */
@@ -348,6 +369,8 @@ function finPorServidor(motivo) {
 function limpiarSesion() {
   activo = false; entregando = false; clearInterval(relojId); clearInterval(reintentoId);
   document.removeEventListener('visibilitychange', alCambiarVisibilidad);
+  window.removeEventListener('blur', alPerderFoco);
+  window.removeEventListener('focus', alRecuperarFoco);
   document.removeEventListener('keydown', teclado);
   window.removeEventListener('beforeunload', antesDeCerrar);
   window.removeEventListener('online', reintentarYa);

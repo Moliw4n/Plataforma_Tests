@@ -241,6 +241,22 @@ test.describe('resultados de un examen', () => {
     await page.locator('.cronologia summary').click();
     await expect(page.locator('.linea-eventos li')).toHaveText(/Recargó o reabrió la página/);
   });
+  test('la cronología distingue el foco perdido (otra ventana a la vez) y lo cuenta aparte', async ({ page, servidor }) => {
+    const base = datosExamen();
+    const id = 'aaaaaaaa-0000-4000-8000-000000000002';
+    await abrir(page, servidor, { extra: { eventos: [...base.eventos,
+      { partida: id, tipo: 'otro', momento: '2026-11-25T09:20:00+00:00', detalle: { foco: 'perdido' } },
+      { partida: id, tipo: 'otro', momento: '2026-11-25T09:20:40+00:00', detalle: { foco: 'vuelto', segundos: 40 } }] } });
+    await aResultados(page);
+    await visible(page, '[data-id="TDA2-02"]').click();
+    await expect(page.locator('.cronologia')).toContainText('Pulsó fuera de la ventana del examen 1 vez');
+    await page.locator('.cronologia summary').click();
+    const lineas = page.locator('.linea-eventos li');
+    await expect(lineas).toHaveCount(3);
+    await expect(lineas.nth(1)).toContainText('Pulsó fuera de la ventana del examen');
+    await expect(lineas.nth(2)).toContainText('Volvió a la ventana del examen (40 s fuera de foco)');
+    await sinDesborde(page);
+  });
   test('un alumno con partida en curso y preguntas en blanco', async ({ page, servidor }) => {
     await abrir(page, servidor); await aResultados(page);
     await visible(page, '[data-id="TDA2-02"]').click();

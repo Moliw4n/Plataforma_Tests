@@ -197,7 +197,7 @@ section.gestion h2{font-family:Orbitron,sans-serif;font-size:15px;letter-spacing
 .linea-eventos{list-style:none;margin:8px 0 0;padding:0 0 0 4px;display:flex;flex-direction:column;gap:3px;font-size:14px;border-left:2px solid var(--borde)}
 .linea-eventos li{padding-left:10px}
 .linea-eventos time{font-family:'Cascadia Mono',Consolas,Menlo,monospace;color:var(--tinta);margin-right:6px}
-.linea-eventos .ev-salida{color:var(--ambar)}.linea-eventos .ev-sin_red{color:var(--rojo)}.linea-eventos .ev-recarga{color:var(--morado)}
+.linea-eventos .ev-salida{color:var(--ambar)}.linea-eventos .ev-sin_red{color:var(--rojo)}.linea-eventos .ev-recarga{color:var(--morado)}.linea-eventos .ev-foco{color:var(--ambar)}
 /* tablas de la gestión de exámenes: siempre visibles (también en móvil, con scroll si no caben) */
 .tabla-ex{overflow-x:auto;border:1px solid var(--borde);border-radius:var(--r)}
 .tabla-ex table.datos{min-width:480px}

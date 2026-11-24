@@ -332,6 +332,27 @@ test.describe('si algo falla', () => {
     await visibilidad('hidden'); await visibilidad('visible');
     await expect(page.locator('.aviso-examen')).toContainText('2 veces');
   });
+  test('pulsar en otra ventana (la del examen sigue visible) se anota como foco perdido, con los segundos al volver', async ({ page, servidor }) => {
+    const S = await empezar(page, servidor);
+    await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+    await expect.poll(() => S.eventos.map(e => e.tipo + ':' + (e.detalle && e.detalle.foco))).toEqual(['otro:perdido']);
+    await expect(page.locator('.aviso-examen')).toContainText('Has pulsado fuera de la ventana del examen');
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await expect.poll(() => S.eventos.map(e => e.tipo + ':' + (e.detalle && e.detalle.foco))).toEqual(['otro:perdido', 'otro:vuelto']);
+    expect(Number.isInteger(S.eventos[1].detalle.segundos)).toBe(true);
+  });
+  test('un foco perdido muy corto (notificación del sistema) no se anota', async ({ page, servidor }) => {
+    const S = await empezar(page, servidor);
+    await page.evaluate(() => { window.dispatchEvent(new Event('blur')); setTimeout(() => window.dispatchEvent(new Event('focus')), 200); });
+    await page.waitForTimeout(2000);
+    expect(S.eventos).toEqual([]);
+  });
+  test('si al perder el foco la pestaña queda oculta, cuenta solo como salida (sin foco duplicado)', async ({ page, servidor }) => {
+    const S = await empezar(page, servidor);
+    await page.evaluate(() => { window.dispatchEvent(new Event('blur')); Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' }); document.dispatchEvent(new Event('visibilitychange')); });
+    await page.waitForTimeout(2000);
+    expect(S.eventos.map(e => e.tipo)).toEqual(['salida']);
+  });
   test('se acaba el tiempo: se entrega solo', async ({ page, servidor }) => {
     await page.clock.install();
     const S = await empezar(page, servidor);
