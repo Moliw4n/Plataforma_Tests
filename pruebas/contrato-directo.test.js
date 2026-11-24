@@ -114,6 +114,41 @@ async function guion(banco, ids, contestarBien) {
   ambos('profe borrar (ya no existe)', await PR('profe_directo_borrar', sala.sesion), PF('profe_directo_borrar', { p_sesion: falso.sesion }));
   ambos('responder con la sala terminada', await real.responder(A, sala.sesion, 2, dadaBuena), F('directo_responder', { p_codigo: A, p_sesion: falso.sesion, p_pregunta: 2, p_dada: dadaBuena }));
   ambos('unirse a una sala terminada', await real.unirse(A, sala.sala), F('directo_unirse', { p_codigo: A, p_sala: sala.sala }));
+  // 7) pausa de lectura, apodo libre y expulsar (otra sala, con las dos opciones activadas)
+  await extras(banco, ids);
+}
+
+// Pausa de lectura + apodo libre + expulsar: otra sala, mismo guion contra el real y el falso
+async function extras(banco, ids) {
+  await c.query('truncate directo_respuestas, directo_participantes, directo_sesiones cascade');
+  const datos = { grupo: 'TDA2', bancos: [banco], preguntas: 2, tiempo_s: 30, lectura_s: 3, apodo_libre: true };
+  const sala = await real.profe('profe_directo_crear', JSON.stringify(datos));
+  const falso = await crearServidorDirecto({ preguntas: ids.slice(0, 2), tiempoS: 30, sala: sala.sala, creada: false });
+  const F = (fn, a) => falso.llamar(fn, a), PF = (fn, a) => falso.profe(fn, a), PR = (fn, ...a) => real.profe(fn, ...a);
+  ambos('crear con lectura y apodo libre', sala, PF('profe_directo_crear', { p_datos: datos }));
+  const A = 'AAA222', B = 'BBB333';
+  const dadaBuena = banco === 'gmc' ? 1 : true;
+  const apodo = async (cod, ap) => (await como(c, 'anon', 'select public.directo_apodo($1, $2::uuid, $3) as r', [cod, sala.sesion, ap])).rows[0].r;
+  ambos('unirse (apodo libre)', await real.unirse(A, sala.sala), F('directo_unirse', { p_codigo: A, p_sala: sala.sala }));
+  await real.unirse(B, sala.sala); F('directo_unirse', { p_codigo: B, p_sala: sala.sala });
+  ambos('apodo ok', await apodo(A, 'Capitán Kiron'), F('directo_apodo', { p_codigo: A, p_sesion: falso.sesion, p_apodo: 'Capitán Kiron' }));
+  ambos('apodo ocupado', await apodo(B, 'capitán kiron'), F('directo_apodo', { p_codigo: B, p_sesion: falso.sesion, p_apodo: 'capitán kiron' }));
+  ambos('apodo raro', await apodo(B, '<x>'), F('directo_apodo', { p_codigo: B, p_sesion: falso.sesion, p_apodo: '<x>' }));
+  ambos('apodo: no participa', await apodo('CCC444', 'Hola'), F('directo_apodo', { p_codigo: 'CCC444', p_sesion: falso.sesion, p_apodo: 'Hola' }));
+  ambos('apodo: código malo', await apodo('ZZZ999', 'Hola'), F('directo_apodo', { p_codigo: 'ZZZ999', p_sesion: falso.sesion, p_apodo: 'Hola' }));
+  ambos('profe estado (con apodos)', await PR('profe_directo_estado', sala.sesion), PF('profe_directo_estado', { p_sesion: falso.sesion }));
+  ambos('avanzar (con lectura)', await PR('profe_directo_avanzar', sala.sesion, 'espera'), falso.avanzar('espera'));
+  ambos('apodo ya empezada', await apodo(A, 'Tarde'), F('directo_apodo', { p_codigo: A, p_sesion: falso.sesion, p_apodo: 'Tarde' }));
+  ambos('estado en la lectura (sin opciones)', await real.estado(A, sala.sesion), F('directo_estado', { p_codigo: A, p_sesion: falso.sesion }));
+  ambos('profe estado en la lectura', await PR('profe_directo_estado', sala.sesion), PF('profe_directo_estado', { p_sesion: falso.sesion }));
+  ambos('responder en la lectura', await real.responder(A, sala.sesion, 0, dadaBuena), F('directo_responder', { p_codigo: A, p_sesion: falso.sesion, p_pregunta: 0, p_dada: dadaBuena }));
+  ambos('expulsar', await PR('profe_directo_expulsar', sala.sesion, 'TDA2-02'), PF('profe_directo_expulsar', { p_sesion: falso.sesion, p_alumno: 'TDA2-02' }));
+  ambos('expulsar otra vez', await PR('profe_directo_expulsar', sala.sesion, 'TDA2-02'), PF('profe_directo_expulsar', { p_sesion: falso.sesion, p_alumno: 'TDA2-02' }));
+  ambos('expulsar: sala que no existe', await PR('profe_directo_expulsar', '00000000-0000-4000-8000-000000000000', 'TDA2-02'), PF('profe_directo_expulsar', { p_sesion: '00000000-0000-4000-8000-000000000000', p_alumno: 'TDA2-02' }));
+  ambos('estado del expulsado', await real.estado(B, sala.sesion), F('directo_estado', { p_codigo: B, p_sesion: falso.sesion }));
+  ambos('unirse expulsado', await real.unirse(B, sala.sala), F('directo_unirse', { p_codigo: B, p_sala: sala.sala }));
+  ambos('profe estado (sin el expulsado)', await PR('profe_directo_estado', sala.sesion), PF('profe_directo_estado', { p_sesion: falso.sesion }));
+  await real.profe('profe_directo_terminar', sala.sesion);
 }
 
 test('el falso y el SQL real responden con la misma forma en cada paso del directo (preguntas de opción múltiple)', () => guion('gmc', ['t1mc', 't2mc', 't3mc'], true));

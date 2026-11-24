@@ -37,6 +37,10 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
     manda tiempo, corrección y puntos; con 25 alumnos: pico de 37 peticiones/s). Puntos: de 1000 (al instante) a 500 (al límite) por acertar, 0 si falla o no contesta;
     una sola respuesta por pregunta (la primera cuenta); 1 s de cortesía; el móvil nunca recibe el reparto de los demás ni la solución antes de cerrar la pregunta.
     En pantalla solo **apodos** («Zorro Azul»); los números de alumno solo con «Ver quién es quién». **En clase se usa sobre todo el ORDENADOR**, no el móvil.
+    **Mejoras tras el primer directo (24 nov 2026, rama `directo-mejoras`)**: podio con el ganador en el centro (2.º izquierda, 3.º derecha, escalones de distinta altura);
+    **pausa de lectura** (`lectura_s`, 0-10; el panel manda 3): sale el enunciado y las opciones solo después (el servidor no las manda en la pausa, `responder` da `aun_no`, y el tiempo de contestar empieza al salir las opciones;
+    `lectura_ms` en el estado); **apodo libre** (`apodo_libre`: el alumno se cambia el apodo SOLO en la espera con `directo_apodo`, 2-16 caracteres, sin repetir) y **sacar de la sala** (`profe_directo_expulsar`,
+    tabla `directo_expulsados`; la × junto a cada jugador en la espera). Todo eso está en `09_directo.sql` (se vuelve a ejecutar encima: `add column if not exists`); `verificar_fase2.sql` ahora comprueba 4 tablas, 7 funciones de profesor y 4 de alumno.
   - `js/config.js` — entornos: producción por defecto; `?entorno=pruebas` solo desde localhost o una dirección de red local
     (192.168.x.x, 10.x, 172.16-31.x, .local: los móviles del ensayo), con franja «PRUEBAS» visible, y se niega a usar la URL de producción como si fuera la de pruebas.
   - `js/panel.js` (módulo ES) y `js/panel-examenes.js`: la parte de EXÁMENES del panel (subir bancos desde un archivo del

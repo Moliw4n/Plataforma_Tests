@@ -207,11 +207,6 @@ main.directo{padding-bottom:110px}
 .op-d .l{background:rgba(26,39,68,.18);color:#fff}
 .op-d.correcta{outline:5px solid var(--color-text);outline-offset:-2px;box-shadow:none}
 .controles-directo{background:#fff;border-top:1px solid var(--color-border);left:var(--lat);transition:left .22s cubic-bezier(.4,0,.2,1)}
-.puesto{padding:18px 24px}
-.puesto b{color:var(--color-text)}
-.puesto .pt{color:var(--color-accent-txt)}
-.puesto-1{border-color:#e0a020;background:linear-gradient(#fffaf0,#fff)}
-.puesto-2{border-color:#a8b3c4}.puesto-3{border-color:#cc8f4a}
 .marcador li{background:#fff;border:1px solid var(--color-border)}
 .caja.porque{background:#e6f9f0;border-left-color:var(--color-ok)}
 .caja.trampa{background:#fff0f0;border-left-color:var(--color-danger)}

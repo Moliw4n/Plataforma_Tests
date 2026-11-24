@@ -1268,6 +1268,12 @@ create table if not exists public.directo_sesiones (
 -- El código de sala es único entre las salas NO terminadas (después se puede reutilizar)
 create unique index if not exists directo_sesiones_sala_viva on public.directo_sesiones(sala) where estado <> 'terminada';
 
+-- Añadidos después del primer 09 (se pueden ejecutar encima de una instalación anterior):
+--   lectura_s   segundos entre que sale la pregunta y salen las opciones (el tiempo de contestar empieza DESPUÉS); 0 = sin pausa
+--   apodo_libre true = cada alumno puede cambiarse el apodo en la espera (si no, el servidor se lo da y no se cambia)
+alter table public.directo_sesiones add column if not exists lectura_s   int     not null default 0 check (lectura_s between 0 and 10);
+alter table public.directo_sesiones add column if not exists apodo_libre boolean not null default false;
+
 create table if not exists public.directo_participantes (
   sesion  uuid not null references public.directo_sesiones(id) on delete cascade,
   alumno  text not null references public.alumnos(id) on update cascade on delete cascade,
@@ -1293,12 +1299,19 @@ create table if not exists public.directo_respuestas (
   foreign key (sesion, alumno) references public.directo_participantes(sesion, alumno) on delete cascade
 );
 
+-- Quien el profesor saca de una sala no puede volver a entrar en ESA sala
+create table if not exists public.directo_expulsados (
+  sesion  uuid not null references public.directo_sesiones(id) on delete cascade,
+  alumno  text not null references public.alumnos(id) on update cascade on delete cascade,
+  primary key (sesion, alumno)
+);
+
 -- ---------- Seguridad: todo cerrado; el profesor solo LEE ---------------
 
 do $$
 declare t text;
 begin
-  foreach t in array array['directo_sesiones', 'directo_participantes', 'directo_respuestas'] loop
+  foreach t in array array['directo_sesiones', 'directo_participantes', 'directo_respuestas', 'directo_expulsados'] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('revoke all on public.%I from anon, authenticated', t);
     execute format('grant select on public.%I to authenticated', t);
@@ -1320,7 +1333,9 @@ $$;
 -- La pregunta número `p_n` de una sala, tal como la ve el alumno (SIN solución). Las opciones salen en el orden fijo de la sala.
 create or replace function public._directo_pregunta(p_sesion uuid, p_n int) returns jsonb
 language sql stable security definer set search_path = public as $$
-  select public._item_alumno(i.datos, s.e -> 'ops_orden', s.e ->> 'clave')
+  select case when d.estado = 'pregunta' and d.actual = p_n and now() < d.abierta     -- en la pausa de lectura: solo el enunciado, sin opciones
+              then public._item_alumno(i.datos, s.e -> 'ops_orden', s.e ->> 'clave') - 'ops'
+              else public._item_alumno(i.datos, s.e -> 'ops_orden', s.e ->> 'clave') end
     from public.directo_sesiones d
     cross join lateral (select d.preguntas -> p_n as e) s
     join public.items i on i.banco = s.e ->> 'banco' and i.id = s.e ->> 'id'
@@ -1356,7 +1371,7 @@ end $$;
 
 create or replace function public.profe_directo_crear(p_datos jsonb) returns jsonb
 language plpgsql security definer set search_path = public as $$
-declare g text; bancos_j text[]; npreg int; tiempo int; equil text; titulo text; sel jsonb; disp int; cod text; sid uuid; intentos int := 0;
+declare g text; bancos_j text[]; npreg int; tiempo int; lect int; libre boolean; equil text; titulo text; sel jsonb; disp int; cod text; sid uuid; intentos int := 0;
 begin
   if not public.es_profesor() then raise exception 'no_autorizado'; end if;
   if jsonb_typeof(p_datos) is distinct from 'object' then raise exception 'directo_no_valido: no es un objeto'; end if;
@@ -1381,6 +1396,15 @@ begin
                                or (p_datos ->> 'tiempo_s')::numeric not between 5 and 120) then
     raise exception 'directo_no_valido: tiempo_s debe ser un entero de 5 a 120';
   end if;
+  if p_datos ? 'lectura_s' and (jsonb_typeof(p_datos -> 'lectura_s') is distinct from 'number' or (p_datos ->> 'lectura_s')::numeric <> trunc((p_datos ->> 'lectura_s')::numeric)
+                                or (p_datos ->> 'lectura_s')::numeric not between 0 and 10) then
+    raise exception 'directo_no_valido: lectura_s debe ser un entero de 0 a 10';
+  end if;
+  if p_datos ? 'apodo_libre' and jsonb_typeof(p_datos -> 'apodo_libre') is distinct from 'boolean' then
+    raise exception 'directo_no_valido: apodo_libre debe ser verdadero o falso';
+  end if;
+  lect := coalesce((p_datos ->> 'lectura_s')::int, 0);
+  libre := coalesce((p_datos ->> 'apodo_libre')::boolean, false);
   equil := coalesce(p_datos ->> 'equilibrar', 'tema');
   if equil not in ('tema', 'ninguno') then raise exception 'directo_no_valido: equilibrar debe ser «tema» o «ninguno»'; end if;
   if p_datos ? 'titulo' and (jsonb_typeof(p_datos -> 'titulo') is distinct from 'string' or length(btrim(p_datos ->> 'titulo')) not between 1 and 200) then
@@ -1417,8 +1441,8 @@ begin
     if intentos > 50 then raise exception 'directo_sin_codigo'; end if;
   end loop;
 
-  insert into public.directo_sesiones(sala, grupo, titulo, bancos, preguntas, tiempo_s)
-  values (cod, g, titulo, bancos_j, sel, tiempo) returning id into sid;
+  insert into public.directo_sesiones(sala, grupo, titulo, bancos, preguntas, tiempo_s, lectura_s, apodo_libre)
+  values (cod, g, titulo, bancos_j, sel, tiempo, lect, libre) returning id into sid;
   return jsonb_build_object('ok', true, 'sesion', sid, 'sala', cod, 'total', jsonb_array_length(sel), 'tiempo_s', tiempo);
 end $$;
 
@@ -1436,6 +1460,7 @@ begin
     'ok', true, 'sesion', s.id, 'sala', s.sala, 'titulo', s.titulo, 'grupo', s.grupo, 'estado', s.estado,
     'actual', s.actual, 'total', total, 'tiempo_s', s.tiempo_s, 'ahora', now(),
     'restante_ms', case when s.estado = 'pregunta' then greatest(0, round(extract(epoch from s.limite - now()) * 1000))::int end,
+    'lectura_ms', case when s.estado = 'pregunta' then greatest(0, round(extract(epoch from s.abierta - now()) * 1000))::int end,
     'participantes', coalesce((
       select jsonb_agg(jsonb_build_object('alumno', p.alumno, 'apodo', p.apodo, 'puntos', p.puntos, 'aciertos', p.aciertos, 'conectado', p.visto > now() - interval '8 seconds',
                                           'respondio', s.actual >= 0 and exists (select 1 from public.directo_respuestas r where r.sesion = s.id and r.alumno = p.alumno and r.pregunta = s.actual))
@@ -1461,12 +1486,12 @@ begin
   total := jsonb_array_length(s.preguntas);
 
   if s.estado = 'espera' then
-    update public.directo_sesiones set estado = 'pregunta', actual = 0, abierta = now(), limite = now() + make_interval(secs => s.tiempo_s) where id = s.id;
+    update public.directo_sesiones set estado = 'pregunta', actual = 0, abierta = now() + make_interval(secs => s.lectura_s), limite = now() + make_interval(secs => s.lectura_s + s.tiempo_s) where id = s.id;
   elsif s.estado = 'pregunta' then                                       -- cerrar ya
     update public.directo_sesiones set estado = 'resultado', limite = least(limite, now()) where id = s.id;
   elsif s.estado = 'resultado' then
     if s.actual + 1 < total then
-      update public.directo_sesiones set estado = 'pregunta', actual = s.actual + 1, abierta = now(), limite = now() + make_interval(secs => s.tiempo_s) where id = s.id;
+      update public.directo_sesiones set estado = 'pregunta', actual = s.actual + 1, abierta = now() + make_interval(secs => s.lectura_s), limite = now() + make_interval(secs => s.lectura_s + s.tiempo_s) where id = s.id;
     else
       update public.directo_sesiones set estado = 'terminada', terminada = now() where id = s.id;
     end if;
@@ -1505,6 +1530,18 @@ begin
   return jsonb_build_object('ok', n > 0);
 end $$;
 
+-- Sacar a un alumno de la sala (por un apodo que no toca, por ejemplo): se borran su entrada y sus respuestas y no puede volver a entrar en esa sala.
+create or replace function public.profe_directo_expulsar(p_sesion uuid, p_alumno text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.es_profesor() then raise exception 'no_autorizado'; end if;
+  if not exists (select 1 from public.directo_sesiones where id = p_sesion) then return jsonb_build_object('ok', false, 'motivo', 'no_encontrada'); end if;
+  if not exists (select 1 from public.directo_participantes where sesion = p_sesion and alumno = p_alumno) then return jsonb_build_object('ok', false, 'motivo', 'no_participa'); end if;
+  insert into public.directo_expulsados(sesion, alumno) values (p_sesion, p_alumno) on conflict do nothing;
+  delete from public.directo_participantes where sesion = p_sesion and alumno = p_alumno;        -- sus respuestas se van con él (on delete cascade)
+  return jsonb_build_object('ok', true);
+end $$;
+
 -- ---------- Funciones del ALUMNO --------------------------------------------
 
 -- Apodos: adjetivo + animal, ambos masculinos. Solo se usan en pantalla; nada que ver con el alumno real.
@@ -1535,6 +1572,8 @@ begin
   -- una sala de otro grupo se trata como si no existiera (no se enseña que está abierta)
   if s.id is null or s.grupo <> a.grupo then return jsonb_build_object('ok', false, 'motivo', 'sala'); end if;
 
+  if exists (select 1 from public.directo_expulsados where sesion = s.id and alumno = a.id) then return jsonb_build_object('ok', false, 'motivo', 'expulsado'); end if;
+
   perform pg_advisory_xact_lock(hashtextextended(s.id::text || ':' || a.id, 0));
   select * into pt from public.directo_participantes where sesion = s.id and alumno = a.id;
   if pt.alumno is null then
@@ -1550,7 +1589,31 @@ begin
   else
     update public.directo_participantes set visto = now() where sesion = s.id and alumno = a.id;
   end if;
-  return jsonb_build_object('ok', true, 'sesion', s.id, 'apodo', pt.apodo, 'titulo', s.titulo, 'total', jsonb_array_length(s.preguntas));
+  return jsonb_build_object('ok', true, 'sesion', s.id, 'apodo', pt.apodo, 'titulo', s.titulo, 'total', jsonb_array_length(s.preguntas), 'apodo_libre', s.apodo_libre);
+end $$;
+
+-- Cambiarse el apodo: SOLO si el profesor activó «apodo libre» y SOLO mientras la sala está en espera. De 2 a 16 caracteres, sin símbolos raros,
+-- sin repetir uno que ya esté en la sala (sin distinguir mayúsculas). Lo que escriba se ve en el proyector: el profesor puede sacar de la sala a quien abuse.
+create or replace function public.directo_apodo(p_codigo text, p_sesion uuid, p_apodo text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare a public.alumnos; s public.directo_sesiones; n text;
+begin
+  begin a := public._quien(p_codigo); exception when others then return jsonb_build_object('ok', false, 'motivo', 'espera'); end;
+  if a.id is null then return jsonb_build_object('ok', false, 'motivo', 'codigo'); end if;
+  select * into s from public.directo_sesiones where id = p_sesion;
+  if s.id is null or s.grupo <> a.grupo then return jsonb_build_object('ok', false, 'motivo', 'no_encontrada'); end if;
+  if not exists (select 1 from public.directo_participantes where sesion = s.id and alumno = a.id) then return jsonb_build_object('ok', false, 'motivo', 'no_participas'); end if;
+  if not s.apodo_libre then return jsonb_build_object('ok', false, 'motivo', 'no_libre'); end if;
+  perform public._directo_al_dia(s.id);
+  if s.estado <> 'espera' then return jsonb_build_object('ok', false, 'motivo', 'empezada'); end if;
+  n := regexp_replace(btrim(coalesce(p_apodo, '')), '\s+', ' ', 'g');
+  if length(n) not between 2 and 16 or n ~ '[[:cntrl:]<>]' then return jsonb_build_object('ok', false, 'motivo', 'dato'); end if;
+  if exists (select 1 from public.directo_participantes where sesion = s.id and lower(apodo) = lower(n) and alumno <> a.id) then return jsonb_build_object('ok', false, 'motivo', 'ocupado'); end if;
+  begin
+    update public.directo_participantes set apodo = n, visto = now() where sesion = s.id and alumno = a.id;
+  exception when unique_violation then return jsonb_build_object('ok', false, 'motivo', 'ocupado');
+  end;
+  return jsonb_build_object('ok', true, 'apodo', n);
 end $$;
 
 -- Lo que ve el móvil del alumno. Sin soluciones hasta que la pregunta se cierra; entonces, solo SU resultado y el marcador.
@@ -1581,6 +1644,7 @@ begin
     'ok', true, 'sesion', s.id, 'titulo', s.titulo, 'estado', s.estado, 'actual', s.actual, 'total', jsonb_array_length(s.preguntas), 'tiempo_s', s.tiempo_s,
     'apodo', pt.apodo, 'puntos', pt.puntos, 'aciertos', pt.aciertos, 'posicion', pos, 'participantes', npart, 'ahora', now(),
     'restante_ms', case when s.estado = 'pregunta' then greatest(0, round(extract(epoch from s.limite - now()) * 1000))::int end,
+    'lectura_ms', case when s.estado = 'pregunta' then greatest(0, round(extract(epoch from s.abierta - now()) * 1000))::int end,
     'pregunta', case when s.estado = 'pregunta' then public._directo_pregunta(s.id, s.actual) end,
     'respondio', case when s.actual >= 0 and s.estado <> 'terminada' then r.alumno is not null end,
     'mi_dada', case when s.estado = 'pregunta' then r.dada end,
@@ -1604,6 +1668,7 @@ begin
   if not exists (select 1 from public.directo_participantes where sesion = s.id and alumno = a.id) then return jsonb_build_object('ok', false, 'motivo', 'no_participas'); end if;
   if p_pregunta is distinct from s.actual then return jsonb_build_object('ok', false, 'motivo', 'otra_pregunta'); end if;
   if s.estado <> 'pregunta' then return jsonb_build_object('ok', false, 'motivo', 'cerrada'); end if;
+  if now() < s.abierta then return jsonb_build_object('ok', false, 'motivo', 'aun_no'); end if;       -- todavía en la pausa de lectura
 
   e := s.preguntas -> s.actual;
   select i.datos into datos from public.items i where i.banco = e ->> 'banco' and i.id = e ->> 'id';
@@ -1635,6 +1700,8 @@ revoke all on function public._directo_apodo(uuid)            from public, anon,
 revoke all on function public.directo_unirse(text, text)       from public;
 revoke all on function public.directo_estado(text, uuid)       from public;
 revoke all on function public.directo_responder(text, uuid, int, jsonb) from public;
+revoke all on function public.directo_apodo(text, uuid, text)  from public;
+grant execute on function public.directo_apodo(text, uuid, text)          to anon, authenticated;
 grant execute on function public.directo_unirse(text, text)               to anon, authenticated;
 grant execute on function public.directo_estado(text, uuid)               to anon, authenticated;
 grant execute on function public.directo_responder(text, uuid, int, jsonb) to anon, authenticated;
@@ -1644,6 +1711,8 @@ revoke all on function public.profe_directo_avanzar(uuid, text) from public, ano
 revoke all on function public.profe_directo_terminar(uuid)     from public, anon;
 revoke all on function public.profe_directo_activas()          from public, anon;
 revoke all on function public.profe_directo_borrar(uuid)       from public, anon;
+revoke all on function public.profe_directo_expulsar(uuid, text) from public, anon;
+grant execute on function public.profe_directo_expulsar(uuid, text) to authenticated;
 grant execute on function public.profe_directo_crear(jsonb)        to authenticated;
 grant execute on function public.profe_directo_estado(uuid)        to authenticated;
 grant execute on function public.profe_directo_avanzar(uuid, text) to authenticated;
@@ -1651,13 +1720,13 @@ grant execute on function public.profe_directo_terminar(uuid)      to authentica
 grant execute on function public.profe_directo_activas()           to authenticated;
 grant execute on function public.profe_directo_borrar(uuid)        to authenticated;
 
--- Comprobación: debe salir 3 (las tablas nuevas), 6 (funciones del profesor) y 3 (funciones del alumno)
+-- Comprobación: debe salir 4 (las tablas nuevas), 7 (funciones del profesor) y 4 (funciones del alumno)
 select
-  (select count(*) from information_schema.tables where table_schema = 'public' and table_name in ('directo_sesiones', 'directo_participantes', 'directo_respuestas')) as tablas_nuevas,
+  (select count(*) from information_schema.tables where table_schema = 'public' and table_name in ('directo_sesiones', 'directo_participantes', 'directo_respuestas', 'directo_expulsados')) as tablas_nuevas,
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public' and p.proname in ('profe_directo_crear', 'profe_directo_estado', 'profe_directo_avanzar', 'profe_directo_terminar', 'profe_directo_activas', 'profe_directo_borrar')) as funciones_profe_directo,
+    where n.nspname = 'public' and p.proname in ('profe_directo_crear', 'profe_directo_estado', 'profe_directo_avanzar', 'profe_directo_terminar', 'profe_directo_activas', 'profe_directo_borrar', 'profe_directo_expulsar')) as funciones_profe_directo,
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public' and p.proname in ('directo_unirse', 'directo_estado', 'directo_responder')) as funciones_alumno_directo;
+    where n.nspname = 'public' and p.proname in ('directo_unirse', 'directo_estado', 'directo_responder', 'directo_apodo')) as funciones_alumno_directo;
 
 -- =====================================================================
 -- COMPROBACIÓN FINAL. Debe salir exactamente esta fila:
