@@ -361,7 +361,7 @@ test.describe('pausa de lectura, apodo libre y expulsado', () => {
   test('con apodo libre: se puede cambiar en la espera, avisa si está ocupado y si no es válido', async ({ page, servidor }) => {
     const S = await abrir(page, servidor, { apodoLibre: true });
     await expect(page.locator('#fApodo')).toBeVisible();
-    await expect(page.locator('#escena')).toContainText('Nada de tu nombre real');
+    await expect(page.locator('#escena')).toContainText('se ve en la pantalla de la clase');
     await page.fill('#iApodo', 'x'); await page.click('#bApodo');
     await expect(page.locator('#msgApodo')).toContainText('de 2 a 16 caracteres');
     S.sembrar([0]);                                                                              // otro jugador con apodo «Lobo Rojo 2»

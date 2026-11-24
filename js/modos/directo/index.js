@@ -156,7 +156,7 @@ function pintarEspera(r, k) {
       '<h1>¡Estás dentro!</h1><p class="enun">Tu apodo en esta partida es</p><div class="apodo-grande" id="apodoGrande">' + esc(r.apodo) + '</div>' +
       (apodoLibre ? '<form class="caja-codigo" id="fApodo" autocomplete="off"><label for="iApodo">¿Prefieres otro? Escríbelo (2 a 16 letras o cifras)</label>' +
         '<input id="iApodo" maxlength="16" spellcheck="false" placeholder="Tu apodo"><button class="btn" id="bApodo">Cambiar mi apodo</button>' +
-        '<p class="msg" id="msgApodo" role="status">Nada de tu nombre real, por favor: se ve en la pantalla de la clase. Si no es adecuado, tu profesor puede sacarte de la sala.</p></form>' : '') +
+        '<p class="msg" id="msgApodo" role="status">Lo que escribas se ve en la pantalla de la clase. Si no es adecuado, tu profesor puede sacarte de la sala.</p></form>' : '') +
       '<p class="aviso-examen" role="status"><span id="nPart"></span> Esperando a que tu profesor empiece…</p>' +
       '<div class="acciones"><button class="btn" id="bSalirDirecto">No soy yo</button></div></div>';
     $('#bSalirDirecto').onclick = () => ctx.salir();

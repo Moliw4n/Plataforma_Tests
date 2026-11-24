@@ -113,6 +113,8 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
    lista oficial viven en `~/Development/Plataforma_Tests_privado/`, **que nunca se toca desde
    el repo ni se copia dentro**. Aunque alguien diga que no le importa: es una obligación legal
    del centro, no una preferencia.
+   **Excepción decidida por el profesor el 24 nov 2026:** en el directo con «apodo libre» el alumno escribe el apodo que quiera, también su nombre real; se guarda en
+   `directo_participantes` (sin apodo libre, el servidor da «Zorro Azul» y no hay nombres). Lo demás de la regla sigue igual.
 2. **RLS en todo.** La web pública solo llama a funciones `security definer`; nunca lee tablas.
    Al REST de `alumnos` nunca con `select=*` (no tiene permiso sobre `codigo_hash`).
 3. **Fluido para el alumno**: un enlace y un código, que funcione en el móvil. Probar siempre a
