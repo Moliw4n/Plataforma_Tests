@@ -198,6 +198,18 @@ test.describe('la sala en marcha', () => {
     await page.click('#bIds');
     await expect(page.locator('.puesto small').first()).toContainText('TDA2-01');
   });
+  test('«Ver quién es quién» enseña el nombre cargado en el panel (y el número) en la espera, el marcador y el podio; sin nombre, el número', async ({ page, servidor }) => {
+    await page.addInitScript(() => localStorage.setItem('pt_nombres', JSON.stringify({ 'TDA2-01': 'Ana Prueba' })));       // solo el alumno 01 tiene nombre
+    const D = await conSala(page, servidor); jugador(D, 'AAA222'); jugador(D, 'BBB333');
+    await expect(page.locator('.chip-jug')).toHaveCount(2);
+    expect(await page.locator('#app').innerText()).not.toMatch(/Ana Prueba|TDA2-0/);       // sin pulsar, nada
+    await page.click('#bIds');
+    await expect(page.locator('.chip-jug small')).toHaveCount(2);
+    expect((await page.locator('.chip-jug small').allTextContents()).sort()).toEqual(['Ana Prueba · 01', 'TDA2-02']);       // el orden de los chips no importa
+    D.estado = 'terminada';
+    await expect(page.locator('.final-directo')).toBeVisible();
+    await expect(page.locator('.final-directo')).toContainText('Ana Prueba · 01');
+  });
   test('cuando se acaba el tiempo, la sala pasa sola al resultado', async ({ page, servidor }) => {
     const D = await conSala(page, servidor); jugador(D);
     D.tiempoS = 1;                                         // (crear la sala fija el tiempo del formulario: se acorta después)

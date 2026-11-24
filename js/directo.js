@@ -167,6 +167,13 @@ import { crearSesionProfe } from './nucleo/sesion-profe.js';
   }
 
   const ENLACE = () => new URL('jugar.html?d=' + est.sala + (window.ENTORNO === 'pruebas' ? '&entorno=pruebas' : ''), location.href).href;     // con el código de la sala dentro
+  /* «Quién es quién»: el nombre que el profesor cargó en el panel (solo vive en ESTE navegador, clave pt_nombres) + el número; si no hay nombres, el número de siempre.
+     Se lee al pintar, así que si cargas el archivo en el panel con esta pantalla abierta, sale al pulsar el botón. */
+  function etiqueta(alumno) {
+    let nombre = '';
+    try { nombre = (JSON.parse(localStorage.getItem('pt_nombres') || '{}') || {})[alumno] || ''; } catch (e) {}
+    return nombre ? nombre + ' · ' + alumno.split('-').pop() : alumno;
+  }
   const ENLACE_FIJO = () => new URL('jugar.html?d' + (window.ENTORNO === 'pruebas' ? '&entorno=pruebas' : ''), location.href).href;                   // el mismo siempre: el alumno escribe el código
   function cabSala(r) {
     return '<div class="sala-cab"><span class="chip-sala">Sala <b>' + codigoBonito(r.sala) + '</b></span><span>' + esc(r.titulo) + '</span><span class="dato-p">' + esc(r.grupo) + ' · <span id="nJug">' + r.participantes.length + '</span> jugadores</span></div>';
@@ -182,7 +189,7 @@ import { crearSesionProfe } from './nucleo/sesion-profe.js';
   }
   const controles = html => '<div class="controles-directo">' + html + '</div>';
   const chipsJugadores = (r, sacar) => r.participantes.length ? r.participantes.map(p =>
-    '<span class="chip-jug' + (p.conectado ? '' : ' fuera') + '">' + esc(p.apodo) + (mostrarIds ? ' <small>' + esc(p.alumno) + '</small>' : '') +
+    '<span class="chip-jug' + (p.conectado ? '' : ' fuera') + '">' + esc(p.apodo) + (mostrarIds ? ' <small>' + esc(etiqueta(p.alumno)) + '</small>' : '') +
     (sacar ? ' <button type="button" class="x-jug" data-sacar="' + esc(p.alumno) + '" data-apodo="' + esc(p.apodo) + '" title="Sacar de la sala" aria-label="Sacar de la sala a ' + esc(p.apodo) + '">×</button>' : '') + '</span>').join('') : '<span class="dato-p">Aún no ha entrado nadie…</span>';
 
   /* ---------- espera: el código para unirse ---------- */
@@ -270,7 +277,7 @@ import { crearSesionProfe } from './nucleo/sesion-profe.js';
   }
   function marcador(r, max) {
     return '<ol class="marcador grande">' + r.participantes.slice(0, max).map((p, i) =>
-      '<li><span class="n">' + (i + 1) + '</span><span class="ap">' + esc(p.apodo) + (mostrarIds ? ' <small>' + esc(p.alumno) + '</small>' : '') + '</span><span class="pt">' + miles(p.puntos) + '</span></li>').join('') + '</ol>';
+      '<li><span class="n">' + (i + 1) + '</span><span class="ap">' + esc(p.apodo) + (mostrarIds ? ' <small>' + esc(etiqueta(p.alumno)) + '</small>' : '') + '</span><span class="pt">' + miles(p.puntos) + '</span></li>').join('') + '</ol>';
   }
 
   /* ---------- final: el podio ---------- */
@@ -282,8 +289,8 @@ import { crearSesionProfe } from './nucleo/sesion-profe.js';
     app.innerHTML = cabSala(r) +
       '<div class="final-directo"><div class="sup">¡SE ACABÓ!</div><h1>El podio</h1>' +
       '<div class="podio">' + top.map((p, i) => '<div class="puesto puesto-' + (i + 1) + '"><span class="medalla">' + medalla[i] + '</span><b>' + esc(p.apodo) + '</b>' +
-        (mostrarIds ? '<small>' + esc(p.alumno) + '</small>' : '') + '<span class="pt">' + miles(p.puntos) + ' pts</span><small>' + p.aciertos + ' de ' + r.total + ' bien</small></div>').join('') + '</div>' +
-      (resto.length ? '<ol class="marcador grande" start="4">' + resto.map((p, i) => '<li><span class="n">' + (i + 4) + '</span><span class="ap">' + esc(p.apodo) + (mostrarIds ? ' <small>' + esc(p.alumno) + '</small>' : '') +
+        (mostrarIds ? '<small>' + esc(etiqueta(p.alumno)) + '</small>' : '') + '<span class="pt">' + miles(p.puntos) + ' pts</span><small>' + p.aciertos + ' de ' + r.total + ' bien</small></div>').join('') + '</div>' +
+      (resto.length ? '<ol class="marcador grande" start="4">' + resto.map((p, i) => '<li><span class="n">' + (i + 4) + '</span><span class="ap">' + esc(p.apodo) + (mostrarIds ? ' <small>' + esc(etiqueta(p.alumno)) + '</small>' : '') +
         '</span><span class="pt">' + miles(p.puntos) + '</span></li>').join('') + '</ol>' : '') +
       '<div class="acciones"><button class="btn" id="bIds">' + (mostrarIds ? 'Ocultar quién es quién' : 'Ver quién es quién') + '</button></div></div>' +
       controles('<button class="btn pri grande" id="bNueva">Nueva sala</button>');
