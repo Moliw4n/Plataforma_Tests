@@ -123,7 +123,7 @@ async function extras(banco, ids) {
   await c.query('truncate directo_respuestas, directo_participantes, directo_sesiones cascade');
   const datos = { grupo: 'TDA2', bancos: [banco], preguntas: 2, tiempo_s: 30, lectura_s: 3, apodo_libre: true };
   const sala = await real.profe('profe_directo_crear', JSON.stringify(datos));
-  const falso = await crearServidorDirecto({ preguntas: ids.slice(0, 2), tiempoS: 30, sala: sala.sala, creada: false });
+  const falso = await crearServidorDirecto({ preguntas: ids.slice(0, 2), tiempoS: 30, sala: sala.sala, creada: false, lecturaS: 3, apodoLibre: true });   // el falso no lee estas dos de p_datos: se fijan aquí
   const F = (fn, a) => falso.llamar(fn, a), PF = (fn, a) => falso.profe(fn, a), PR = (fn, ...a) => real.profe(fn, ...a);
   ambos('crear con lectura y apodo libre', sala, PF('profe_directo_crear', { p_datos: datos }));
   const A = 'AAA222', B = 'BBB333';
