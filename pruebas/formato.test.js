@@ -24,6 +24,8 @@ test('los tests de tests/*.json están en formato 2, son válidos y equivalen ex
     const t = leerDisco(id);
     assert.equal(t.formato, 2, id);
     assert.deepEqual(F.validarBanco(t), [], id);
+    // Los tests nacidos ya en formato 2 no tienen copia congelada del formato 1: con validar basta.
+    if (!fs.existsSync(path.join(__dirname, 'datos', id + '.formato1.json'))) continue;
     assert.deepEqual(F.aFormato1(t), leer(id), id + ': el formato 2 de disco pierde algo respecto al formato 1');
     assert.deepEqual(t, F.aFormato2(leer(id)), id + ': no coincide con convertir el antiguo');
   }

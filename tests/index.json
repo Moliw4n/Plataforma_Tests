@@ -1,4 +1,5 @@
 [
   { "id": "tda2-u1-python-practica", "grupo": "TDA2", "titulo": "Práctica U1 · Python", "tipo": "practica" },
-  { "id": "tda1-u1u2-repaso", "grupo": "TDA1", "titulo": "Repaso U1 y U2 · El ordenador y el sistema operativo", "tipo": "practica" }
+  { "id": "tda1-u1u2-repaso", "grupo": "TDA1", "titulo": "Repaso U1 y U2 · El ordenador y el sistema operativo", "tipo": "practica" },
+  { "id": "4eso-hardware-so-repaso", "grupo": "4ESO", "titulo": "Repaso · Hardware y sistemas operativos", "tipo": "practica" }
 ]

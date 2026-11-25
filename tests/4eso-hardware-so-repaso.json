@@ -1,0 +1,351 @@
+{
+  "formato": 2,
+  "id": "4eso-hardware-so-repaso",
+  "titulo": "Repaso · Hardware y sistemas operativos",
+  "materia": "Digitalización 4.º ESO",
+  "unidad": "Hardware y software",
+  "version": 1,
+  "categorias": {
+    "hardware": {
+      "nombre": "Hardware",
+      "color": "cian"
+    },
+    "unidades": {
+      "nombre": "Haz la cuenta",
+      "color": "ambar"
+    },
+    "software": {
+      "nombre": "Software y SO",
+      "color": "verde"
+    }
+  },
+  "preguntas": [
+    {
+      "tipo": "opcion_multiple",
+      "categoria": "hardware",
+      "id": "h01",
+      "dificultad": 1,
+      "enun": "¿Qué es el hardware de un ordenador?",
+      "ops": [
+        "Los programas que tiene instalados",
+        "Las piezas físicas que se pueden tocar",
+        "La conexión a internet",
+        "Los archivos que guardamos"
+      ],
+      "ok": 1,
+      "sol": "Hardware es todo lo físico: placa, procesador, memoria, teclado, pantalla… El software son los programas.",
+      "trampa": "Mezclar hardware y software: un programa no se puede tocar, aunque esté guardado en un disco.",
+      "tema": "hardware"
+    },
+    {
+      "tipo": "opcion_multiple",
+      "categoria": "hardware",
+      "id": "h02",
+      "dificultad": 1,
+      "enun": "¿Qué componente se considera el «cerebro» del ordenador, el que ejecuta las instrucciones?",
+      "ops": [
+        "La memoria RAM",
+        "El disco duro",
+        "La CPU (procesador)",
+        "La fuente de alimentación"
+      ],
+      "ok": 2,
+      "sol": "La CPU (unidad central de proceso) ejecuta las instrucciones de los programas y hace los cálculos.",
+      "trampa": "Pensar que es la RAM porque «recuerda» cosas: la RAM guarda datos, pero quien los procesa es la CPU.",
+      "tema": "hardware"
+    },
+    {
+      "tipo": "verdadero_falso",
+      "categoria": "hardware",
+      "id": "h03",
+      "dificultad": 1,
+      "enun": "Si apagamos el ordenador, lo que había en la memoria RAM se pierde.",
+      "ok": true,
+      "sol": "La RAM es memoria volátil: solo guarda datos mientras tiene corriente. Por eso hay que guardar los archivos en el disco.",
+      "trampa": "Confundir la RAM con el almacenamiento (disco duro o SSD), que sí conserva los datos apagado.",
+      "tema": "hardware"
+    },
+    {
+      "tipo": "opcion_multiple",
+      "categoria": "hardware",
+      "id": "h04",
+      "dificultad": 1,
+      "enun": "¿Dónde se quedan guardados tus archivos y programas aunque apagues el ordenador?",
+      "ops": [
+        "En la memoria RAM",
+        "En la caché de la CPU",
+        "En el disco duro o SSD",
+        "En la tarjeta gráfica"
+      ],
+      "ok": 2,
+      "sol": "El disco duro (HDD) o el SSD es el almacenamiento permanente: guarda los datos sin corriente.",
+      "trampa": "Elegir la RAM porque se llama «memoria»: es rápida pero se borra al apagar.",
+      "tema": "hardware"
+    },
+    {
+      "tipo": "opcion_multiple",
+      "categoria": "hardware",
+      "id": "h05",
+      "dificultad": 1,
+      "enun": "¿Cuál de estos es un periférico de ENTRADA?",
+      "ops": [
+        "El monitor",
+        "La impresora",
+        "El teclado",
+        "Los altavoces"
+      ],
+      "ok": 2,
+      "sol": "El teclado mete información en el ordenador (entrada). Monitor, impresora y altavoces la sacan (salida).",
+      "trampa": "Fijarse en si el aparato «hace algo» en vez de en hacia dónde va la información.",
+      "tema": "hardware"
+    },
+    {
+      "tipo": "opcion_multiple",
+      "categoria": "hardware",
+      "id": "h06",
+      "dificultad": 2,
+      "enun": "Una pantalla táctil es un periférico…",
+      "ops": [
+        "Solo de entrada",
+        "Solo de salida",
+        "De entrada y salida",
+        "De almacenamiento"
+      ],
+      "ok": 2,
+      "sol": "Muestra imágenes (salida) y recoge tus toques (entrada): es de entrada/salida, como un router o un disco USB.",
+      "trampa": "Pensar solo en que «es una pantalla» y quedarse con la salida.",
+      "tema": "hardware"
+    },
+    {
+      "tipo": "opcion_multiple",
+      "categoria": "hardware",
+      "id": "h07",
+      "dificultad": 1,
+      "enun": "¿Qué pieza conecta entre sí todos los componentes del ordenador?",
+      "ops": [
+        "La placa base",
+        "La tarjeta de red",
+        "El ventilador",
+        "La caja o torre"
+      ],
+      "ok": 0,
+      "sol": "La placa base es la gran placa de circuitos donde se conectan CPU, RAM, discos, tarjetas y puertos.",
+      "trampa": "Elegir la caja: la caja solo protege y sujeta; la que conecta es la placa base.",
+      "tema": "hardware"
+    },
+    {
+      "tipo": "opcion_multiple",
+      "categoria": "unidades",
+      "id": "h08",
+      "dificultad": 1,
+      "enun": "¿Cuántos bits tiene un byte?",
+      "ops": [
+        "2",
+        "8",
+        "10",
+        "1000"
+      ],
+      "ok": 1,
+      "sol": "Un byte son 8 bits. Un bit es un 0 o un 1.",
+      "trampa": "Confundir bit y byte: el bit es la unidad más pequeña, el byte son 8 bits.",
+      "tema": "unidades"
+    },
+    {
+      "tipo": "opcion_multiple",
+      "categoria": "unidades",
+      "id": "h09",
+      "dificultad": 2,
+      "enun": "Ordena de MENOR a MAYOR: ¿cuál es el orden correcto?",
+      "ops": [
+        "MB < KB < GB < TB",
+        "KB < MB < GB < TB",
+        "KB < GB < MB < TB",
+        "GB < MB < KB < TB"
+      ],
+      "ok": 1,
+      "sol": "Kilo < Mega < Giga < Tera. Cada paso es unas 1000 veces más (1024 en binario).",
+      "trampa": "Liarse entre MB y GB: una foto del móvil ocupa unos pocos MB y un móvil guarda cientos de GB.",
+      "tema": "unidades"
+    },
+    {
+      "tipo": "verdadero_falso",
+      "categoria": "hardware",
+      "id": "h10",
+      "dificultad": 2,
+      "enun": "Un SSD es más rápido que un disco duro mecánico (HDD) porque no tiene piezas que giran.",
+      "ok": true,
+      "sol": "El SSD guarda los datos en chips de memoria flash; el HDD usa discos que giran y un cabezal que se mueve, que es más lento.",
+      "trampa": "Creer que más capacidad significa más velocidad: un HDD puede ser más grande pero es más lento.",
+      "tema": "hardware"
+    },
+    {
+      "tipo": "opcion_multiple",
+      "categoria": "hardware",
+      "id": "h11",
+      "dificultad": 2,
+      "enun": "¿Qué componente se encarga sobre todo de las imágenes, los vídeos y los juegos?",
+      "ops": [
+        "La tarjeta de sonido",
+        "La tarjeta gráfica (GPU)",
+        "La BIOS",
+        "La tarjeta de red"
+      ],
+      "ok": 1,
+      "sol": "La GPU (tarjeta gráfica) calcula y genera lo que se ve en pantalla; es clave en juegos, vídeo y también en IA.",
+      "trampa": "Pensar que todo lo hace la CPU: puede hacer gráficos sencillos, pero la GPU está especializada.",
+      "tema": "hardware"
+    },
+    {
+      "tipo": "opcion_multiple",
+      "categoria": "software",
+      "id": "s01",
+      "dificultad": 1,
+      "enun": "¿Qué es un sistema operativo?",
+      "ops": [
+        "Un programa para escribir documentos",
+        "El software que gestiona el hardware y permite usar los demás programas",
+        "Un tipo de procesador",
+        "Un antivirus"
+      ],
+      "ok": 1,
+      "sol": "El sistema operativo hace de intermediario entre el hardware y el usuario y sus programas: gestiona memoria, archivos, dispositivos…",
+      "trampa": "Pensar que es un programa más, como el navegador: sin sistema operativo los demás programas no pueden funcionar.",
+      "tema": "software"
+    },
+    {
+      "tipo": "opcion_multiple",
+      "categoria": "software",
+      "id": "s02",
+      "dificultad": 1,
+      "enun": "¿Cuál de estos NO es un sistema operativo?",
+      "ops": [
+        "Windows",
+        "Android",
+        "Linux",
+        "Google Chrome"
+      ],
+      "ok": 3,
+      "sol": "Chrome es un navegador (una aplicación). Windows, Android y Linux son sistemas operativos.",
+      "trampa": "Confundirse con ChromeOS, que sí es un sistema operativo; Chrome a secas es el navegador.",
+      "tema": "software"
+    },
+    {
+      "tipo": "opcion_multiple",
+      "categoria": "software",
+      "id": "s03",
+      "dificultad": 1,
+      "enun": "¿Qué sistema operativo llevan los iPhone?",
+      "ops": [
+        "Android",
+        "iOS",
+        "macOS",
+        "Windows"
+      ],
+      "ok": 1,
+      "sol": "Los iPhone usan iOS. macOS es el de los ordenadores Mac, también de Apple.",
+      "trampa": "Elegir macOS porque también es de Apple: es para ordenadores, no para móviles.",
+      "tema": "software"
+    },
+    {
+      "tipo": "verdadero_falso",
+      "categoria": "software",
+      "id": "s04",
+      "dificultad": 1,
+      "enun": "Android es un sistema operativo basado en Linux.",
+      "ok": true,
+      "sol": "Android usa el núcleo (kernel) de Linux, aunque por encima es muy distinto a un Linux de ordenador.",
+      "trampa": "Pensar que Android y Linux no tienen nada que ver porque se ven diferentes.",
+      "tema": "software"
+    },
+    {
+      "tipo": "opcion_multiple",
+      "categoria": "software",
+      "id": "s05",
+      "dificultad": 2,
+      "enun": "¿Qué significa que un programa sea de «software libre»?",
+      "ops": [
+        "Que es siempre gratis y no tiene autor",
+        "Que se puede usar, estudiar, modificar y compartir",
+        "Que no necesita sistema operativo",
+        "Que no tiene virus"
+      ],
+      "ok": 1,
+      "sol": "Software libre = libertad de usarlo, ver su código, cambiarlo y compartirlo (por ejemplo Linux, LibreOffice, Firefox).",
+      "trampa": "Confundir «libre» con «gratis»: hay programas gratis que no son libres (no puedes ver ni cambiar su código).",
+      "tema": "software"
+    },
+    {
+      "tipo": "verdadero_falso",
+      "categoria": "software",
+      "id": "s06",
+      "dificultad": 1,
+      "enun": "Un programa como WhatsApp o un juego es software de aplicación, no software de sistema.",
+      "ok": true,
+      "sol": "Las aplicaciones sirven para tareas concretas del usuario. El software de sistema (sistema operativo, controladores) hace funcionar el equipo.",
+      "trampa": "Pensar que todo lo que viene instalado en el móvil es «del sistema».",
+      "tema": "software"
+    },
+    {
+      "tipo": "opcion_multiple",
+      "categoria": "software",
+      "id": "s07",
+      "dificultad": 2,
+      "enun": "Conectas una impresora nueva y no funciona. ¿Qué suele faltar?",
+      "ops": [
+        "Más memoria RAM",
+        "El controlador (driver)",
+        "Un antivirus",
+        "Otro sistema operativo"
+      ],
+      "ok": 1,
+      "sol": "El controlador o driver es el programa que enseña al sistema operativo a usar ese aparato concreto.",
+      "trampa": "Pensar que es un problema de hardware cuando lo que falta es un pequeño programa.",
+      "tema": "software"
+    },
+    {
+      "tipo": "opcion_multiple",
+      "categoria": "software",
+      "id": "s08",
+      "dificultad": 2,
+      "enun": "En Windows, ¿cómo se organizan los archivos?",
+      "ops": [
+        "En carpetas, que pueden tener otras carpetas dentro",
+        "Todos juntos en una única lista",
+        "Solo por la fecha en que se crearon",
+        "En la memoria RAM"
+      ],
+      "ok": 0,
+      "sol": "El sistema de archivos usa una estructura en árbol: unidades (C:), carpetas y subcarpetas, y dentro los archivos.",
+      "trampa": "Creer que el escritorio o «Descargas» son sitios especiales: son carpetas como las demás.",
+      "tema": "software"
+    },
+    {
+      "tipo": "opcion_multiple",
+      "categoria": "software",
+      "id": "s09",
+      "dificultad": 2,
+      "enun": "¿Qué indica la extensión de un archivo, como «.pdf» o «.mp3»?",
+      "ops": [
+        "Su tamaño",
+        "El tipo de archivo y qué programa lo abre",
+        "La fecha de creación",
+        "Quién lo creó"
+      ],
+      "ok": 1,
+      "sol": "La extensión dice el formato: .pdf documento, .mp3 audio, .jpg imagen, .exe programa… y el sistema la usa para elegir con qué abrirlo.",
+      "trampa": "Pensar que cambiar la extensión convierte el archivo: renombrar foto.jpg a foto.mp3 no la vuelve canción.",
+      "tema": "software"
+    },
+    {
+      "tipo": "verdadero_falso",
+      "categoria": "software",
+      "id": "s10",
+      "dificultad": 2,
+      "enun": "Las actualizaciones del sistema operativo solo sirven para cambiar el aspecto y se pueden ignorar sin problema.",
+      "ok": false,
+      "sol": "Las actualizaciones corrigen fallos de seguridad. Si no actualizas, el equipo queda expuesto a virus y ataques.",
+      "trampa": "Ver solo los cambios visibles y no los parches de seguridad, que no se notan pero son lo importante.",
+      "tema": "software"
+    }
+  ]
+}
