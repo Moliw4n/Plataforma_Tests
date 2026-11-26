@@ -420,6 +420,17 @@ test.describe('resultados de un examen', () => {
     await aResultados(page);
     await expect(visible(page, '[data-id="TDA2-01"]')).toContainText('Alumno Inventado Uno');
   });
+  test('los nombres se pueden cargar desde el propio examen (un grupo puede no tener tests), y vale un número con «_»', async ({ page, servidor }) => {
+    const S = await abrir(page, servidor); await aResultados(page);
+    await expect(page.locator('.aviso-nombres')).toBeVisible();
+    const csv = 'numero;nombre;codigo\r\nTDA2-01;Alumno Inventado Uno;AAA222\r\n4ESO_DIGI_I-05;Alumna Inventada Cinco;CCC444\r\n';
+    await page.setInputFiles('#iCSV', { name: 'x.csv', mimeType: 'text/csv', buffer: Buffer.from(csv, 'utf8') });
+    await expect(page.locator('.banda-notas')).toBeVisible();
+    await expect(visible(page, '[data-id="TDA2-01"]')).toContainText('Alumno Inventado Uno');
+    await expect(page.locator('.nombres-ok')).toBeVisible();
+    expect(JSON.parse(await page.evaluate(() => localStorage.getItem('pt_nombres')))['4ESO_DIGI_I-05']).toBe('Alumna Inventada Cinco');
+    for (const dato of ['Alumno Inventado', 'Alumna Inventada', 'AAA222', 'CCC444']) expect(JSON.stringify(S.peticiones)).not.toContain(dato);
+  });
   test('actualizar vuelve a pedir los resultados al servidor', async ({ page, servidor }) => {
     const S = await abrir(page, servidor); await aResultados(page);
     const antes = rpcs(S, 'profe_resultados').length;

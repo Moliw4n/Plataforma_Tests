@@ -267,6 +267,7 @@ export function crearExamenes(P) {
       '<span class="espacio"></span><button class="btn" id="bRecargarEx">'+icono("actualizar")+' Actualizar</button><button class="btn pri" id="bExcelEx">'+icono("bajar")+' Descargar para Excel</button></div>';
     h += '<div class="banda-notas ' + (a.notas_publicadas ? 'pub' : '') + '"><span>' + (a.notas_publicadas ? icono('ok') + ' Los alumnos YA ven su nota.' : icono('aviso') + ' Los alumnos todavía NO ven su nota.') + '</span>' +
       '<button class="btn ' + (a.notas_publicadas ? '' : 'pri') + '" id="bPublicar">' + (a.notas_publicadas ? 'Ocultar las notas' : 'Publicar las notas') + '</button></div>';
+    h += P.barraNombres(a.grupo);
     h += '<div class="resumen">' +
       '<div class="regla"><span class="g">' + hechos.length + '<small style="font-size:16px;color:var(--mut)">/' + fs.length + '</small></span><p>han entregado</p></div>' +
       '<div class="regla"><span class="g">' + (hechos.length ? P.fmtNotaTxt(P.media(hechos.map(x => x.nota))) : '—') + '</span><p>nota media</p></div>' +
@@ -280,6 +281,7 @@ export function crearExamenes(P) {
     $('#bRecargarEx').onclick = () => pintarResultados();
     $('#bExcelEx').onclick = () => exportar(fs);
     $('#bPublicar').onclick = publicar;
+    P.conectarNombres();
     P.app.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; dibujarResultados(); });
     if (tab === 'preguntas') vistaPreguntas(); else vistaAlumnos(fs);
   }

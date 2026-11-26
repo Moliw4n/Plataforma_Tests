@@ -8,8 +8,9 @@ const { spawnSync } = require('child_process');
 const RAIZ = path.join(__dirname, '..');
 // Las pruebas de CONVERSIÓN parten de copias congeladas del formato 1 (los de tests/ ya están en formato 2)
 const leer = id => JSON.parse(fs.readFileSync(path.join(__dirname, 'datos', id + '.formato1.json'), 'utf8'));
-const leerDisco = id => JSON.parse(fs.readFileSync(path.join(RAIZ, 'tests', id + '.json'), 'utf8'));
-const IDS = JSON.parse(fs.readFileSync(path.join(RAIZ, 'tests', 'index.json'), 'utf8')).map(t => t.id);
+const INDICE = JSON.parse(fs.readFileSync(path.join(RAIZ, 'tests', 'index.json'), 'utf8'));
+const IDS = INDICE.map(t => t.id);
+const leerDisco = id => JSON.parse(fs.readFileSync(path.join(RAIZ, 'tests', INDICE.find(t => t.id === id).carpeta || '', id + '.json'), 'utf8'));
 let F;
 test.before(async () => { F = await import(path.join(RAIZ, 'js', 'nucleo', 'formato.js')); });
 const clon = o => JSON.parse(JSON.stringify(o));
@@ -17,6 +18,9 @@ const clon = o => JSON.parse(JSON.stringify(o));
 test('el índice y los archivos de tests coinciden', () => {
   assert.ok(IDS.length >= 2);
   for (const id of IDS) assert.equal(leerDisco(id).id, id);
+  // Cada test vive en la carpeta de su clase (tests/<carpeta>/<id>.json): nada suelto en tests/ salvo el índice.
+  for (const t of INDICE) assert.ok(t.carpeta, t.id + ': le falta «carpeta» en tests/index.json');
+  assert.deepEqual(fs.readdirSync(path.join(RAIZ, 'tests')).filter(f => f.endsWith('.json')), ['index.json']);
 });
 
 test('los tests de tests/*.json están en formato 2, son válidos y equivalen exactamente al formato 1 de siempre', () => {

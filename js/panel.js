@@ -3,6 +3,7 @@
    - Los NOMBRES reales salen de tu CSV privado y solo se guardan en este navegador
      (localStorage). Nunca se envían a Supabase ni a ningún sitio. */
 import { aFormato2 } from './nucleo/formato.js';
+import { leerIndiceTests, rutaTest } from './nucleo/util.js';
 import { crearExamenes } from './panel-examenes.js';
 import { crearDirectos } from './panel-directo.js';
 import { icono } from './nucleo/iconos.js';
@@ -139,10 +140,10 @@ import { icono } from './nucleo/iconos.js';
     }
     // La lista de tests sale de tests/index.json (la misma que lee Kronos)
     let indice = [];
-    try { const r = await fetch('tests/index.json', { cache: 'no-cache' }); if (r.ok) indice = (await r.json()).map(t => t.id); } catch (e) {}
+    indice = (await leerIndiceTests()).map(t => t.id);
     const ids = [...new Set([...indice, ...TESTS_CONOCIDOS, ...intentos.map(i => i.test_id)])];
     await Promise.all(ids.map(async id => {
-      try { const r = await fetch('tests/' + encodeURIComponent(id) + '.json', { cache: 'no-cache' }); if (r.ok) tests[id] = aFormato2(await r.json()); } catch (e) {}
+      try { const r = await fetch(await rutaTest(id), { cache: 'no-cache' }); if (r.ok) tests[id] = aFormato2(await r.json()); } catch (e) {}
     }));
     if (mia !== carga) return;
     // Un grupo cuyos alumnos están todos de baja (la clase se desvinculó de Kronos) no se enseña: así no sale «0 alumnos».
@@ -220,7 +221,6 @@ import { icono } from './nucleo/iconos.js';
     if (EX && f.vista === 'examen') return EX.pintarResultados();
     if (DI && f.vista === 'directo') return DI.pintarResultados();
     const T = tests[f.test];
-    const hayNombres = Object.keys(nombres).length > 0;
     const fs = filas();
     const hechos = fs.filter(x => x.n);
     const todos = fs.flatMap(x => x.intentos);
@@ -237,10 +237,7 @@ import { icono } from './nucleo/iconos.js';
       '<button class="btn pri" id="bExcel">'+icono("bajar")+' Descargar para Excel</button>' +
     '</div>';
 
-    h += hayNombres
-      ? '<div class="nombres-ok">'+icono("persona")+' Nombres cargados desde tu archivo (solo en este navegador). <button class="enlace" id="bCambiarCSV">Cambiar archivo</button> · <button class="enlace" id="bOlvidar">Olvidar nombres</button></div>'
-      : '<div class="aviso-nombres">Ahora ves solo números. Para ver los nombres, elige tu archivo <b>TDA2_alumnos.csv</b> (carpeta Plataforma_Tests_privado). No se sube a ningún sitio. <button class="btn" id="bCSV">Elegir archivo…</button></div>';
-    h += '<input type="file" id="iCSV" accept=".csv,text/csv" hidden>';
+    h += barraNombres(f.grupo);
 
     h += '<div class="resumen">' +
       '<div class="regla"><span class="g">' + hechos.length + '<small style="font-size:16px;color:var(--mut)">/' + fs.length + '</small></span><p>alumnos lo han hecho</p></div>' +
@@ -264,11 +261,7 @@ import { icono } from './nucleo/iconos.js';
     $('#bRecargar').onclick = arrancar;
     $('#bInicio').onclick = () => { f.vista = 'inicio'; pintar(); };
     $('#bExcel').onclick = exportar;
-    const iCSV = $('#iCSV');
-    iCSV.onchange = () => leerCSV(iCSV.files[0]);
-    if ($('#bCSV')) $('#bCSV').onclick = () => iCSV.click();
-    if ($('#bCambiarCSV')) $('#bCambiarCSV').onclick = () => iCSV.click();
-    if ($('#bOlvidar')) $('#bOlvidar').onclick = () => { nombres = {}; guarda.del('pt_nombres'); pintar(); };
+    conectarNombres();
     app.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { f.vista = b.dataset.v; pintar(); });
     if (f.vista === 'preguntas') vistaPreguntas(pregs, T); else vistaAlumnos(fs);
   }
@@ -506,6 +499,21 @@ import { icono } from './nucleo/iconos.js';
   }
 
   /* ---------- nombres desde el CSV ---------- */
+  // La barra «Nombres cargados / Elegir archivo…»: la usan los resultados de un test y los de un examen (panel-examenes.js).
+  function barraNombres(grupo) {
+    const hay = alumnos.some(a => a.grupo === grupo && a.activo && nombres[a.id]);
+    return (hay
+      ? '<div class="nombres-ok">'+icono("persona")+' Nombres cargados desde tu archivo (solo en este navegador). <button class="enlace" id="bCambiarCSV">Cambiar archivo</button> · <button class="enlace" id="bOlvidar">Olvidar nombres</button></div>'
+      : '<div class="aviso-nombres">Ahora ves solo números. Para ver los nombres, elige el archivo de alumnos de esta clase (carpeta Kiron_privado, dentro de la de tu clase → alumnos). No se sube a ningún sitio. <button class="btn" id="bCSV">Elegir archivo…</button></div>') +
+      '<input type="file" id="iCSV" accept=".csv,text/csv" hidden>';
+  }
+  function conectarNombres() {
+    const iCSV = $('#iCSV'); if (!iCSV) return;
+    iCSV.onchange = () => leerCSV(iCSV.files[0]);
+    if ($('#bCSV')) $('#bCSV').onclick = () => iCSV.click();
+    if ($('#bCambiarCSV')) $('#bCambiarCSV').onclick = () => iCSV.click();
+    if ($('#bOlvidar')) $('#bOlvidar').onclick = () => { nombres = {}; guarda.del('pt_nombres'); pintar(); };
+  }
   function leerCSV(file) {
     if (!file) return;
     const lector = new FileReader();
@@ -515,9 +523,9 @@ import { icono } from './nucleo/iconos.js';
       const nuevo = {};
       lineas.forEach(l => {
         const c = l.split(sep).map(s => s.trim().replace(/^"|"$/g, ''));
-        if (/^[A-Z0-9]+-\d+$/i.test(c[0]) && c[1]) nuevo[c[0].toUpperCase()] = c[1];   // solo número → nombre; el código NO se guarda
+        if (/^[A-Z0-9_]+-\d+$/i.test(c[0]) && c[1]) nuevo[c[0].toUpperCase()] = c[1];   // solo número → nombre; el código NO se guarda
       });
-      if (!Object.keys(nuevo).length) { alert('No he encontrado alumnos en ese archivo. Debe ser TDA2_alumnos.csv.'); return; }
+      if (!Object.keys(nuevo).length) { alert('No he encontrado alumnos en ese archivo. Cada fila debe empezar por el número del alumno (p. ej. TDA2-07) y su nombre.'); return; }
       nombres = { ...nombres, ...nuevo };
       guarda.set('pt_nombres', nombres);
       pintar();
@@ -546,7 +554,7 @@ import { icono } from './nucleo/iconos.js';
     app, esc, api, confirmar, abrirModal, cerrarModal: () => capa.classList.remove('on'), f, guarda,
     pintar: () => pintar(), recargar: () => arrancar(),
     grupos: () => grupos, alumnos: () => alumnos, tests: () => tests,
-    nombreDe, numDe, fmtNota, fmtNotaTxt, fmtSeg, fmtFecha, media, haceCuanto, chipTipo
+    nombreDe, numDe, barraNombres, conectarNombres, fmtNota, fmtNotaTxt, fmtSeg, fmtFecha, media, haceCuanto, chipTipo
   };
 
   /* ---------- inicio ---------- */

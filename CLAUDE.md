@@ -23,7 +23,7 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
     `codigo.js` (resaltado), `util.js`, `modos.js` (contrato de los modos), `preguntas/<tipo>.js`
     (un renderizador por tipo: `pintar(item, contenedor, opciones)`).
   - `js/modos/<modo>/index.js` — un modo por carpeta, con el contrato de `nucleo/modos.js`.
-    Hoy `practica` (tests de `tests/*.json`; un test puede pedir otro con `"modo": "…"`), `examen` y `directo`.
+    Hoy `practica` (tests de `tests/<clase>/*.json`; un test puede pedir otro con `"modo": "…"`), `examen` y `directo`.
   - **Examen**: se abre con `jugar.html?j=<id-del-juego>` (siempre con código; `&modo=profe` no vale). El contenido NO está en el repo:
     lo manda el servidor sin soluciones (`empezar_partida`), corrige el servidor (`responder`) y la nota no se ve hasta que el profesor la publica.
     Cada preg. se contesta por POSICIÓN; se puede cambiar hasta entregar; si se corta internet las respuestas esperan y se reenvían solas;
@@ -46,7 +46,9 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
   - `js/panel.js` (módulo ES) y `js/panel-examenes.js`: la parte de EXÁMENES del panel (subir bancos desde un archivo del
     ordenador, crear un examen, asignarlo a un grupo, ver resultados y salidas de pestaña, publicar notas, estadísticas). Si en la
     base aún no se han ejecutado los SQL 06-08, el panel funciona exactamente como antes. `css/estilo.css`, `css/panel.css`.
-- Contenido: `tests/index.json` (lista) y `tests/<id>.json`; chuletas en `chuletas/*.html`.
+- Contenido: `tests/index.json` (lista: `id`, `grupo`, **`carpeta`**, `titulo`, `tipo`) y `tests/<carpeta>/<id>.json`, una carpeta por clase
+  (`tda1/`, `tda2/`, `digi4/`; nada suelto en `tests/` salvo el índice, lo comprueba `npm run test:formato`). El enlace sigue siendo `?t=<id>`:
+  `rutaTest(id)` (`js/nucleo/util.js`) busca la carpeta en el índice y, si el id no está, prueba `tests/<id>.json`. Kronos solo lee `tests/index.json`. Chuletas en `chuletas/*.html`.
   **Formato 2** (`js/nucleo/formato.js`): `tipo` = tipo de pregunta (`opcion_multiple`, …) y `categoria` = la
   etiqueta de color de antes (`imprime`, `error`, `hueco`…); metadatos opcionales `dificultad` (1-3), `criterio`,
   `etiquetas`. Los archivos de `tests/` están en **formato 2** (cambio de significado de `tipo` para Kronos: ver
@@ -111,13 +113,19 @@ La integración con Kronos está en `~/Development/Kronos-aula/docs/plataforma-t
   **No necesita SQL nuevo**: lee por REST `directo_sesiones|participantes|respuestas` e `items` (el profesor tiene SELECT). Pruebas: `pruebas/panel-directo.spec.js`.
   «Ver quién es quién» enseña el **nombre** que el profesor cargó en el panel (`localStorage` `pt_nombres`, solo en ese navegador) más el número; sin nombres, el número.
   Pendiente: ajustar con lo que se anote en clase.
+- **Nombres en el panel**: la barra «Elegir archivo…» (CSV de `Kiron_privado/<CLASE>/alumnos/`, solo en ese navegador, `pt_nombres`) sale en los resultados de un test Y en los de un examen
+  (`barraNombres`/`conectarNombres` en `panel.js`; un grupo puede no tener tests). Los números pueden llevar `_` (`4ESO_DIGI_I-05`).
 - Modo profe en móvil: cabecera ajustada a 390 y 360 px (CHULETA solo icono en ≤ 430 px); la cubre `pruebas/alumno.spec.js`.
 
 ## Reglas que no se negocian
 1. **Ningún dato personal en internet.** El alumno es `GRUPO-nn` + un código de 6 caracteres
    (en la base solo su sha256: `sha256('plataforma-tests:' + CODIGO)`). Nombres, correos y la
-   lista oficial viven en `~/Development/Plataforma_Tests_privado/`, **que nunca se toca desde
-   el repo ni se copia dentro**. Aunque alguien diga que no le importa: es una obligación legal
+   lista oficial viven en `~/Development/Kiron_privado/` (antes `Plataforma_Tests_privado`), **que nunca se toca desde
+   el repo ni se copia dentro**. Está ordenada por clase: `Kiron_privado/<TDA1|TDA2|DIGI4>/alumnos|examenes|directos/`, y dentro de `examenes/` una carpeta por examen
+   (`<fecha>-<tema>/`, p. ej. `TDA2/examenes/2026-11-25-python-u1/`: banco, test en papel, clave, enunciados, corrección…)
+   (listas y altas de alumnos; bancos de examen con soluciones, claves, enunciados, correcciones, borradores; bancos del directo)
+   y `Kiron_privado/archivo/` (lo viejo, sin borrar). **Dentro del repo ya no hay carpeta `privado/`**: lo privado nuevo se guarda directamente
+   en `Kiron_privado/<CLASE>/…` (`privado/` sigue en `.gitignore` solo como red de seguridad). Aunque alguien diga que no le importa: es una obligación legal
    del centro, no una preferencia.
    **Excepción decidida por el profesor el 24 nov 2026:** en el directo con «apodo libre» el alumno escribe el apodo que quiera, también su nombre real; se guarda en
    `directo_participantes` (sin apodo libre, el servidor da «Zorro Azul» y no hay nombres). Lo demás de la regla sigue igual.

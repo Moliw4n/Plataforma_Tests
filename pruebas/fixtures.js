@@ -10,7 +10,9 @@ const CODIGO_BUENO = 'ABC123';   // ABC-123 en pantalla
 const CODIGO_ESPERA = 'ESP000';
 const ALUMNO = { ok: true, alumno: 'TDA2-07', grupo: 'TDA2' };
 
-const cargarTest = id => JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tests', id + '.json'), 'utf8'));
+// Los tests están en tests/<carpeta de la clase>/<id>.json; la carpeta la dice tests/index.json.
+const carpetaTest = id => (JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tests', 'index.json'), 'utf8')).find(t => t.id === id) || {}).carpeta || '';
+const cargarTest = id => JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tests', carpetaTest(id), id + '.json'), 'utf8'));
 
 const test = base.test.extend({
   /* servidor: simula Supabase y registra lo que recibe.

@@ -8,7 +8,8 @@ const { SQL, iniciar, parar, baseNueva, como, comoUsuario } = require('./ayuda-s
 
 const PROFE = 'profe@ejemplo.test', OTRO = 'otro@ejemplo.test';
 const RAIZ = path.join(__dirname, '..');
-const leerTest = id => JSON.parse(require('fs').readFileSync(path.join(RAIZ, 'tests', id + '.json'), 'utf8'));
+const carpetaTest = id => (JSON.parse(require('fs').readFileSync(path.join(RAIZ, 'tests', 'index.json'), 'utf8')).find(t => t.id === id) || {}).carpeta || '';
+const leerTest = id => JSON.parse(require('fs').readFileSync(path.join(RAIZ, 'tests', carpetaTest(id), id + '.json'), 'utf8'));
 const clon = o => JSON.parse(JSON.stringify(o));
 const it = (id, extra) => ({ id, enun: 'Enunciado ' + id, sol: 'Porque sí', trampa: 'Cuidado', ...extra });
 const MIXTO = { formato: 2, id: 'mixto', titulo: 'Banco mixto', materia: 'TDA I', unidad: 'U1', preguntas: [

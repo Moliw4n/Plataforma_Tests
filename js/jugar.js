@@ -1,13 +1,13 @@
 /* Kiron · página del alumno (el «runner»)
    Dos formas de abrirla:
-     jugar.html?t=<id-del-test>   práctica: carga tests/<id>.json (test.html es un alias que reenvía aquí) · &modo=profe = sin código y sin guardar.
+     jugar.html?t=<id-del-test>   práctica: carga tests/<carpeta>/<id>.json (la carpeta, de tests/index.json) (test.html es un alias que reenvía aquí) · &modo=profe = sin código y sin guardar.
      jugar.html?j=<id-del-juego>  examen: pide el código y busca ese juego entre los asignados a su grupo (mis_juegos);
                                   el contenido NO está aquí: lo manda el servidor, sin soluciones. &modo=profe no vale: siempre hace falta código.
      jugar.html?d=<sala>          directo (tipo Kahoot): pide el código y entra en la sala de 6 cifras que el profesor ha abierto.
      jugar.html?d                 el mismo directo con ENLACE FIJO (sin código de sala): tras el código de alumno pide el de la sala, que es el que proyecta el profesor.
    Pide el código y entrega el control al MODO que corresponda. El contrato de los modos está en nucleo/modos.js. */
 import { rpc } from './nucleo/api.js';
-import { esc, tituloBonito } from './nucleo/util.js';
+import { esc, tituloBonito, rutaTest } from './nucleo/util.js';
 import { crearChuleta } from './nucleo/chuleta.js';
 import { mostrarAcceso } from './nucleo/acceso.js';
 import { cargarModo } from './nucleo/modos.js';
@@ -36,7 +36,7 @@ import { RENDERIZADORES } from './nucleo/preguntas/index.js';
     const id = PARAMS.get('t') || window.TEST_POR_DEFECTO;
     try {
       if (window.TEST_EMBEBIDO) T = window.TEST_EMBEBIDO;
-      else { const r = await fetch('tests/' + encodeURIComponent(id) + '.json', { cache: 'no-cache' }); if (!r.ok) throw 0; T = await r.json(); }
+      else { const r = await fetch(await rutaTest(id), { cache: 'no-cache' }); if (!r.ok) throw 0; T = await r.json(); }
       T = aFormato2(T);   // formato 1 o 2: de aquí en adelante, siempre formato 2
     } catch (e) {
       E.innerHTML = '<div class="cargando">No encuentro este test. Revisa el enlace que te ha pasado tu profesor.</div>';
